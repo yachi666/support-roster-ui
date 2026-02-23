@@ -132,6 +132,10 @@ const getShiftBgClass = (teamColor) => {
   return colors[teamColor] || 'bg-gray-100 border-gray-200'
 }
 
+const getShiftRole = (shift) => {
+  return shift.meaning || shift.code || 'Support'
+}
+
 const formatShiftTime = (iso) => {
   return format(new Date(iso), 'HH:mm')
 }
@@ -293,7 +297,7 @@ const getTeamShiftCount = (teamId) => {
                           )
                         "
                       >
-                        {{ layoutShift.shift.role }}
+                        {{ getShiftRole(layoutShift.shift) }}
                       </div>
                     </div>
 
