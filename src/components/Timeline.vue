@@ -140,6 +140,17 @@ const formatShiftTime = (iso) => {
   return format(new Date(iso), 'HH:mm')
 }
 
+const formatShiftTimeInZone = (iso) => {
+  const date = new Date(iso)
+  const options = { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    hour12: false,
+    timeZone: props.selectedTimezone 
+  }
+  return date.toLocaleTimeString('en-US', options)
+}
+
 const getShiftStyle = (layoutShift) => ({
   left: `${layoutShift.left}px`,
   width: `${Math.max(layoutShift.width, 4)}px`,
@@ -262,8 +273,8 @@ const getTeamShiftCount = (teamId) => {
                       v-if="layoutShift.width > 80"
                       class="text-xs font-mono opacity-80 whitespace-nowrap ml-2 hidden sm:inline-block"
                     >
-                      {{ formatShiftTime(layoutShift.shift.start) }} -
-                      {{ formatShiftTime(layoutShift.shift.end) }}
+                      {{ formatShiftTimeInZone(layoutShift.shift.start) }} -
+                      {{ formatShiftTimeInZone(layoutShift.shift.end) }}
                     </span>
                   </div>
                 </TooltipTrigger>
@@ -305,8 +316,8 @@ const getTeamShiftCount = (teamId) => {
                       <div class="flex items-center">
                         <Clock class="w-3.5 h-3.5 mr-2 text-gray-400" />
                         <span class="font-mono text-xs">
-                          {{ format(new Date(layoutShift.shift.start), 'MMM d, HH:mm') }} -
-                          {{ format(new Date(layoutShift.shift.end), 'HH:mm') }}
+                          {{ formatShiftTimeInZone(layoutShift.shift.start) }} -
+                          {{ formatShiftTimeInZone(layoutShift.shift.end) }}
                         </span>
                       </div>
                       <div class="h-px bg-gray-100 my-2"></div>
