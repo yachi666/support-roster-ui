@@ -37,14 +37,19 @@ npm run dev
 npm run build
 ```
 
-## Linux + Nginx 部署（方案 A：前端同域，`/api` 反向代理到后端）
+## Linux + Nginx 部署（方案 A：前后端不同域名、不同服务器）
 
-本项目当前通过 `VITE_API_BASE_URL` 读取接口基地址。默认约定如下：开发环境使用 `http://localhost:8080/api`，生产环境如果采用“前端静态站点 + Nginx 代理后端”的方式，则使用 `/api`，由 Nginx 将该路径转发到独立后端服务器。
+本项目当前通过 `VITE_API_BASE_URL` 读取接口基地址。默认约定如下：
+
+- 开发环境：`http://localhost:8080/api`
+- 生产环境：`https://supportui.servier/api`
+
+也就是说，生产环境中的前端页面会直接请求后端域名，而不是通过前端服务器上的 Nginx 再转发 `/api`。
 
 ### 已生成的部署文件
 
 - `build/build-frontend.sh`：前端生产打包脚本
-- `build/support-roster-ui.nginx.conf`：Nginx 站点配置示例
+- `build/support-roster-ui.nginx.conf`：前端静态站点 Nginx 配置示例
 
 ### 1. 运行前端打包脚本
 
@@ -56,7 +61,7 @@ npm run build
 chmod +x build/build-frontend.sh
 ```
 
-使用默认同域 API 路径 `/api` 打包：
+使用默认生产 API 地址 `https://supportui.servier/api` 打包：
 
 ```sh
 ./build/build-frontend.sh
@@ -65,7 +70,7 @@ chmod +x build/build-frontend.sh
 如果你想临时覆盖 API 地址，也可以在执行时传入环境变量：
 
 ```sh
-VITE_API_BASE_URL=/api ./build/build-frontend.sh
+VITE_API_BASE_URL=https://supportui.servier/api ./build/build-frontend.sh
 ```
 
 打包成功后，产物位于 `dist/`。
@@ -84,7 +89,7 @@ rsync -avz --delete dist/ user@your-server:/var/www/support-roster-ui/releases/2
 ln -sfn /var/www/support-roster-ui/releases/20260313-1 /var/www/support-roster-ui/current
 ```
 
-### 3. 安装 Nginx 配置
+### 3. 安装前端 Nginx 配置
 
 将 `build/support-roster-ui.nginx.conf` 复制到服务器，例如：
 
@@ -96,7 +101,8 @@ sudo cp build/support-roster-ui.nginx.conf /etc/nginx/conf.d/support-roster-ui.c
 
 - `server_name roster.example.com;` 改为你的前端域名
 - `root /var/www/support-roster-ui/current;` 改为你的静态文件目录
-- `proxy_pass https://supportui.servier/api/;` 改为你的后端 API 地址
+
+当前这个 Nginx 示例只负责托管前端静态文件，不负责转发 API 请求。
 
 检查并重载 Nginx：
 
@@ -117,14 +123,23 @@ sudo certbot --nginx -d roster.example.com
 
 ### 5. 部署完成后检查项
 
-- 打开页面后，请确认接口请求路径为 `/api/...`
+- 打开页面后，请确认接口请求地址为 `https://supportui.servier/api/...`
 - 直接刷新 `/workspace`、`/workspace/staff`、`/workspace/roster` 等页面不应出现 404
 - 如果接口请求失败，请优先检查：
-  - Nginx 中 `proxy_pass` 是否填写正确
-  - 前端服务器是否能访问后端服务器
+  - 后端是否已对前端域名开启 CORS
+  - 浏览器开发者工具中是否出现跨域错误（CORS）
   - 后端服务端口、防火墙、安全组是否已放行
+  - `VITE_API_BASE_URL` 是否为正确的生产地址
 
-### 6. 常用上线命令汇总
+### 6. 后端跨域配置提醒
+
+由于前端和后端不在同一个域名下，后端服务必须允许前端站点跨域访问。至少需要确认：
+
+- `Access-Control-Allow-Origin` 包含你的前端域名
+- 如果接口依赖 Cookie / Session，还需要正确配置 `Access-Control-Allow-Credentials`
+- 如果存在自定义请求头或 `PUT` / `DELETE` / 文件上传请求，后端需要正确处理预检请求（`OPTIONS`）
+
+### 7. 常用上线命令汇总
 
 ```sh
 chmod +x build/build-frontend.sh

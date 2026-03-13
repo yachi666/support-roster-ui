@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 DIST_DIR="${DIST_DIR:-${PROJECT_ROOT}/dist}"
-VITE_API_BASE_URL_VALUE="${VITE_API_BASE_URL:-/api}"
+VITE_API_BASE_URL_VALUE="${VITE_API_BASE_URL:-https://supportui.servier/api}"
 
 if ! command -v node >/dev/null 2>&1; then
   echo "Error: node is not installed or not in PATH." >&2
