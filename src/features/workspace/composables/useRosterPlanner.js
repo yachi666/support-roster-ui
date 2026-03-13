@@ -28,6 +28,7 @@ function normalizeGroups(groups, totalDays) {
       id: person.staffId,
       name: person.staffName,
       role: person.roleName || 'Unassigned',
+      roleGroupId: person.roleGroupId ? String(person.roleGroupId) : '',
       schedule: buildScheduleArray(person.schedule, totalDays),
     })),
   }))
@@ -49,6 +50,15 @@ function normalizeShiftCodeOptions(options) {
   const optionSet = new Set(options || [])
   optionSet.add('Clear')
   return Array.from(optionSet)
+}
+
+function normalizeShiftCodeOptionsByRoleGroup(optionsByRoleGroup) {
+  return Object.fromEntries(
+    Object.entries(optionsByRoleGroup || {}).map(([roleGroupId, options]) => [
+      String(roleGroupId),
+      normalizeShiftCodeOptions(options),
+    ]),
+  )
 }
 
 function findAssignment(groups, cell) {
@@ -81,6 +91,7 @@ export function useRosterPlanner() {
   const drawerOpen = shallowRef(false)
   const selectedShiftCode = shallowRef('')
   const shiftCodeOptions = shallowRef(['Clear'])
+  const shiftCodeOptionsByRoleGroup = shallowRef({})
   const shiftCodeColorMap = shallowRef({})
   const loading = shallowRef(false)
   const saving = shallowRef(false)
@@ -127,7 +138,19 @@ export function useRosterPlanner() {
 
   const selectedAssignment = computed(() => findAssignment(rosterGroups.value, selectedCell.value))
 
-  watch([selectedAssignment, shiftCodeOptions], ([assignment, options]) => {
+  const availableShiftCodeOptions = computed(() => {
+    const roleGroupId = selectedAssignment.value?.staff?.roleGroupId
+    const roleScopedOptions = roleGroupId ? shiftCodeOptionsByRoleGroup.value[roleGroupId] : null
+    const options = roleScopedOptions && roleScopedOptions.length ? roleScopedOptions : shiftCodeOptions.value
+
+    if (selectedAssignment.value?.currentCode && !options.includes(selectedAssignment.value.currentCode)) {
+      return normalizeShiftCodeOptions([...options, selectedAssignment.value.currentCode])
+    }
+
+    return options
+  })
+
+  watch([selectedAssignment, availableShiftCodeOptions], ([assignment, options]) => {
     selectedShiftCode.value = assignment?.currentCode || options[0] || ''
   }, { immediate: true })
 
@@ -150,6 +173,7 @@ export function useRosterPlanner() {
       baseGroups.value = normalizedGroups
       rosterGroups.value = cloneGroups(normalizedGroups)
       shiftCodeOptions.value = normalizeShiftCodeOptions(response.shiftCodeOptions)
+      shiftCodeOptionsByRoleGroup.value = normalizeShiftCodeOptionsByRoleGroup(response.shiftCodeOptionsByRoleGroup)
       shiftCodeColorMap.value = response.shiftCodeColorMap || {}
       serverValidationWarning.value = response.validationWarning || ''
       pendingUpdates.value = new Map()
@@ -163,6 +187,7 @@ export function useRosterPlanner() {
       rosterGroups.value = []
       baseGroups.value = []
       shiftCodeOptions.value = ['Clear']
+      shiftCodeOptionsByRoleGroup.value = {}
       shiftCodeColorMap.value = {}
       serverValidationWarning.value = ''
       pendingUpdates.value = new Map()
@@ -245,6 +270,7 @@ export function useRosterPlanner() {
       baseGroups.value = normalizedGroups
       rosterGroups.value = cloneGroups(normalizedGroups)
       shiftCodeOptions.value = normalizeShiftCodeOptions(response.shiftCodeOptions)
+      shiftCodeOptionsByRoleGroup.value = normalizeShiftCodeOptionsByRoleGroup(response.shiftCodeOptionsByRoleGroup)
       shiftCodeColorMap.value = response.shiftCodeColorMap || {}
       serverValidationWarning.value = response.validationWarning || ''
       pendingUpdates.value = new Map()
@@ -310,7 +336,7 @@ export function useRosterPlanner() {
     selectedAssignment,
     selectedShiftCode,
     validationWarning,
-    shiftCodeOptions,
+    shiftCodeOptions: availableShiftCodeOptions,
     shiftCodeColorMap,
     allTeams,
     selectedTeamIds,
