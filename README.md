@@ -39,7 +39,7 @@ npm run build
 
 ## Linux + Nginx 部署（方案 A：前端同域，`/api` 反向代理到后端）
 
-本项目当前通过 `VITE_API_BASE_URL` 读取接口基地址。生产环境如果采用“前端静态站点 + Nginx 代理后端”的方式，推荐将接口地址设置为 `/api`，由 Nginx 将该路径转发到独立后端服务器。
+本项目当前通过 `VITE_API_BASE_URL` 读取接口基地址。默认约定如下：开发环境使用 `http://localhost:8080/api`，生产环境如果采用“前端静态站点 + Nginx 代理后端”的方式，则使用 `/api`，由 Nginx 将该路径转发到独立后端服务器。
 
 ### 已生成的部署文件
 
@@ -96,7 +96,7 @@ sudo cp build/support-roster-ui.nginx.conf /etc/nginx/conf.d/support-roster-ui.c
 
 - `server_name roster.example.com;` 改为你的前端域名
 - `root /var/www/support-roster-ui/current;` 改为你的静态文件目录
-- `proxy_pass http://10.0.0.25:8080/api/;` 改为你的后端 API 地址
+- `proxy_pass https://supportui.servier/api/;` 改为你的后端 API 地址
 
 检查并重载 Nginx：
 
