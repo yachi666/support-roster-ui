@@ -1,216 +1,98 @@
-# Support Roster UI - 技术规格书
+# Support Roster UI Spec Index
 
-## 项目概述
+## 文档定位
 
-**Support Roster UI** 是一个企业级值班排班可视化系统，为技术支持团队提供实时值班状态展示、多时区排班视图和人员联系方式查询功能。系统采用前后端分离架构，前端基于 Vue 3 构建，后端使用 Spring Boot + Excel 数据存储方案。
+本目录是 support-roster-ui 的正式前端规格入口，负责描述当前 Vue 应用的页面边界、架构分层、模块职责、交互约束与视觉规范。
 
-### 核心价值
+当前前端包含两套体验：
 
-- **实时可视化**：24小时时间轴展示当前值班人员，支持多团队并行显示
-- **多时区支持**：自动时区转换，支持全球分布式团队协作
-- **高信息密度**：在单一视图内聚合团队、人员、联系方式、班次信息
-- **零配置部署**：基于 Excel 的数据存储，无需数据库依赖
+- Public Viewer：只读排班看板，路由位于 `/viewer`
+- Admin Workspace：管理工作台，详细规格统一收敛到 `workspace/`
+- Root Entry：入口分流关系见 `workspace/routing.md`
 
----
-
-## 技术栈选型
-
-| 层级 | 技术选型 | 版本 | 选型理由 |
-|------|---------|------|---------|
-| **框架** | Vue.js | 3.5.28 | Composition API、响应式系统、TypeScript 支持 |
-| **构建工具** | Vite | 7.3.1 | 快速 HMR、ESM 原生支持、简洁配置 |
-| **样式方案** | Tailwind CSS | 4.2.0 | 原子化 CSS、快速原型开发、一致性设计系统 |
-| **状态管理** | Pinia | 3.0.4 | Vue 3 官方推荐、类型安全、DevTools 集成 |
-| **路由** | Vue Router | 5.0.2 | SPA 路由管理 |
-| **UI 组件库** | Radix Vue | 1.9.17 | 无样式原语组件、可访问性保证 |
-| **日期处理** | date-fns | 4.1.0 | 模块化、时区支持 (date-fns-tz) |
-| **图标** | Lucide Vue Next | 0.574.0 | 轻量级、一致性图标集 |
-
----
-
-## 文档地图
+## 目录结构
 
 ```
 .specs/
-├── spec.md              # 本文档 - 主索引
-├── architecture.md      # 系统架构设计
-├── ui-design.md         # UI 设计规范
-└── modules/
-    ├── dashboard.md     # Dashboard 仪表盘模块
-    ├── header.md        # Header 导航模块
-    └── timeline.md      # Timeline 时间轴模块
+├── spec.md
+├── architecture.md
+├── ui-design.md
+├── modules/
+│   ├── index.md
+│   ├── dashboard.md
+│   ├── header.md
+│   └── timeline.md
+├── workspace/
+│   ├── index.md
+│   ├── architecture.md
+│   ├── layout.md
+│   ├── routing.md
+│   ├── ui-design.md
+│   ├── components/
+│   └── pages/
+└── CHANGELOG.md
 ```
 
----
+## 阅读顺序
 
-## 系统架构概览
+1. 先读 `spec.md` 了解产品边界与文档导航
+2. 再读 `architecture.md` 了解应用入口、路由和数据流
+3. Public Viewer 相关改动进入 `modules/index.md`
+4. Admin Workspace 相关改动进入 `workspace/index.md`
+5. 视觉、排版、颜色与组件风格统一参考 `ui-design.md`
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Browser (SPA)                             │
-├─────────────────────────────────────────────────────────────────┤
-│  App.vue                                                         │
-│    └── Dashboard.vue                                             │
-│          ├── Header.vue (日期/时区选择)                          │
-│          └── Timeline.vue (排班时间轴)                           │
-├─────────────────────────────────────────────────────────────────┤
-│  API Layer (src/api/index.js)                                   │
-│    └── REST Client (fetch-based)                                │
-├─────────────────────────────────────────────────────────────────┤
-│  HTTP/REST                                                       │
-├─────────────────────────────────────────────────────────────────┤
-│  Spring Boot Backend (support-roster-server)                    │
-│    └── RosterRepository → Excel (roster.xlsx)                   │
-└─────────────────────────────────────────────────────────────────┘
-```
+## 主题边界
 
----
+### 根级文档
 
-## 核心业务概念
+- `spec.md`：总入口、范围说明、导航索引、跨主题约束
+- `architecture.md`：前端整体架构与顶层分流关系，不展开 workspace 子域实现
+- `ui-design.md`：共用视觉规范与 Public Viewer 设计说明，workspace 视觉文档在 `workspace/ui-design.md`
 
-### 1. 团队层级 (Team Hierarchy)
+### Public Viewer
 
-| Team ID | 显示名称 | 颜色 | 排序 | 对应 RoleGroup |
-|---------|---------|------|------|----------------|
-| `incident-manager` | Incident Manager | orange | 0 | Incident_Manager_China, Incident_Manager_India |
-| `l1` | L1 | blue | 1 | L1_China, L1_India |
-| `ap-l2` | AP L2 | green | 2 | AP_L2 |
-| `emea-l2` | EMEA L2 | purple | 3 | EMEA_L2 |
-| `mdp-l2` | MDP L2 | red | 4 | MDP_L2 |
-| `ap-l2-plus` | AP L2+ | green | 5 | AP_L2+ |
-| `ap-l3` | AP L3 | green | 6 | AP_L3 |
-| `devops` | DevOps | orange | 7 | DevOps_China, DevOps_India |
+- `modules/`：传统只读排班看板模块说明
+- 适用对象：`src/components/`、`src/pages/PublicDashboardPage.vue`、`src/api/index.js`
 
-### 2. 班次代码 (Shift Codes)
+### Admin Workspace
 
-| 代码 | 含义 | 是否主班次 |
-|------|------|-----------|
-| `OC` | Full Day Oncall Support | ✓ |
-| `DS` | Day Shift | ✓ |
-| `NS` | Night Shift | ✓ |
-| `A` | 00:00-07:00 | ✓ |
-| `B` | 06:30-15:30 | ✓ |
-| `D` | 15:30-00:30 | ✓ |
-| `C` | 08:00-17:00 | ✗ |
-| `BH` | Business Hours | ✗ |
-| `HoL` | Holiday or Leave | ✗ |
+- `workspace/`：工作台信息架构、页面规格、共享组件、路由、布局与视觉规范
+- 适用对象：`src/features/workspace/`、`src/router/index.js`
 
-> 说明: 后端主班次集合来自 `PRIMARY_CODES = {OC, DS, NS, A, B, D}`，`C` 作为班次定义存在，但当前不会进入 `/api/shifts` 的主班次输出。
+## 当前实现摘要
 
-### 3. 角色职责 (非鉴权权限模型)
+### 技术栈
 
-- **L1**: 一线支持，处理基础工单和用户请求
-- **L2**: 二线支持，处理复杂技术问题和区域专项
-- **L3**: 三线支持，处理架构级问题和深层技术排查
-- **Incident Manager**: 事件协调者，负责重大事件响应协调
+| 层级 | 选型 | 当前用途 |
+|------|------|----------|
+| 框架 | Vue 3 | 单页应用、Composition API |
+| 构建 | Vite | 本地开发与打包 |
+| 路由 | Vue Router | 根级入口分流与页面导航 |
+| 样式 | Tailwind CSS | 前端样式系统基础设施 |
+| 状态 | Vue Reactivity | 各产品域状态细节见对应子目录 |
+| 数据请求 | fetch API 封装 | Viewer 与 Workspace 共用请求层；workspace 调用 `/api/workspace/**` |
 
-当前代码中的约束如下:
+### 业务事实
 
-- **无登录与 RBAC**: 前后端都没有用户身份或权限校验逻辑。
-- **无前端角色态**: Vue 端没有 `currentUserRole` 或类似状态，不会按角色隐藏/禁用功能。
-- **后端过滤仅按 teamId + 主班次规则**: `/api/shifts` 仅基于日期、可选 `teamId`、时区和主班次集合筛选。
-- **角色职责属于业务语义，不是访问控制**: L1/L2/Incident Manager 目前仅体现在 team/role-group 映射与展示。
+| 主题 | 当前事实 |
+|------|----------|
+| 主班次代码 | `OC`、`DS`、`NS`、`A`、`B`、`D` |
+| 非主班次 | `C`、`BH`、`HoL` 等不会进入 `/api/shifts` 主班次输出 |
+| 权限模型 | 当前无登录、无 RBAC、无前端角色态 |
+| Timeline 能力 | 固定宽度时间轴、横向滚动、重叠泳道布局、Tooltip |
 
----
+## 变更准则
 
-## 数据流
+- 修改 viewer 页面结构、组件职责或数据流时，更新 `modules/` 与 `architecture.md`
+- 修改 workspace 页面、共享组件、布局或路由时，更新 `workspace/`
+- 修改 Public Viewer 或全局共用视觉语言时，更新 `ui-design.md`
+- 修改 workspace 视觉语言、界面密度或管理端样式约束时，更新 `workspace/ui-design.md`
+- 新增一级主题文档或目录时，必须同步回写本文件导航
 
-```
-用户选择日期/时区
-       │
-       ▼
-┌──────────────────┐
-│  Dashboard.vue   │
-│  watch([date,    │
-│    timezone])    │
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│  api.getShifts() │
-│  GET /api/shifts │
-│  ?date=YYYY-MM-DD│
-│  &timezone=TZ    │
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│  Spring Boot     │
-│  RosterService   │
-│  .getShiftsByDate│
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│  RosterRepository│
-│  (内存缓存)       │
-│  ← roster.xlsx   │
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│  ShiftDto[]      │
-│  (JSON Response) │
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│  Timeline.vue    │
-│  layout 计算     │
-│  → 渲染排班卡片   │
-└──────────────────┘
-```
+## 文档导航
 
----
-
-## Constraints & Technical Debt
-
-### 当前限制
-
-1. **无持久化存储**: 数据完全依赖 Excel 文件，重启后需重新加载
-2. **无用户认证**: 系统无登录机制，所有数据公开可见
-3. **无实时更新**: 前端需手动刷新或轮询获取最新数据
-4. **路由未使用**: Vue Router 配置为空数组，当前为单页应用
-
-### 技术债
-
-| 项目 | 描述 | 优先级 |
-|------|------|--------|
-| Store 未使用 | `counter.js` 为 Pinia 模板代码，未实际使用 | Low |
-| Mock 数据残留 | `mockData.js` 在生产环境未使用 | Low |
-| 错误处理简陋 | API 错误仅显示文本，无重试机制 | Medium |
-| 无国际化 | 界面硬编码英文 | Low |
-| 无单元测试 | 缺少测试覆盖 | Medium |
-
-### TODO 项 (代码中)
-
-- `RosterService.getShiftById()` 返回 `null`，功能未实现
-
----
-
-## 快速开始
-
-```bash
-# 安装依赖
-npm install
-
-# 开发模式
-npm run dev
-
-# 生产构建
-npm run build
-
-# 代码格式化
-npm run format
-```
-
----
-
-## 相关文档
-
-- [架构设计](./architecture.md) - 详细架构说明
-- [UI 设计规范](./ui-design.md) - 组件设计与样式规范
-- [Dashboard 模块](./modules/dashboard.md) - 仪表盘详细设计
-- [Header 模块](./modules/header.md) - 导航栏详细设计
-- [Timeline 模块](./modules/timeline.md) - 时间轴详细设计
-- [变更记录](./CHANGELOG.md) - Spec 变更历史
+- [整体架构](./architecture.md)
+- [UI 设计规范](./ui-design.md)
+- [Public Viewer 模块索引](./modules/index.md)
+- [Admin Workspace 索引](./workspace/index.md)
+- [Spec 变更记录](./CHANGELOG.md)

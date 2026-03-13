@@ -1,1 +1,34 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 @import 'tailwindcss';
+
+:root {
+	color-scheme: light;
+	font-family: 'Manrope', sans-serif;
+}
+
+html,
+body,
+#app {
+	min-height: 100%;
+}
+
+body {
+	margin: 0;
+	background: linear-gradient(180deg, #f7faf9 0%, #ffffff 30%, #f8fafc 100%);
+	color: #0f172a;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+	font: inherit;
+}
+
+.font-mono {
+	font-family: 'IBM Plex Mono', monospace;
+}

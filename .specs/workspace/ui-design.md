@@ -1,0 +1,74 @@
+# Workspace UI Design
+
+## Scope
+
+本文件维护 Admin Workspace 的专属视觉规范。根级 `../ui-design.md` 只保留共用与 Public Viewer 说明；凡是管理端特有的视觉语言、表面风格、密度策略与工作流型组件观感，都应记录在本文件。
+
+## Visual Direction
+
+Workspace 有意与 Public Viewer 区分开，避免同一套视觉语气覆盖两种不同工作场景。
+
+- 用途定位：面向管理与编辑，而不是实时大屏展示
+- 气质方向：轻中性色表面、清晰边框、偏紧凑的表单与表格密度
+- 交互目标：提升可扫描性、批量操作效率与信息编排稳定性
+
+## Typography
+
+- UI 文案主字体：Manrope
+- 表格、日期、班次代码等结构化信息：IBM Plex Mono
+- 标题应更偏管理后台语气，减少 Viewer 式的展示型强调
+
+## Color And Surface
+
+- 主体背景：浅中性色背景，弱化装饰性渐变
+- 操作强调色：teal 系按钮、链接与状态强调
+- 卡片表面：白色或 muted surface，边界清晰，阴影克制
+- 辅助文本：以灰阶建立信息优先级，不依赖高饱和颜色堆砌层级
+
+## Density Rules
+
+- 控件密度应高于 Public Viewer，优先服务录入、筛选、校验和批量编辑
+- 页头、筛选区、表格区、抽屉区之间要有明确分区，但避免过度留白
+- 表格和 roster grid 优先保证扫描效率，再考虑展示感
+
+## Shell Expectations
+
+- Sidebar 是稳定导航骨架，负责模块切换与状态提示
+- Topbar 是跨页面工具区，承载搜索、跳转和辅助操作
+- 主内容区应允许页面独立滚动，不影响外层壳结构稳定性
+
+## Shared Component Direction
+
+### WorkspaceSurface
+
+- 作为工作台默认卡片表面
+- 需要保证边框与底色层次清晰
+- `white` 与 `muted` 两类表面应有稳定用途，不随页面随意漂移
+
+### WorkspaceDrawer
+
+- 应保持强操作导向，而不是展示型弹层
+- 标题区、表单区、底部动作区要有稳定结构
+- 关闭、取消、保存等动作层级必须清楚
+
+## Accessibility Rules
+
+- Workspace 表单控件必须提供稳定的 `id` 与 `name`，便于自动化、浏览器填充与可访问性工具识别
+- 文本输入、选择器、文件上传控件应通过显式 label 或屏幕阅读器专用 label 获得可访问名称
+- 仅图标或表格内复选框至少要提供 `aria-label`，避免批量操作场景出现无名控件
+
+### WorkspacePageHeader
+
+- 页面标题与摘要信息需要简洁
+- 操作按钮通过 actions 插槽承载，避免把页面说明和操作混杂
+
+## Relationship To Viewer
+
+- Viewer 重展示和实时感知
+- Workspace 重维护、编辑和校验
+- 两者可以复用基础样式体系，但不应强行统一为同一视觉语气
+
+## Update Rules
+
+- 修改管理端字体、颜色、表面层次、页头结构、抽屉样式或表单密度时，优先更新本文件
+- 若改动同时影响 Viewer，再同步更新根级 `../ui-design.md`

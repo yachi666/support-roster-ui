@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { ChevronLeft, ChevronRight, Settings, Download, Upload, Filter, Search, MoreHorizontal, User, AlertCircle, X, Check, Save } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
@@ -99,7 +99,7 @@ export function MonthlyRosterPlanner() {
           </thead>
           <tbody>
             {mockData.map((teamGroup) => (
-              <optgroup key={teamGroup.team} className="contents">
+              <Fragment key={teamGroup.team}>
                 <tr>
                   <td colSpan={32} className="bg-slate-50/80 px-4 py-2 text-xs font-semibold text-slate-800 border-y border-slate-200 shadow-[0_1px_0_rgba(0,0,0,0.02)] sticky left-0 z-20 uppercase tracking-wide">
                     {teamGroup.team}
@@ -158,7 +158,7 @@ export function MonthlyRosterPlanner() {
                     })}
                   </tr>
                 ))}
-              </optgroup>
+              </Fragment>
             ))}
           </tbody>
         </table>

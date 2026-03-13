@@ -1,5 +1,128 @@
 # Spec Change Log
 
+## 2026-03-12
+
+### Summary
+
+本次变更为 Import/Export 页面新增导入模版示例模块，展示 Excel 导入格式并提供模版下载功能。
+
+### Files Changed
+
+- `.specs/workspace/pages/import-export.md`
+- `.specs/CHANGELOG.md`
+
+### Detailed Changes
+
+| File | Section | Change Type | Before | After | Why |
+|---|---|---|---|---|---|
+| `.specs/workspace/pages/import-export.md` | Import Template Example | Add | 无模版示例说明 | 新增模版结构说明、3 个 sheet 格式、下载接口 | 为新增的模版示例功能提供规范文档 |
+
+### Impact Assessment
+
+- **Feature Documentation**: 导入模版功能已有完整规范描述。
+- **API Contract**: 新增 `GET /api/workspace/import-export/template` 接口已记录。
+
+### Verification Notes
+
+本次 spec 更新已对照以下实现事实进行同步：
+
+- `src/features/workspace/pages/ImportExportCenterPage.vue` 已新增模版示例展示区域
+- `src/api/index.js` 已新增 `downloadTemplate()` API 调用
+
+## 2026-03-11
+
+### Summary
+
+本次变更将 workspace 管理端从本地 mock 数据切换为真实后端接口驱动，并同步更新前端 spec，移除失效的“mock 数据中心”“纯前端导入流程”等描述。
+
+### Files Changed
+
+- `.specs/spec.md`
+- `.specs/workspace/index.md`
+- `.specs/workspace/architecture.md`
+- `.specs/workspace/pages/overview.md`
+- `.specs/workspace/pages/monthly-roster.md`
+- `.specs/workspace/pages/staff-directory.md`
+- `.specs/workspace/pages/shift-definitions.md`
+- `.specs/workspace/pages/team-mapping.md`
+- `.specs/workspace/pages/validation-center.md`
+- `.specs/workspace/pages/import-export.md`
+- `.specs/CHANGELOG.md`
+
+### Detailed Changes
+
+| File | Section | Change Type | Before | After | Why |
+|---|---|---|---|---|---|
+| `.specs/spec.md` | 技术栈摘要 | Update | 仅说明 viewer 通过 fetch 调后端 | 明确 viewer 与 workspace 共用请求层，workspace 调 `/api/workspace/**` | 保持根级 spec 与当前前端数据流一致 |
+| `.specs/workspace/architecture.md` | 目录与设计决策 | Refactor | 仍描述 `workspaceData.js` mock 中心 | 改为 `api.workspace` + `navigation.js` + `period.js` + server-backed roster composable | 反映真实实现分层 |
+| `.specs/workspace/pages/*.md` | 页面数据源与行为 | Update | 多处写为 mock 数据或前端模拟流程 | 全部改为真实 workspace API 路径与当前交互行为 | 避免后续开发继续依赖失效假设 |
+
+### Impact Assessment
+
+- **Spec Accuracy**: workspace 文档现在与真实 API 驱动实现对齐。
+- **Maintainability**: 后续页面扩展将围绕 `api.workspace` 而不是重新引入 mock 数据。
+- **Integration Clarity**: 导入导出、校验和月排班的后端边界在 spec 中已明确。
+
+### Verification Notes
+
+本次 spec 更新已对照以下实现事实进行同步：
+
+- `src/api/index.js` 已新增 `api.workspace` 请求方法
+- `src/features/workspace/composables/useRosterPlanner.js` 已改为后端加载与保存月排班
+- `src/features/workspace/pages/*` 已去除对 `workspaceData.js` 的引用
+
+### Backward Compatibility
+
+本次变更不影响 viewer 路由与样式系统，但 workspace 页面已不再依赖本地 mock 数据。
+
+## 2026-03-11
+
+### Summary
+
+本次变更针对前端 spec 目录做结构化整理，目的是把根入口、架构说明、viewer 模块索引与 workspace 子域边界拆清楚，减少总文档过载和主题混写问题。
+
+后续补充整理要求：workspace 的内容描述统一收敛到 `.specs/workspace/`，根级文档仅保留引用、边界和导航。
+
+### Files Changed
+
+- `.specs/spec.md`
+- `.specs/architecture.md`
+- `.specs/ui-design.md`
+- `.specs/modules/index.md` (new)
+- `.specs/workspace/index.md`
+- `.specs/workspace/ui-design.md` (new)
+- `.specs/CHANGELOG.md`
+
+### Detailed Changes
+
+| File | Section | Change Type | Before | After | Why |
+|---|---|---|---|---|---|
+| `.specs/spec.md` | 全文结构 | Refactor | 根入口同时承担概述、业务事实、数据流、技术债、文档地图 | 重写为总入口索引，聚焦范围、主题边界、阅读顺序、文档导航 | 让 `spec.md` 回到“入口导航”职责，避免继续堆积细节 |
+| `.specs/spec.md` | 文档导航 | Add | `modules/` 无局部入口 | 增加 `modules/index.md` 导航并在根入口标注 viewer/workspace 分工 | 提升目录可读性与可维护性 |
+| `.specs/architecture.md` | 文档范围 | Refactor | 混入较多后端内部服务与数据层细节 | 聚焦前端 SPA、路由、分层、状态管理和集成边界 | 保持前端 spec 与当前仓库职责一致 |
+| `.specs/modules/index.md` | 新文件 | Add | viewer 模块缺少目录索引 | 新增 viewer 模块索引、模块关系图、维护规则 | 与 `workspace/index.md` 形成对称结构 |
+| `.specs/spec.md` / `.specs/architecture.md` / `.specs/ui-design.md` | workspace 描述 | Refactor | 根级文档保留了部分 workspace 细节说明 | 根级仅保留引用与边界，workspace 细节统一回收到 `.specs/workspace/` | 保持主题收口，避免跨目录重复维护 |
+| `.specs/workspace/ui-design.md` | 新文件 | Add | workspace 缺少独立视觉文档承载点 | 新增管理端专属视觉规范 | 让 workspace 的视觉规则不再散落在根级文档或 layout 文档中 |
+
+### Impact Assessment
+
+- **Navigation**: 根入口更轻，阅读路径更明确。
+- **Maintainability**: viewer 与 workspace 都有局部入口，后续扩展不必持续向 `spec.md` 堆内容。
+- **Spec Accuracy**: 前端架构说明已与当前 Vue 路由和 feature 划分对齐。
+
+### Verification Notes
+
+本次整理已对照以下实现事实进行校验：
+
+- `src/App.vue` 当前仅挂载 `RouterView`
+- `src/router/index.js` 当前将 `/` 重定向到 `/workspace`，并保留 `/viewer`
+- `src/features/workspace/layout/WorkspaceLayout.vue` 当前负责工作台壳层
+- `src/features/workspace/composables/useRosterPlanner.js` 当前承载 workspace 典型交互状态
+
+### Backward Compatibility
+
+本次仅修改前端 spec 文档，不涉及运行时代码与接口行为变更。
+
 ## 2026-03-05
 
 ### Summary

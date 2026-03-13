@@ -121,6 +121,14 @@ const getTeamColorClass = (color) => {
   return colors[color] || 'bg-gray-500'
 }
 
+const getTeamColorStyle = (color) => {
+  if (!color) return null
+  if (color.startsWith('#')) {
+    return { backgroundColor: color }
+  }
+  return null
+}
+
 const getShiftBgClass = (teamColor) => {
   const colors = {
     blue: 'bg-blue-100 border-blue-200 text-blue-900 hover:bg-blue-200',
@@ -130,6 +138,42 @@ const getShiftBgClass = (teamColor) => {
     red: 'bg-red-100 border-red-200 text-red-900 hover:bg-red-200',
   }
   return colors[teamColor] || 'bg-gray-100 border-gray-200'
+}
+
+const getTeamShiftStyle = (teamColor) => {
+  if (!teamColor) return null
+  if (teamColor.startsWith('#')) {
+    const bgColor = hexToRgba(teamColor, 0.15)
+    const borderColor = hexToRgba(teamColor, 0.3)
+    const hoverBgColor = hexToRgba(teamColor, 0.25)
+    return {
+      backgroundColor: bgColor,
+      borderColor: borderColor,
+      '--hover-bg': hoverBgColor,
+    }
+  }
+  return null
+}
+
+const hexToRgba = (hex, alpha = 1) => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  if (!result) return null
+  const r = parseInt(result[1], 16)
+  const g = parseInt(result[2], 16)
+  const b = parseInt(result[3], 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+const getShiftCustomStyle = (colorHex) => {
+  if (!colorHex) return null
+  const bgColor = hexToRgba(colorHex, 0.15)
+  const borderColor = hexToRgba(colorHex, 0.3)
+  const hoverBgColor = hexToRgba(colorHex, 0.25)
+  return {
+    backgroundColor: bgColor,
+    borderColor: borderColor,
+    '--hover-bg': hoverBgColor,
+  }
 }
 
 const getShiftRole = (shift) => {
@@ -225,7 +269,8 @@ const getTeamShiftCount = (teamId) => {
             >
               <div class="font-semibold text-gray-800 text-sm flex items-center">
                 <span
-                  :class="cn('w-2 h-2 rounded-full mr-2', getTeamColorClass(team.color))"
+                  :class="cn('w-2 h-2 rounded-full mr-2', !team.color?.startsWith('#') && getTeamColorClass(team.color))"
+                  :style="getTeamColorStyle(team.color)"
                 ></span>
                 {{ team.name }}
               </div>
@@ -249,10 +294,10 @@ const getTeamShiftCount = (teamId) => {
                     :class="
                       cn(
                         'absolute rounded-lg border px-3 flex items-center justify-between overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all select-none z-10 hover:z-20',
-                        getShiftBgClass(team.color),
+                        !layoutShift.shift.colorHex && !team.color?.startsWith('#') && getShiftBgClass(team.color),
                       )
                     "
-                    :style="getShiftStyle(layoutShift)"
+                    :style="{ ...getShiftStyle(layoutShift), ...getShiftCustomStyle(layoutShift.shift.colorHex), ...(!layoutShift.shift.colorHex && team.color?.startsWith('#') ? getTeamShiftStyle(team.color) : {}) }"
                   >
                     <div class="flex items-center space-x-2 min-w-0">
                       <Star
@@ -304,9 +349,10 @@ const getTeamShiftCount = (teamId) => {
                         :class="
                           cn(
                             'text-[10px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wide border',
-                            getShiftBgClass(team.color),
+                            !layoutShift.shift.colorHex && !team.color?.startsWith('#') && getShiftBgClass(team.color),
                           )
                         "
+                        :style="{ ...getShiftCustomStyle(layoutShift.shift.colorHex), ...(!layoutShift.shift.colorHex && team.color?.startsWith('#') ? getTeamShiftStyle(team.color) : {}) }"
                       >
                         {{ getShiftRole(layoutShift.shift) }}
                       </div>
@@ -362,3 +408,9 @@ const getTeamShiftCount = (teamId) => {
     </div>
   </TooltipProvider>
 </template>
+
+<style scoped>
+div[style*="--hover-bg"]:hover {
+  background-color: var(--hover-bg) !important;
+}
+</style>
