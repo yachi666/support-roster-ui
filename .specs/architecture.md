@@ -127,6 +127,14 @@ Timeline 做布局计算并渲染时间轴
 - Workspace 的数据源与集成边界统一维护在 `workspace/architecture.md`
 - 当前无认证态、无用户会话、无基于角色的前端授权逻辑
 
+## 部署与运行边界
+
+- 本项目产出的是 Vite 构建后的静态资源目录 `dist/`
+- 可采用传统 Linux + Nginx 托管方式部署
+- 也可采用“Node 构建 + Nginx 托管静态资源”的容器镜像方式运行在 ECS Fargate
+- Fargate 方案中，`VITE_API_BASE_URL` 仍是构建时注入，而不是容器启动时动态注入
+- 容器运行、健康检查与 ALB 集成细节统一维护在 `deployment.md`
+
 ## 技术约束
 
 | 主题 | 约束 |

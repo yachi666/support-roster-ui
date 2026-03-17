@@ -16,6 +16,7 @@
 .specs/
 ├── spec.md
 ├── architecture.md
+├── deployment.md
 ├── ui-design.md
 ├── modules/
 │   ├── index.md
@@ -37,9 +38,10 @@
 
 1. 先读 `spec.md` 了解产品边界与文档导航
 2. 再读 `architecture.md` 了解应用入口、路由和数据流
-3. Public Viewer 相关改动进入 `modules/index.md`
-4. Admin Workspace 相关改动进入 `workspace/index.md`
-5. 视觉、排版、颜色与组件风格统一参考 `ui-design.md`
+3. 需要了解容器化与部署边界时，读 `deployment.md`
+4. Public Viewer 相关改动进入 `modules/index.md`
+5. Admin Workspace 相关改动进入 `workspace/index.md`
+6. 视觉、排版、颜色与组件风格统一参考 `ui-design.md`
 
 ## 主题边界
 
@@ -47,6 +49,7 @@
 
 - `spec.md`：总入口、范围说明、导航索引、跨主题约束
 - `architecture.md`：前端整体架构与顶层分流关系，不展开 workspace 子域实现
+- `deployment.md`：前端构建产物、容器化运行方式与部署约束
 - `ui-design.md`：共用视觉规范与 Public Viewer 设计说明，workspace 视觉文档在 `workspace/ui-design.md`
 
 ### Public Viewer
@@ -84,6 +87,7 @@
 ## 变更准则
 
 - 修改 viewer 页面结构、组件职责或数据流时，更新 `modules/` 与 `architecture.md`
+- 修改构建、容器化或部署方式时，更新 `deployment.md`
 - 修改 workspace 页面、共享组件、布局或路由时，更新 `workspace/`
 - 修改 Public Viewer 或全局共用视觉语言时，更新 `ui-design.md`
 - 修改 workspace 视觉语言、界面密度或管理端样式约束时，更新 `workspace/ui-design.md`
@@ -92,6 +96,7 @@
 ## 文档导航
 
 - [整体架构](./architecture.md)
+- [部署规范](./deployment.md)
 - [UI 设计规范](./ui-design.md)
 - [Public Viewer 模块索引](./modules/index.md)
 - [Admin Workspace 索引](./workspace/index.md)

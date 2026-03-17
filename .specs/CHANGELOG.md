@@ -1,5 +1,44 @@
 # Spec Change Log
 
+## 2026-03-17
+
+### Summary
+
+本次变更为前端新增 ECS Fargate + ECR 容器化部署方案，并补充对应的部署规范文档与导航入口。
+
+### Files Changed
+
+- `.specs/spec.md`
+- `.specs/architecture.md`
+- `.specs/deployment.md`
+- `.specs/CHANGELOG.md`
+- `build/ecs-task-definition.example.json`
+- `build/push-to-ecr.example.sh`
+
+### Detailed Changes
+
+| File | Section | Change Type | Before | After | Why |
+|---|---|---|---|---|---|
+| `.specs/spec.md` | 目录结构 / 阅读顺序 / 文档导航 | Update | 无部署主题入口 | 新增 `deployment.md` 导航与变更准则 | 让容器化部署有稳定承载位置，避免只写在 README |
+| `.specs/architecture.md` | 部署与运行边界 | Add | 未说明产物与容器化运行方式 | 明确 `dist/`、Linux + Nginx、Fargate + Nginx 镜像三者关系 | 保持架构文档与实际运行方式一致 |
+| `.specs/deployment.md` | 新文件 | Add | 无前端部署规范文档 | 新增构建、ECR、Fargate、ALB、健康检查与配置约束说明 | 为后续部署与运维变更提供规范入口 |
+| `build/ecs-task-definition.example.json` | 新文件 | Add | 无 ECS 任务定义示例 | 新增 Fargate Task Definition 模板 | 让镜像部署到 ECS 时有可直接改值的起点 |
+| `build/push-to-ecr.example.sh` | 新文件 | Add | 无本地推送脚本模板 | 新增 Docker build、ECR 登录、push、健康检查脚本 | 缩短从本地发布到 ECR 的操作路径 |
+
+### Impact Assessment
+
+- **Deployment Clarity**: 前端现在同时具备传统静态部署与 Fargate 容器部署说明。
+- **Spec Maintainability**: 构建和容器化变更不再需要混写到架构或 UI 文档中。
+- **Operational Consistency**: 明确了 `VITE_API_BASE_URL` 属于构建期变量，避免误以为可在 Fargate 运行期直接切换。
+
+### Verification Notes
+
+本次 spec 更新已对照以下实现事实进行同步：
+
+- 项目打包脚本位于 `build/build-frontend.sh`
+- 新增 `Dockerfile` 采用 Node 构建 + Nginx 运行静态资源
+- 新增 `nginx.container.conf` 提供 SPA 路由回退与 `/health` 健康检查
+
 ## 2026-03-12
 
 ### Summary

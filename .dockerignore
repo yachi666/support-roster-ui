@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+.DS_Store
+npm-debug.log
+Dockerfile*
+build/
+figma-design/
+figma-design-workspace/
+.specs/
+.vscode/
+.idea/
