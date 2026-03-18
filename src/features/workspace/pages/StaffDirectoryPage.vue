@@ -18,7 +18,6 @@ const EMPTY_FORM = {
   roleName: '',
   roleGroupId: '',
   status: 'ACTIVE',
-  avatar: '',
   notes: '',
 }
 
@@ -62,9 +61,6 @@ const staffErrorRules = [
     field: 'timezone',
   },
   {
-    match: ['avatar'],
-    field: 'avatar',
-  },
 ]
 
 async function loadStaff() {
@@ -145,7 +141,6 @@ function fillForm(staff) {
     roleName: staff?.roleName || '',
     roleGroupId: staff?.roleGroupId ? String(staff.roleGroupId) : '',
     status: staff?.status || 'ACTIVE',
-    avatar: staff?.avatar || '',
     notes: staff?.notes || '',
   })
 }
@@ -162,7 +157,6 @@ function buildPayload() {
     roleName: formState.roleName.trim(),
     roleGroupId: formState.roleGroupId,
     status: formState.status,
-    avatar: formState.avatar.trim(),
     notes: formState.notes.trim(),
   }
 }
@@ -178,7 +172,6 @@ function validateForm() {
   if (formState.region.trim() && formState.region.trim().length > 64) fieldErrors.region = 'Region must be 64 characters or fewer.'
   if (formState.roleName.trim() && formState.roleName.trim().length > 128) fieldErrors.roleName = 'Role name must be 128 characters or fewer.'
   if (formState.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formState.email.trim())) fieldErrors.email = 'Enter a valid email address.'
-  if (formState.avatar.trim() && !/^https?:\/\//.test(formState.avatar.trim())) fieldErrors.avatar = 'Avatar URL must start with http:// or https://.'
   if (!formState.timezone.trim()) fieldErrors.timezone = 'Timezone is required.'
   if (formState.timezone.trim().length > 64) fieldErrors.timezone = 'Timezone must be 64 characters or fewer.'
   if (formState.notes.trim().length > 500) fieldErrors.notes = 'Notes must be 500 characters or fewer.'
@@ -545,11 +538,6 @@ onMounted(() => {
                 <option value="ACTIVE">Active</option>
                 <option value="INACTIVE">Inactive</option>
               </select>
-            </label>
-            <label class="space-y-2 text-sm text-slate-700 md:col-span-2">
-              <span class="font-medium">Avatar URL</span>
-              <input id="staff-avatar" v-model="formState.avatar" name="avatar" type="url" :class="inputClass('avatar')" />
-              <p v-if="fieldErrors.avatar" class="text-xs text-rose-600">{{ fieldErrors.avatar }}</p>
             </label>
             <label class="space-y-2 text-sm text-slate-700 md:col-span-2">
               <span class="font-medium">Notes</span>
