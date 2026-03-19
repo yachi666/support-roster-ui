@@ -134,7 +134,7 @@ async function exportRoster() {
     const link = document.createElement('a')
 
     link.href = url
-    link.download = `workspace-roster-${year.value}-${String(month.value).padStart(2, '0')}.csv`
+    link.download = `workspace-roster-${year.value}-${String(month.value).padStart(2, '0')}.xlsx`
     document.body.appendChild(link)
     link.click()
     link.remove()
@@ -212,7 +212,7 @@ onBeforeUnmount(clearTimer)
           </div>
           <button class="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" :disabled="exportPending" @click="exportRoster">
             <FileSpreadsheet class="h-4 w-4 text-emerald-600" />
-            {{ exportPending ? 'Exporting...' : 'Export CSV' }}
+            {{ exportPending ? 'Exporting...' : 'Export Excel' }}
           </button>
         </WorkspaceSurface>
 

@@ -1,10 +1,21 @@
 <script setup>
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import { Bell, ChevronLeft, ChevronRight, HelpCircle, Search, Settings } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, Globe, Search } from 'lucide-vue-next'
 import { useWorkspacePeriod } from '../composables/useWorkspacePeriod'
+import { WORKSPACE_TIMEZONE_OPTIONS } from '../config/timezones'
 
-const { year, month, monthLabel, setWorkspaceYear, setWorkspaceMonth, goToPreviousMonth, goToNextMonth } = useWorkspacePeriod()
+const {
+  timezone,
+  year,
+  month,
+  monthLabel,
+  setWorkspaceTimezone,
+  setWorkspaceYear,
+  setWorkspaceMonth,
+  goToPreviousMonth,
+  goToNextMonth,
+} = useWorkspacePeriod()
 
 const monthOptions = [
   { value: 1, label: 'Jan' },
@@ -35,10 +46,14 @@ function handleYearChange(event) {
 function handleMonthChange(event) {
   setWorkspaceMonth(event.target.value)
 }
+
+function handleTimezoneChange(event) {
+  setWorkspaceTimezone(event.target.value)
+}
 </script>
 
 <template>
-  <header class="flex h-16 flex-shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6 shadow-sm">
+  <header class="flex h-16 flex-shrink-0 items-center border-b border-slate-200 bg-white px-6 shadow-sm">
     <div class="flex min-w-0 flex-1 items-center gap-4">
       <div class="relative w-full max-w-sm">
         <label for="workspace-topbar-search" class="sr-only">Search staff, shifts, or codes</label>
@@ -83,27 +98,28 @@ function handleMonthChange(event) {
         <button class="rounded-md p-1.5 text-slate-500 transition-colors hover:bg-white hover:text-slate-800" @click="goToNextMonth">
           <ChevronRight class="h-4 w-4" />
         </button>
+        <div class="mx-1 h-6 w-px bg-slate-200"></div>
+        <label for="workspace-topbar-timezone" class="sr-only">Select workspace timezone</label>
+        <div class="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1">
+          <Globe class="h-4 w-4 flex-shrink-0 text-slate-400" />
+          <select
+            id="workspace-topbar-timezone"
+            name="workspace-topbar-timezone"
+            :value="timezone"
+            class="min-w-[4.5rem] appearance-none bg-transparent py-1 pr-5 text-sm font-medium text-slate-700 outline-none"
+            @change="handleTimezoneChange"
+          >
+            <option v-for="timezoneOption in WORKSPACE_TIMEZONE_OPTIONS" :key="timezoneOption.value" :value="timezoneOption.value">{{ timezoneOption.label }}</option>
+          </select>
+        </div>
       </div>
 
       <RouterLink
         to="/viewer"
-        class="hidden items-center rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-sm font-medium text-teal-700 transition-colors hover:border-teal-300 hover:bg-teal-100 lg:inline-flex"
+        class="ml-auto hidden items-center rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-sm font-medium text-teal-700 transition-colors hover:border-teal-300 hover:bg-teal-100 lg:inline-flex"
       >
         Open Public Viewer
       </RouterLink>
-    </div>
-
-    <div class="ml-4 flex items-center gap-3 text-slate-500">
-      <button class="relative flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-slate-100">
-        <Bell class="h-4 w-4" />
-        <span class="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-rose-500"></span>
-      </button>
-      <button class="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-slate-100">
-        <HelpCircle class="h-4 w-4" />
-      </button>
-      <button class="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-slate-100">
-        <Settings class="h-4 w-4" />
-      </button>
     </div>
   </header>
 </template>

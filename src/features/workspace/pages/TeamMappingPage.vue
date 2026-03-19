@@ -25,6 +25,9 @@ const submitPending = shallowRef(false)
 const deletePending = shallowRef(false)
 const formErrorMessage = shallowRef('')
 const confirmDeleteVisible = shallowRef(false)
+const reorderPending = shallowRef(false)
+const draggingTeamId = shallowRef(null)
+const dragOverTeamId = shallowRef(null)
 const fieldErrors = reactive({})
 const formState = reactive({ ...EMPTY_FORM })
 
@@ -68,8 +71,75 @@ async function loadTeams() {
   }
 }
 
+async function persistTeamOrder(orderedTeams, fallbackTeams) {
+  reorderPending.value = true
+  errorMessage.value = ''
+
+  try {
+    reorderLocalTeams(orderedTeams)
+    await api.workspace.reorderTeams(orderedTeams.map((team) => team.id))
+    await loadTeams()
+  } catch (error) {
+    teams.value = fallbackTeams
+    errorMessage.value = error.message || 'Failed to reorder team mappings.'
+  } finally {
+    reorderPending.value = false
+    draggingTeamId.value = null
+    dragOverTeamId.value = null
+  }
+}
+
+function handleDragStart(teamId) {
+  if (reorderPending.value) {
+    return
+  }
+
+  draggingTeamId.value = teamId
+}
+
+function handleDragEnd() {
+  draggingTeamId.value = null
+  dragOverTeamId.value = null
+}
+
+function handleDragEnter(teamId) {
+  if (draggingTeamId.value == null || draggingTeamId.value === teamId) {
+    return
+  }
+
+  dragOverTeamId.value = teamId
+}
+
+function handleDrop(targetTeamId) {
+  if (draggingTeamId.value == null || draggingTeamId.value === targetTeamId || reorderPending.value) {
+    handleDragEnd()
+    return
+  }
+
+  const currentTeams = [...sortedTeams.value]
+  const sourceIndex = currentTeams.findIndex((team) => team.id === draggingTeamId.value)
+  const targetIndex = currentTeams.findIndex((team) => team.id === targetTeamId)
+
+  if (sourceIndex === -1 || targetIndex === -1) {
+    handleDragEnd()
+    return
+  }
+
+  const [movedTeam] = currentTeams.splice(sourceIndex, 1)
+  currentTeams.splice(targetIndex, 0, movedTeam)
+
+  void persistTeamOrder(currentTeams, [...teams.value])
+}
+
 function teamColorStyle(team) {
   return { backgroundColor: team.color || '#94a3b8' }
+}
+
+function reorderLocalTeams(orderedTeams) {
+  teams.value = orderedTeams.map((team, index) => ({
+    ...team,
+    displayOrder: index,
+  }))
 }
 
 function resetForm() {
@@ -97,6 +167,10 @@ function openCreateDrawer() {
 }
 
 function openTeamDrawer(team) {
+  if (draggingTeamId.value != null || reorderPending.value) {
+    return
+  }
+
   selectedTeamId.value = team.id
   fillForm(team)
   formVisible.value = true
@@ -235,6 +309,7 @@ onMounted(() => {
               These rules control how staff members are grouped on the public On-Call Dashboard.
               Teams marked as hidden remain schedulable here but stay out of downstream read-only views.
             </p>
+            <p class="mt-2 text-xs text-blue-800/70">Drag a row up or down to save the display order.</p>
           </div>
         </WorkspaceSurface>
 
@@ -245,7 +320,17 @@ onMounted(() => {
             <WorkspaceSurface
               v-for="team in sortedTeams"
               :key="team.id"
-              class="group cursor-pointer flex items-center gap-4 p-4 transition-colors hover:border-slate-300"
+              :class="[
+                'group flex items-center gap-4 p-4 transition-colors hover:border-slate-300',
+                reorderPending ? 'cursor-wait' : 'cursor-pointer',
+                dragOverTeamId === team.id ? 'border-teal-300 bg-teal-50/40' : '',
+              ]"
+              draggable="true"
+              @dragstart="handleDragStart(team.id)"
+              @dragend="handleDragEnd"
+              @dragenter.prevent="handleDragEnter(team.id)"
+              @dragover.prevent
+              @drop.prevent="handleDrop(team.id)"
               @click="openTeamDrawer(team)"
             >
               <div class="cursor-grab text-slate-300 transition-colors hover:text-slate-500">

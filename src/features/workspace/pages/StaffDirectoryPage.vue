@@ -382,7 +382,7 @@ onMounted(() => {
                       {{ staff.teamName || '-' }}
                     </span>
                   </td>
-                  <td class="px-6 py-4 text-xs text-slate-500">{{ staff.timezone || '-' }}</td>
+                  <td class="px-6 py-4 text-xs text-slate-500">{{ normalizeWorkspaceStaffTimezone(staff.timezone) || '-' }}</td>
                   <td class="px-6 py-4">
                     <span
                       v-if="isActiveStatus(staff.status)"
@@ -445,7 +445,7 @@ onMounted(() => {
               </div>
               <div class="flex items-center gap-3">
                 <Clock3 class="h-4 w-4 text-slate-400" />
-                <span>{{ selectedStaff.timezone || '-' }}</span>
+                <span>{{ normalizeWorkspaceStaffTimezone(selectedStaff.timezone) || '-' }}</span>
               </div>
             </div>
           </div>

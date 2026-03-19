@@ -1,12 +1,13 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, shallowRef } from 'vue'
 import { format } from 'date-fns'
 import Header from './Header.vue'
 import Timeline from './Timeline.vue'
 import { api } from '@/api'
+import { normalizeTimezoneSelection, toIanaTimezone } from '@/lib/timezones'
 
 const selectedDate = ref(new Date())
-const selectedTimezone = ref(Intl.DateTimeFormat().resolvedOptions().timeZone)
+const selectedTimezone = shallowRef(normalizeTimezoneSelection(Intl.DateTimeFormat().resolvedOptions().timeZone))
 
 const teams = ref([])
 const shifts = ref([])
@@ -29,7 +30,7 @@ async function fetchShifts() {
   loading.value = true
   error.value = null
   try {
-    const data = await api.getShifts(formattedDate.value, null, selectedTimezone.value)
+    const data = await api.getShifts(formattedDate.value, null, toIanaTimezone(selectedTimezone.value))
     shifts.value = data
   } catch (err) {
     console.error('Failed to fetch shifts:', err)

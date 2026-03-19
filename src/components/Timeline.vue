@@ -1,9 +1,10 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { format, addHours, differenceInMinutes } from 'date-fns'
 import { fromZonedTime } from 'date-fns-tz'
 import { User, Mail, Phone, MessageSquare, Star, Clock } from 'lucide-vue-next'
 import { cn } from '@/lib/utils'
+import { toIanaTimezone } from '@/lib/timezones'
 import {
   TooltipRoot,
   TooltipTrigger,
@@ -20,29 +21,63 @@ const props = defineProps({
   shifts: { type: Array, required: true },
 })
 
-const HOUR_WIDTH = 120
-const TOTAL_WIDTH = 24 * HOUR_WIDTH
-const BLOCK_HEIGHT = 36
-const BLOCK_GAP = 8
-const ROW_PADDING = 16
-const MIN_ROW_HEIGHT = 80
+const HOUR_COUNT = 24
+const TEAM_COLUMN_WIDTH = 208
+const MIN_HOUR_WIDTH = 28
+const BLOCK_HEIGHT = 32
+const BLOCK_GAP = 6
+const ROW_PADDING = 12
+const MIN_ROW_HEIGHT = 72
 
 const now = ref(new Date())
+const viewportWidth = ref(0)
+const timelineViewportRef = useTemplateRef('timelineViewport')
+
 let timer = null
+let resizeObserver = null
+
+function updateViewportWidth() {
+  viewportWidth.value = timelineViewportRef.value?.clientWidth || 0
+}
 
 onMounted(() => {
   timer = setInterval(() => {
     now.value = new Date()
   }, 60000)
+
+  updateViewportWidth()
+
+  resizeObserver = new ResizeObserver(() => {
+    updateViewportWidth()
+  })
+
+  if (timelineViewportRef.value) {
+    resizeObserver.observe(timelineViewportRef.value)
+  }
 })
 
 onUnmounted(() => {
   if (timer) clearInterval(timer)
+  if (resizeObserver) resizeObserver.disconnect()
 })
+
+const resolvedTimezone = computed(() => toIanaTimezone(props.selectedTimezone))
+const minimumTimelineWidth = HOUR_COUNT * MIN_HOUR_WIDTH
+const availableTimelineWidth = computed(() => Math.max(viewportWidth.value - TEAM_COLUMN_WIDTH, 0))
+const timelineWidth = computed(() => {
+  if (!availableTimelineWidth.value) {
+    return minimumTimelineWidth
+  }
+
+  return Math.max(availableTimelineWidth.value, minimumTimelineWidth)
+})
+const hourWidth = computed(() => timelineWidth.value / HOUR_COUNT)
+const canvasWidth = computed(() => timelineWidth.value + TEAM_COLUMN_WIDTH)
+const hours = Array.from({ length: HOUR_COUNT }, (_, index) => index)
 
 const viewWindow = computed(() => {
   const dateStr = format(props.selectedDate, 'yyyy-MM-dd')
-  const start = fromZonedTime(dateStr + ' 00:00:00', props.selectedTimezone)
+  const start = fromZonedTime(`${dateStr} 00:00:00`, resolvedTimezone.value)
   const end = addHours(start, 24)
   return { start, end }
 })
@@ -51,10 +86,9 @@ const layout = computed(() => {
   const teamLayouts = []
 
   props.teams.forEach((team) => {
-    const teamShifts = props.shifts.filter((s) => s.teamId === team.id)
-
+    const teamShifts = props.shifts.filter((shift) => shift.teamId === team.id)
     const sorted = [...teamShifts].sort(
-      (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
+      (left, right) => new Date(left.start).getTime() - new Date(right.start).getTime(),
     )
 
     const lanes = []
@@ -64,25 +98,26 @@ const layout = computed(() => {
       const shiftStart = new Date(shift.start)
       const shiftEnd = new Date(shift.end)
 
-      if (shiftEnd <= viewWindow.value.start || shiftStart >= viewWindow.value.end) return
+      if (shiftEnd <= viewWindow.value.start || shiftStart >= viewWindow.value.end) {
+        return
+      }
 
       const visibleStart = shiftStart < viewWindow.value.start ? viewWindow.value.start : shiftStart
       const visibleEnd = shiftEnd > viewWindow.value.end ? viewWindow.value.end : shiftEnd
-
       const startDiff = differenceInMinutes(visibleStart, viewWindow.value.start)
       const duration = differenceInMinutes(visibleEnd, visibleStart)
-
-      const left = (startDiff / 60) * HOUR_WIDTH
-      const width = (duration / 60) * HOUR_WIDTH
+      const left = (startDiff / 60) * hourWidth.value
+      const width = (duration / 60) * hourWidth.value
 
       let laneIndex = -1
-      for (let i = 0; i < lanes.length; i++) {
-        if (lanes[i] <= shiftStart) {
-          laneIndex = i
-          lanes[i] = shiftEnd
+      for (let index = 0; index < lanes.length; index += 1) {
+        if (lanes[index] <= shiftStart) {
+          laneIndex = index
+          lanes[index] = shiftEnd
           break
         }
       }
+
       if (laneIndex === -1) {
         laneIndex = lanes.length
         lanes.push(shiftEnd)
@@ -104,11 +139,13 @@ const layout = computed(() => {
 
 const currentTimeLeft = computed(() => {
   const diff = differenceInMinutes(now.value, viewWindow.value.start)
-  if (diff < 0 || diff > 24 * 60) return null
-  return (diff / 60) * HOUR_WIDTH
-})
 
-const hours = Array.from({ length: 24 }, (_, i) => i)
+  if (diff < 0 || diff > 24 * 60) {
+    return null
+  }
+
+  return (diff / 60) * hourWidth.value
+})
 
 const getTeamColorClass = (color) => {
   const colors = {
@@ -118,6 +155,7 @@ const getTeamColorClass = (color) => {
     purple: 'bg-purple-500',
     red: 'bg-red-500',
   }
+
   return colors[color] || 'bg-gray-500'
 }
 
@@ -137,62 +175,51 @@ const getShiftBgClass = (teamColor) => {
     purple: 'bg-purple-100 border-purple-200 text-purple-900 hover:bg-purple-200',
     red: 'bg-red-100 border-red-200 text-red-900 hover:bg-red-200',
   }
-  return colors[teamColor] || 'bg-gray-100 border-gray-200'
-}
 
-const getTeamShiftStyle = (teamColor) => {
-  if (!teamColor) return null
-  if (teamColor.startsWith('#')) {
-    const bgColor = hexToRgba(teamColor, 0.15)
-    const borderColor = hexToRgba(teamColor, 0.3)
-    const hoverBgColor = hexToRgba(teamColor, 0.25)
-    return {
-      backgroundColor: bgColor,
-      borderColor: borderColor,
-      '--hover-bg': hoverBgColor,
-    }
-  }
-  return null
+  return colors[teamColor] || 'bg-gray-100 border-gray-200 text-gray-900 hover:bg-gray-200'
 }
 
 const hexToRgba = (hex, alpha = 1) => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
   if (!result) return null
-  const r = parseInt(result[1], 16)
-  const g = parseInt(result[2], 16)
-  const b = parseInt(result[3], 16)
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+
+  const red = parseInt(result[1], 16)
+  const green = parseInt(result[2], 16)
+  const blue = parseInt(result[3], 16)
+
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`
+}
+
+const getTeamShiftStyle = (teamColor) => {
+  if (!teamColor || !teamColor.startsWith('#')) return null
+
+  return {
+    backgroundColor: hexToRgba(teamColor, 0.15),
+    borderColor: hexToRgba(teamColor, 0.3),
+    '--hover-bg': hexToRgba(teamColor, 0.25),
+  }
 }
 
 const getShiftCustomStyle = (colorHex) => {
   if (!colorHex) return null
-  const bgColor = hexToRgba(colorHex, 0.15)
-  const borderColor = hexToRgba(colorHex, 0.3)
-  const hoverBgColor = hexToRgba(colorHex, 0.25)
+
   return {
-    backgroundColor: bgColor,
-    borderColor: borderColor,
-    '--hover-bg': hoverBgColor,
+    backgroundColor: hexToRgba(colorHex, 0.15),
+    borderColor: hexToRgba(colorHex, 0.3),
+    '--hover-bg': hexToRgba(colorHex, 0.25),
   }
 }
 
-const getShiftRole = (shift) => {
-  return shift.meaning || shift.code || 'Support'
-}
-
-const formatShiftTime = (iso) => {
-  return format(new Date(iso), 'HH:mm')
-}
+const getShiftRole = (shift) => shift.meaning || shift.code || 'Support'
 
 const formatShiftTimeInZone = (iso) => {
   const date = new Date(iso)
-  const options = { 
-    hour: '2-digit', 
+  return date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
     minute: '2-digit',
     hour12: false,
-    timeZone: props.selectedTimezone 
-  }
-  return date.toLocaleTimeString('en-US', options)
+    timeZone: resolvedTimezone.value,
+  })
 }
 
 const getShiftStyle = (layoutShift) => ({
@@ -202,157 +229,157 @@ const getShiftStyle = (layoutShift) => ({
   height: `${BLOCK_HEIGHT}px`,
 })
 
-const getTeamShiftCount = (teamId) => {
-  return props.shifts.filter((s) => s.teamId === teamId).length
-}
+const shouldShowShiftTime = (width) => width >= 88
+
+const getTeamShiftCount = (teamId) => props.shifts.filter((shift) => shift.teamId === teamId).length
 </script>
 
 <template>
   <TooltipProvider :delay-duration="200">
-    <div class="h-full overflow-auto bg-white relative">
-      <div class="min-w-max flex flex-col">
-        <div class="sticky top-0 z-30 flex bg-gray-50 border-b border-gray-200 shadow-sm h-12">
+    <div ref="timelineViewport" class="relative h-full overflow-y-auto overflow-x-auto bg-white">
+      <div class="flex flex-col bg-white" :style="{ minWidth: `${canvasWidth}px` }">
+        <div class="sticky top-0 z-30 flex h-12 border-b border-gray-200 bg-gray-50 shadow-sm">
           <div
-            class="sticky left-0 z-40 w-60 bg-gray-50 border-r border-gray-200 flex items-center px-4 font-semibold text-xs text-gray-500 uppercase tracking-wider shadow-[1px_0_0_0_rgba(229,231,235,1)]"
+            class="sticky left-0 z-40 flex items-center border-r border-gray-200 bg-gray-50 px-4 text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[1px_0_0_0_rgba(229,231,235,1)]"
+            :style="{ width: `${TEAM_COLUMN_WIDTH}px` }"
           >
             Teams
           </div>
-          <div class="flex relative" :style="{ width: `${TOTAL_WIDTH}px` }">
+
+          <div class="relative flex bg-gray-50" :style="{ width: `${timelineWidth}px` }">
             <div
-              v-for="h in hours"
-              :key="h"
-              class="flex-none border-r border-gray-200/50 flex items-center px-2 text-xs font-mono text-gray-400 select-none"
-              :style="{ width: `${HOUR_WIDTH}px` }"
+              v-for="hour in hours"
+              :key="hour"
+              class="flex-none select-none border-r border-gray-200/50 text-center font-mono text-[11px] leading-[48px] text-gray-400"
+              :style="{ width: `${hourWidth}px` }"
             >
-              {{ h.toString().padStart(2, '0') }}:00
+              {{ hour.toString().padStart(2, '0') }}
             </div>
 
             <div
               v-if="currentTimeLeft !== null"
-              class="absolute top-0 bottom-0 z-50 w-px bg-red-500 pointer-events-none"
+              class="pointer-events-none absolute bottom-0 top-0 z-50 w-px bg-red-500"
               :style="{ left: `${currentTimeLeft}px` }"
             >
-              <div
-                class="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[6px] border-t-red-500 -ml-[4.5px]"
-              ></div>
+              <div class="-ml-[4.5px] h-0 w-0 border-l-[5px] border-r-[5px] border-t-[6px] border-l-transparent border-r-transparent border-t-red-500"></div>
             </div>
           </div>
         </div>
 
-        <div class="relative">
+        <div class="relative bg-white">
           <div
-            class="absolute inset-0 pointer-events-none flex pl-60"
-            :style="{ width: `${TOTAL_WIDTH + 240}px` }"
+            class="pointer-events-none absolute inset-y-0 right-0 z-0 flex"
+            :style="{ left: `${TEAM_COLUMN_WIDTH}px`, width: `${timelineWidth}px` }"
           >
             <div
-              v-for="h in hours"
-              :key="h"
-              class="flex-none border-r border-dashed border-gray-100 h-full"
-              :style="{ width: `${HOUR_WIDTH}px` }"
+              v-for="hour in hours"
+              :key="`grid-${hour}`"
+              class="h-full flex-none border-r border-dashed border-gray-100"
+              :style="{ width: `${hourWidth}px` }"
             ></div>
           </div>
 
           <div
             v-if="currentTimeLeft !== null"
-            class="absolute top-0 bottom-0 w-px bg-red-500/50 z-20 pointer-events-none ml-60"
-            :style="{ left: `${currentTimeLeft}px` }"
+            class="pointer-events-none absolute bottom-0 top-0 z-20 w-px bg-red-500/50"
+            :style="{ left: `${TEAM_COLUMN_WIDTH + currentTimeLeft}px` }"
           ></div>
 
           <div
             v-for="{ team, height, shifts } in layout"
             :key="team.id"
-            class="flex border-b border-gray-100 group hover:bg-gray-50/50 transition-colors"
+            class="group flex border-b border-gray-100 transition-colors hover:bg-gray-50/50"
           >
             <div
-              class="sticky left-0 z-20 w-60 bg-white border-r border-gray-200 flex flex-col justify-center px-4 group-hover:bg-gray-50/50 transition-colors shadow-[1px_0_0_0_rgba(229,231,235,1)]"
-              :style="{ height: `${height}px` }"
+              class="sticky left-0 z-20 flex flex-col justify-center border-r border-gray-200 bg-white px-4 shadow-[1px_0_0_0_rgba(229,231,235,1)] transition-colors group-hover:bg-gray-50/50"
+              :style="{ width: `${TEAM_COLUMN_WIDTH}px`, height: `${height}px` }"
             >
-              <div class="font-semibold text-gray-800 text-sm flex items-center">
+              <div class="flex items-center text-sm font-semibold text-gray-800">
                 <span
-                  :class="cn('w-2 h-2 rounded-full mr-2', !team.color?.startsWith('#') && getTeamColorClass(team.color))"
+                  :class="cn('mr-2 h-2 w-2 rounded-full', !team.color?.startsWith('#') && getTeamColorClass(team.color))"
                   :style="getTeamColorStyle(team.color)"
                 ></span>
                 {{ team.name }}
               </div>
-              <div class="text-xs text-gray-400 mt-1 pl-4">
+              <div class="mt-1 pl-4 text-xs text-gray-400">
                 {{ getTeamShiftCount(team.id) }} active shifts
               </div>
             </div>
 
             <div
-              class="relative flex-1"
-              :style="{ width: `${TOTAL_WIDTH}px`, height: `${height}px` }"
+              class="relative flex-1 bg-white"
+              :style="{ width: `${timelineWidth}px`, height: `${height}px` }"
             >
-              <div
-                v-if="shifts.length === 0"
-                class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImEiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgNDBMODAgMCIgc3Ryb2tlPSIjRjNGNEY2IiBzdHJva2Utd2lkdGg9IjIiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjYSkiLz48L3N2Zz4=')] opacity-50"
-              ></div>
+              <div v-if="shifts.length === 0" class="absolute inset-0 bg-white"></div>
 
               <TooltipRoot v-for="layoutShift in shifts" :key="layoutShift.shift.id">
                 <TooltipTrigger as-child>
                   <div
-                    :class="
-                      cn(
-                        'absolute rounded-lg border px-3 flex items-center justify-between overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all select-none z-10 hover:z-20',
-                        !layoutShift.shift.colorHex && !team.color?.startsWith('#') && getShiftBgClass(team.color),
-                      )
-                    "
-                    :style="{ ...getShiftStyle(layoutShift), ...getShiftCustomStyle(layoutShift.shift.colorHex), ...(!layoutShift.shift.colorHex && team.color?.startsWith('#') ? getTeamShiftStyle(team.color) : {}) }"
+                    :class="cn(
+                      'absolute z-10 flex cursor-pointer items-center justify-between overflow-hidden rounded-lg border px-2 shadow-sm transition-all select-none hover:z-20 hover:shadow-md',
+                      !layoutShift.shift.colorHex && !team.color?.startsWith('#') && getShiftBgClass(team.color),
+                    )"
+                    :style="{
+                      ...getShiftStyle(layoutShift),
+                      ...getShiftCustomStyle(layoutShift.shift.colorHex),
+                      ...(!layoutShift.shift.colorHex && team.color?.startsWith('#')
+                        ? getTeamShiftStyle(team.color)
+                        : {}),
+                    }"
                   >
-                    <div class="flex items-center space-x-2 min-w-0">
+                    <div class="flex min-w-0 items-center space-x-1.5">
                       <Star
                         v-if="layoutShift.shift.isPrimary"
-                        class="w-3 h-3 flex-shrink-0 fill-current opacity-70"
+                        class="h-2.5 w-2.5 flex-shrink-0 fill-current opacity-70"
                       />
                       <img
                         :src="layoutShift.shift.userAvatar"
                         alt=""
-                        class="w-5 h-5 rounded-full bg-white/50 flex-shrink-0 object-cover border border-white/30"
+                        class="h-4 w-4 flex-shrink-0 rounded-full border border-white/30 bg-white/50 object-cover"
                       />
-                      <span class="font-semibold text-xs truncate">{{
-                        layoutShift.shift.userName
-                      }}</span>
+                      <span class="truncate text-xs font-semibold">{{ layoutShift.shift.userName }}</span>
                     </div>
 
                     <span
-                      v-if="layoutShift.width > 80"
-                      class="text-xs font-mono opacity-80 whitespace-nowrap ml-2 hidden sm:inline-block"
+                      v-if="shouldShowShiftTime(layoutShift.width)"
+                      class="ml-2 hidden whitespace-nowrap text-xs font-mono opacity-80 sm:inline-block"
                     >
                       {{ formatShiftTimeInZone(layoutShift.shift.start) }} -
                       {{ formatShiftTimeInZone(layoutShift.shift.end) }}
                     </span>
                   </div>
                 </TooltipTrigger>
+
                 <TooltipPortal>
                   <TooltipContent
-                    class="z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-4 w-72"
+                    class="z-50 w-72 rounded-lg border border-gray-200 bg-white p-4 shadow-xl"
                     :side-offset="5"
                   >
-                    <div class="flex items-start justify-between mb-3">
+                    <div class="mb-3 flex items-start justify-between">
                       <div class="flex items-center space-x-3">
                         <img
                           :src="layoutShift.shift.userAvatar"
-                          class="w-10 h-10 rounded-full object-cover border border-gray-100"
+                          class="h-10 w-10 rounded-full border border-gray-100 object-cover"
                         />
                         <div>
-                          <div class="font-bold text-gray-900">
-                            {{ layoutShift.shift.userName }}
-                          </div>
-                          <div class="text-xs text-gray-500 flex items-center mt-0.5">
-                            {{
-                              layoutShift.shift.isPrimary ? 'Primary On-call' : 'Secondary Support'
-                            }}
+                          <div class="font-bold text-gray-900">{{ layoutShift.shift.userName }}</div>
+                          <div class="mt-0.5 flex items-center text-xs text-gray-500">
+                            {{ layoutShift.shift.isPrimary ? 'Primary On-call' : 'Secondary Support' }}
                           </div>
                         </div>
                       </div>
+
                       <div
-                        :class="
-                          cn(
-                            'text-[10px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wide border',
-                            !layoutShift.shift.colorHex && !team.color?.startsWith('#') && getShiftBgClass(team.color),
-                          )
-                        "
-                        :style="{ ...getShiftCustomStyle(layoutShift.shift.colorHex), ...(!layoutShift.shift.colorHex && team.color?.startsWith('#') ? getTeamShiftStyle(team.color) : {}) }"
+                        :class="cn(
+                          'rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide',
+                          !layoutShift.shift.colorHex && !team.color?.startsWith('#') && getShiftBgClass(team.color),
+                        )"
+                        :style="{
+                          ...getShiftCustomStyle(layoutShift.shift.colorHex),
+                          ...(!layoutShift.shift.colorHex && team.color?.startsWith('#')
+                            ? getTeamShiftStyle(team.color)
+                            : {}),
+                        }"
                       >
                         {{ getShiftRole(layoutShift.shift) }}
                       </div>
@@ -360,43 +387,36 @@ const getTeamShiftCount = (teamId) => {
 
                     <div class="space-y-2 text-sm text-gray-600">
                       <div class="flex items-center">
-                        <Clock class="w-3.5 h-3.5 mr-2 text-gray-400" />
+                        <Clock class="mr-2 h-3.5 w-3.5 text-gray-400" />
                         <span class="font-mono text-xs">
                           {{ formatShiftTimeInZone(layoutShift.shift.start) }} -
                           {{ formatShiftTimeInZone(layoutShift.shift.end) }}
                         </span>
                       </div>
-                      <div class="h-px bg-gray-100 my-2"></div>
-                      <div
-                        class="flex items-center hover:text-gray-900 cursor-pointer transition-colors"
-                      >
-                        <MessageSquare class="w-3.5 h-3.5 mr-2 text-gray-400" />
+                      <div class="my-2 h-px bg-gray-100"></div>
+                      <div class="flex cursor-pointer items-center transition-colors hover:text-gray-900">
+                        <MessageSquare class="mr-2 h-3.5 w-3.5 text-gray-400" />
                         <span class="select-all">{{ layoutShift.shift.contact.slack }}</span>
                       </div>
-                      <div
-                        class="flex items-center hover:text-gray-900 cursor-pointer transition-colors"
-                      >
-                        <Mail class="w-3.5 h-3.5 mr-2 text-gray-400" />
+                      <div class="flex cursor-pointer items-center transition-colors hover:text-gray-900">
+                        <Mail class="mr-2 h-3.5 w-3.5 text-gray-400" />
                         <span class="select-all">{{ layoutShift.shift.contact.email }}</span>
                       </div>
-                      <div
-                        class="flex items-center hover:text-gray-900 cursor-pointer transition-colors"
-                      >
-                        <Phone class="w-3.5 h-3.5 mr-2 text-gray-400" />
+                      <div class="flex cursor-pointer items-center transition-colors hover:text-gray-900">
+                        <Phone class="mr-2 h-3.5 w-3.5 text-gray-400" />
                         <span class="select-all">{{ layoutShift.shift.contact.phone }}</span>
                       </div>
                     </div>
 
-                    <div v-if="layoutShift.shift.backup" class="mt-3 pt-3 border-t border-gray-100">
-                      <div class="text-xs font-semibold text-gray-500 mb-1">Backup</div>
+                    <div v-if="layoutShift.shift.backup" class="mt-3 border-t border-gray-100 pt-3">
+                      <div class="mb-1 text-xs font-semibold text-gray-500">Backup</div>
                       <div class="flex items-center text-sm">
-                        <User class="w-3.5 h-3.5 mr-2 text-gray-400" />
+                        <User class="mr-2 h-3.5 w-3.5 text-gray-400" />
                         {{ layoutShift.shift.backup.name }}
-                        <span class="text-gray-400 ml-1"
-                          >({{ layoutShift.shift.backup.contact }})</span
-                        >
+                        <span class="ml-1 text-gray-400">({{ layoutShift.shift.backup.contact }})</span>
                       </div>
                     </div>
+
                     <TooltipArrow class="fill-white" />
                   </TooltipContent>
                 </TooltipPortal>
@@ -410,7 +430,7 @@ const getTeamShiftCount = (teamId) => {
 </template>
 
 <style scoped>
-div[style*="--hover-bg"]:hover {
+div[style*='--hover-bg']:hover {
   background-color: var(--hover-bg) !important;
 }
 </style>

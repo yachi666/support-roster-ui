@@ -1,7 +1,5 @@
 <script setup>
 import {
-  ChevronLeft,
-  ChevronRight,
   Download,
   Filter,
   Save,
@@ -22,7 +20,6 @@ const {
   year,
   month,
   filteredGroups,
-  timezone,
   searchTerm,
   loading,
   saving,
@@ -49,8 +46,6 @@ const {
   toggleTeamFilter,
   clearTeamFilter,
   exportRoster,
-  goToPreviousMonth,
-  goToNextMonth,
   reloadRoster,
 } = useRosterPlanner()
 
@@ -61,23 +56,9 @@ const showTeamFilter = ref(false)
   <div class="relative flex h-full flex-col bg-white">
     <div class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 shadow-sm">
       <div class="flex items-center gap-4">
-        <div class="flex items-center rounded-md border border-slate-200 bg-slate-100 p-0.5 shadow-sm">
-          <button class="rounded p-1 text-slate-500 transition-colors hover:bg-white hover:text-slate-800" @click="goToPreviousMonth">
-            <ChevronLeft class="h-4 w-4" />
-          </button>
-          <div class="min-w-[120px] px-3 text-center text-sm font-semibold text-slate-800">{{ monthLabel }}</div>
-          <button class="rounded p-1 text-slate-500 transition-colors hover:bg-white hover:text-slate-800" @click="goToNextMonth">
-            <ChevronRight class="h-4 w-4" />
-          </button>
-        </div>
-        <div class="h-4 w-px bg-slate-200"></div>
-        <div class="flex items-center gap-2">
-          <label for="workspace-roster-timezone" class="text-xs font-medium uppercase tracking-wide text-slate-500">Timezone</label>
-          <select id="workspace-roster-timezone" name="workspace-roster-timezone" v-model="timezone" class="cursor-pointer border-none bg-transparent text-sm font-medium text-slate-700 outline-none hover:text-teal-600">
-            <option value="UTC">UTC (Default)</option>
-            <option value="Asia/Singapore">Asia/Singapore</option>
-            <option value="Europe/London">Europe/London</option>
-          </select>
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Monthly Roster</div>
+          <div class="text-sm font-semibold text-slate-800">{{ monthLabel }}</div>
         </div>
       </div>
 

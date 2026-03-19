@@ -1,27 +1,13 @@
-export const WORKSPACE_STAFF_TIMEZONE_OPTIONS = [
-  { value: 'UTC', label: 'UTC' },
-  { value: 'HKT', label: 'HKT' },
-  { value: 'IST', label: 'IST' },
-]
+import { TIMEZONE_OPTIONS, normalizeTimezoneSelection } from '@/lib/timezones'
 
-const TIMEZONE_NORMALIZATION_MAP = {
-  UTC: 'UTC',
-  GMT: 'UTC',
-  'Asia/Shanghai': 'HKT',
-  'Asia/Hong_Kong': 'HKT',
-  'Asia/Singapore': 'HKT',
-  HKT: 'HKT',
-  'Asia/Kolkata': 'IST',
-  'Asia/Calcutta': 'IST',
-  IST: 'IST',
+export const WORKSPACE_TIMEZONE_OPTIONS = TIMEZONE_OPTIONS
+
+export const WORKSPACE_STAFF_TIMEZONE_OPTIONS = WORKSPACE_TIMEZONE_OPTIONS
+
+export function normalizeWorkspaceTimezone(timezone) {
+  return normalizeTimezoneSelection(timezone)
 }
 
 export function normalizeWorkspaceStaffTimezone(timezone) {
-  const normalizedValue = TIMEZONE_NORMALIZATION_MAP[timezone]
-
-  if (normalizedValue) {
-    return normalizedValue
-  }
-
-  return 'UTC'
+  return normalizeWorkspaceTimezone(timezone)
 }

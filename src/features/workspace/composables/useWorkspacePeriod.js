@@ -1,13 +1,16 @@
 import { computed, readonly, shallowRef } from 'vue'
 import {
   formatWorkspaceMonthLabel,
-  getCurrentWorkspacePeriod,
   shiftWorkspacePeriod,
 } from '../lib/period'
+import { normalizeWorkspaceTimezone } from '../config/timezones'
 
-const initialPeriod = getCurrentWorkspacePeriod()
-const workspaceYear = shallowRef(initialPeriod.year)
-const workspaceMonth = shallowRef(initialPeriod.month)
+const initialDate = new Date()
+const workspacePeriod = shallowRef({
+  year: initialDate.getFullYear(),
+  month: initialDate.getMonth() + 1,
+})
+const workspaceTimezone = shallowRef('UTC')
 
 function normalizePeriodValue(value, fallback) {
   const parsed = Number(value)
@@ -16,42 +19,52 @@ function normalizePeriodValue(value, fallback) {
 }
 
 function setWorkspacePeriod(nextYear, nextMonth) {
-  const normalizedYear = normalizePeriodValue(nextYear, workspaceYear.value)
-  const normalizedMonth = normalizePeriodValue(nextMonth, workspaceMonth.value)
+  const normalizedYear = normalizePeriodValue(nextYear, workspacePeriod.value.year)
+  const normalizedMonth = normalizePeriodValue(nextMonth, workspacePeriod.value.month)
 
   if (normalizedMonth < 1 || normalizedMonth > 12) {
     return
   }
 
-  workspaceYear.value = normalizedYear
-  workspaceMonth.value = normalizedMonth
+  workspacePeriod.value = {
+    year: normalizedYear,
+    month: normalizedMonth,
+  }
 }
 
 function setWorkspaceYear(nextYear) {
-  setWorkspacePeriod(nextYear, workspaceMonth.value)
+  setWorkspacePeriod(nextYear, workspacePeriod.value.month)
 }
 
 function setWorkspaceMonth(nextMonth) {
-  setWorkspacePeriod(workspaceYear.value, nextMonth)
+  setWorkspacePeriod(workspacePeriod.value.year, nextMonth)
+}
+
+function setWorkspaceTimezone(nextTimezone) {
+  workspaceTimezone.value = normalizeWorkspaceTimezone(nextTimezone)
 }
 
 function goToPreviousMonth() {
-  const nextPeriod = shiftWorkspacePeriod({ year: workspaceYear.value, month: workspaceMonth.value }, -1)
+  const nextPeriod = shiftWorkspacePeriod(workspacePeriod.value, -1)
   setWorkspacePeriod(nextPeriod.year, nextPeriod.month)
 }
 
 function goToNextMonth() {
-  const nextPeriod = shiftWorkspacePeriod({ year: workspaceYear.value, month: workspaceMonth.value }, 1)
+  const nextPeriod = shiftWorkspacePeriod(workspacePeriod.value, 1)
   setWorkspacePeriod(nextPeriod.year, nextPeriod.month)
 }
 
-const monthLabel = computed(() => formatWorkspaceMonthLabel(workspaceYear.value, workspaceMonth.value))
+const year = computed(() => workspacePeriod.value.year)
+const month = computed(() => workspacePeriod.value.month)
+const monthLabel = computed(() => formatWorkspaceMonthLabel(year.value, month.value))
 
 export function useWorkspacePeriod() {
   return {
-    year: readonly(workspaceYear),
-    month: readonly(workspaceMonth),
+    timezone: readonly(workspaceTimezone),
+    year,
+    month,
     monthLabel,
+    setWorkspaceTimezone,
     setWorkspacePeriod,
     setWorkspaceYear,
     setWorkspaceMonth,

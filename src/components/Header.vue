@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { format } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
 import { Calendar, Clock, Globe } from 'lucide-vue-next'
+import { TIMEZONE_OPTIONS, normalizeTimezoneSelection, toIanaTimezone } from '@/lib/timezones'
 
 const props = defineProps({
   selectedDate: { type: Date, required: true },
@@ -10,15 +11,6 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:selectedDate', 'update:selectedTimezone'])
-
-const TIMEZONES = [
-  { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
-  { value: 'Asia/Shanghai', label: 'CST (China Standard Time)' },
-  { value: 'America/Los_Angeles', label: 'PST (Pacific Standard Time)' },
-  { value: 'America/New_York', label: 'EST (Eastern Standard Time)' },
-  { value: 'Europe/London', label: 'GMT (Greenwich Mean Time)' },
-  { value: 'Asia/Tokyo', label: 'JST (Japan Standard Time)' },
-]
 
 const currentTime = ref(new Date())
 let timer = null
@@ -46,12 +38,14 @@ const setToday = () => emit('update:selectedDate', new Date())
 
 const onTimezoneChange = (e) => emit('update:selectedTimezone', e.target.value)
 
+const resolvedTimezone = computed(() => toIanaTimezone(props.selectedTimezone))
+
 const formattedTime = computed(() => {
-  return formatInTimeZone(currentTime.value, props.selectedTimezone, 'HH:mm:ss')
+  return formatInTimeZone(currentTime.value, resolvedTimezone.value, 'HH:mm:ss')
 })
 
 const timezoneLabel = computed(() => {
-  return props.selectedTimezone.split('/')[1] || props.selectedTimezone
+  return normalizeTimezoneSelection(props.selectedTimezone)
 })
 
 const formattedDate = computed(() => {
@@ -99,7 +93,7 @@ const formattedDate = computed(() => {
             @change="onTimezoneChange"
             class="appearance-none bg-transparent text-sm font-medium text-gray-700 focus:outline-none pr-6 cursor-pointer"
           >
-            <option v-for="tz in TIMEZONES" :key="tz.value" :value="tz.value">
+            <option v-for="tz in TIMEZONE_OPTIONS" :key="tz.value" :value="tz.value">
               {{ tz.label }}
             </option>
           </select>

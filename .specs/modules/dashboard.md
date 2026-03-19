@@ -2,7 +2,7 @@
 
 ## 模块概述
 
-Dashboard 是应用的主容器组件，负责协调 Header 和 Timeline 子组件，管理全局状态（日期、时区、数据），并处理 API 数据获取。
+Dashboard 是应用的主容器组件，负责协调 Header 和 Timeline 子组件，管理页面级日期、三态时区和数据，并处理 API 数据获取。
 
 **文件位置**: `src/components/Dashboard.vue`
 
@@ -25,7 +25,7 @@ Dashboard.vue
 | 状态 | 类型 | 初始值 | 说明 |
 |------|------|--------|------|
 | `selectedDate` | `Date` | `new Date()` | 当前选中日期 |
-| `selectedTimezone` | `string` | 系统时区 | 当前选中时区 |
+| `selectedTimezone` | `string` | 归一化后的 UTC/HKT/IST | 当前选中时区 |
 | `teams` | `TeamDto[]` | `[]` | 团队列表 |
 | `shifts` | `ShiftDto[]` | `[]` | 排班数据 |
 | `loading` | `boolean` | `false` | 加载状态 |
@@ -50,7 +50,7 @@ onMounted()
     │
     └── fetchShifts() ─────────────► shifts.value
                    │
-                   └── GET /api/shifts?date=YYYY-MM-DD&timezone=TZ
+                   └── GET /api/shifts?date=YYYY-MM-DD&timezone=IANA_TZ
 ```
 
 ### 响应式更新
@@ -61,7 +61,7 @@ watch([selectedDate, selectedTimezone], () => {
 })
 ```
 
-当日期或时区变化时，自动重新获取排班数据。
+当日期或时区变化时，自动重新获取排班数据。Header 输出的 UTC/HKT/IST 会在请求前转换为 IANA 时区。
 
 ---
 
@@ -88,7 +88,7 @@ async function fetchShifts() {
   loading.value = true
   error.value = null
   try {
-    const data = await api.getShifts(formattedDate.value, null, selectedTimezone.value)
+    const data = await api.getShifts(formattedDate.value, null, toIanaTimezone(selectedTimezone.value))
     shifts.value = data
   } catch (err) {
     console.error('Failed to fetch shifts:', err)
@@ -193,6 +193,12 @@ async function fetchShifts() {
 1. **状态范围有限**: 仅日期、时区、数据三个状态
 2. **无跨组件共享**: Header 和 Timeline 通过 Props 通信
 3. **简单性**: 避免引入额外复杂度
+
+### 时区约束
+
+- Viewer 只允许 `UTC`、`HKT`、`IST`
+- 页面内部保留 day-level date 选择，因为公共 Viewer 仍按单日查看排班
+- 时间展示和接口参数统一通过共享时区映射工具转换
 
 ### 为什么并行获取 Teams 和 Shifts？
 

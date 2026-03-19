@@ -151,8 +151,12 @@ font-mono: ui-monospace, SFMono-Regular, monospace
 #### 布局参数
 
 ```javascript
-const HOUR_WIDTH = 120      // 每小时宽度
-const TOTAL_WIDTH = 24 * HOUR_WIDTH  // 总宽度 2880px
+const TEAM_COLUMN_WIDTH = 208
+const MIN_HOUR_WIDTH = 28
+const timelineWidth = availableTimelineWidth >= 24 * MIN_HOUR_WIDTH
+  ? availableTimelineWidth
+  : 24 * MIN_HOUR_WIDTH
+const hourWidth = timelineWidth / 24
 ```
 
 #### 刻度设计
@@ -163,7 +167,7 @@ const TOTAL_WIDTH = 24 * HOUR_WIDTH  // 总宽度 2880px
 └──────┴──────┴──────┴──────┴──────┴──────┘
 ```
 
-- 每个刻度宽度: 120px
+- 每个刻度宽度: 桌面端随容器自适应，窄屏时不低于 28px
 - 字体: `font-mono text-xs`
 - 颜色: `text-gray-400`
 - 边框: `border-r border-gray-200/50`
@@ -216,7 +220,7 @@ const currentTimeLeft = computed(() => {
 │ │   N active shifts   │ │                                     │ │
 │ └─────────────────────┘ └─────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
-│← 240px (sticky) →│← 2880px (scrollable) →│
+│← 208px (sticky) →│← 自适应 24h 画布 →│
 ```
 
 #### 高度计算
@@ -304,15 +308,15 @@ const height = Math.max(
 
 ### 当前实现
 
-项目采用 **固定宽度时间轴 + 水平滚动** 的响应策略：
+项目采用 **桌面端整日一屏、窄屏兜底滚动** 的响应策略：
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                      Viewport                               │
 │  ┌────────────┐ ┌───────────────────────────────────────┐  │
-│  │ Team Panel │ │ Timeline (scrollable)                 │  │
-│  │ (sticky)   │ │ ← scroll →                            │  │
-│  │  240px     │ │ 2880px                                │  │
+│  │ Team Panel │ │ Timeline (fit to viewport)            │  │
+│  │ (sticky)   │ │ 00 01 02 ... 23                       │  │
+│  │  208px     │ │                                        │  │
 │  └────────────┘ └───────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -321,12 +325,13 @@ const height = Math.max(
 
 | 断点 | 处理方式 |
 |------|---------|
-| < 640px | 时间标签隐藏 (`hidden sm:inline-block`) |
-| >= 640px | 完整显示 |
+| 宽度充足 | 24h 不滚动，整屏展示 |
+| 宽度不足 | 保持最小列宽并允许横向滚动 |
+| < 640px | 卡片内时间标签隐藏 (`hidden sm:inline-block`) |
 
 ### 滚动行为
 
-- **水平滚动**: 时间轴内容区
+- **水平滚动**: 仅在窄屏兜底场景出现
 - **垂直滚动**: 整个页面
 - **粘性定位**: Team Panel (左侧)、Timeline Header (顶部)
 
@@ -376,6 +381,8 @@ const height = Math.max(
 │╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱│
 └────────────────────────────────────────────────┘
 ```
+
+- 空白区必须显式使用白色底面，不能依赖透明背景，以避免 Viewer 时间轴在部分截图或浏览器渲染场景下出现整块灰底。
 
 ### 加载状态
 

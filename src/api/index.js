@@ -189,6 +189,11 @@ export const api = {
       body: payload,
     }),
 
+    reorderTeams: (teamIds) => request('/workspace/teams/reorder', {
+      method: 'POST',
+      body: { teamIds },
+    }),
+
     deleteTeam: (id) => request(`/workspace/teams/${id}`, {
       method: 'DELETE',
     }),

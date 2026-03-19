@@ -350,7 +350,7 @@ onMounted(() => {
                     <div class="flex items-center gap-2 font-mono text-xs text-slate-600">
                       <Clock3 class="h-3.5 w-3.5 text-slate-400" />
                       <span>{{ shift.startTime }} - {{ shift.endTime }}</span>
-                      <span class="rounded bg-slate-100 px-1 text-[10px] text-slate-400">{{ shift.timezone }}</span>
+                      <span class="rounded bg-slate-100 px-1 text-[10px] text-slate-400">{{ normalizeWorkspaceStaffTimezone(shift.timezone) }}</span>
                     </div>
                   </td>
                   <td class="px-6 py-4">

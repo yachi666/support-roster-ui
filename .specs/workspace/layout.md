@@ -18,7 +18,8 @@
 ## Topbar Rules
 
 - Search is currently presentational and non-blocking
-- Topbar owns the shared workspace month chooser and previous/next month controls for the admin shell
+- Topbar owns the shared workspace month chooser, previous/next month controls, and global timezone selector for the admin shell
+- Topbar does not expose a day-level date picker because workspace pages operate on monthly data only
 - A persistent `Open Public Viewer` link in the topbar routes admins to `/viewer`
 - Notification/help/settings actions are visual placeholders
 - Toolbar stays fixed while page content scrolls
@@ -26,6 +27,7 @@
 ## Shared Period Context
 
 - `useWorkspacePeriod.js` provides the single year/month source of truth for workspace pages that operate on monthly data.
+- Workspace period state no longer tracks a separate day selection in the shell.
 - Monthly Roster, Validation Center, Import / Export, and sidebar validation counts all react to the same selected workspace month.
 
 ## Visual Direction
