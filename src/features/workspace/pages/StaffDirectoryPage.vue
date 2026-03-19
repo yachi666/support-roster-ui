@@ -60,7 +60,6 @@ const staffErrorRules = [
     match: ['timezone'],
     field: 'timezone',
   },
-  {
 ]
 
 async function loadStaff() {
