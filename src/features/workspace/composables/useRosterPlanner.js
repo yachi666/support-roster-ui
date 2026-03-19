@@ -27,6 +27,7 @@ function normalizeGroups(groups, totalDays) {
     staff: (group.staff || []).map((person) => ({
       id: person.staffId,
       name: person.staffName,
+      avatar: person.avatar,
       role: person.roleName || 'Unassigned',
       roleGroupId: person.roleGroupId ? String(person.roleGroupId) : '',
       schedule: buildScheduleArray(person.schedule, totalDays),

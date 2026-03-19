@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import AvatarImage from '../AvatarImage.vue'
 import { cn } from '@/lib/utils'
 
 const props = defineProps({
@@ -83,9 +84,12 @@ function getShiftStyle(code) {
           <tr v-for="person in group.staff" :key="person.id" class="group transition-colors hover:bg-slate-50/60">
             <td class="sticky left-0 z-20 border-b border-r border-slate-200 bg-white px-4 py-2.5 shadow-[1px_0_0_0_#e2e8f0] group-hover:bg-slate-50">
               <div class="flex items-center gap-3">
-                <div class="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-[10px] font-semibold text-slate-600">
-                  {{ person.name.split(' ').map((part) => part[0]).join('') }}
-                </div>
+                <AvatarImage
+                  :name="person.name"
+                  :src="person.avatar"
+                  size-class="h-6 w-6"
+                  fallback-class="border border-slate-200 bg-slate-100 text-[10px] font-semibold text-slate-600"
+                />
                 <div class="flex flex-col">
                   <button class="text-left text-sm font-medium text-slate-800 transition-colors hover:text-teal-600 hover:underline decoration-teal-300 underline-offset-2" @click="emit('select-cell', { staffId: person.id, day: 1 })">
                     {{ person.name }}

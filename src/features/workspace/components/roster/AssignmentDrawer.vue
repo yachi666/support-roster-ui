@@ -1,5 +1,6 @@
 <script setup>
 import { AlertCircle, Check } from 'lucide-vue-next'
+import AvatarImage from '../AvatarImage.vue'
 import WorkspaceDrawer from '../WorkspaceDrawer.vue'
 
 const props = defineProps({
@@ -33,9 +34,12 @@ function formatAssignmentDate(day) {
     <template v-if="assignment">
       <div class="space-y-6">
         <div class="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3">
-          <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-600">
-            {{ assignment.staff.name.split(' ').map((part) => part[0]).join('') }}
-          </div>
+          <AvatarImage
+            :name="assignment.staff.name"
+            :src="assignment.staff.avatar"
+            size-class="h-10 w-10"
+            fallback-class="bg-slate-200 text-sm font-semibold text-slate-600"
+          />
           <div>
             <div class="text-sm font-semibold text-slate-800">{{ assignment.staff.name }}</div>
             <div class="text-xs text-slate-500">{{ assignment.group.team }} • {{ assignment.staff.role }}</div>

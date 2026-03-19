@@ -3,9 +3,11 @@ import { computed, onMounted, reactive, shallowRef } from 'vue'
 import { CheckCircle2, Clock3, Filter, Globe, Mail, Pencil, Plus, Search, Trash2, XCircle } from 'lucide-vue-next'
 import { api } from '@/api'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
+import AvatarImage from '../components/AvatarImage.vue'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
+import { normalizeWorkspaceStaffTimezone, WORKSPACE_STAFF_TIMEZONE_OPTIONS } from '../config/timezones'
 
 const EMPTY_FORM = {
   staffCode: '',
@@ -136,7 +138,7 @@ function fillForm(staff) {
     phone: staff?.phone || '',
     slack: staff?.slack || '',
     region: staff?.region || '',
-    timezone: staff?.timezone || 'UTC',
+    timezone: normalizeWorkspaceStaffTimezone(staff?.timezone),
     roleName: staff?.roleName || '',
     roleGroupId: staff?.roleGroupId ? String(staff.roleGroupId) : '',
     status: staff?.status || 'ACTIVE',
@@ -352,9 +354,7 @@ onMounted(() => {
                 >
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-3">
-                      <div class="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-xs font-semibold text-slate-600 shadow-sm">
-                        {{ staff.name.split(' ').map((part) => part[0]).join('') }}
-                      </div>
+                      <AvatarImage :name="staff.name" :src="staff.avatar" size-class="h-8 w-8" />
                       <div class="flex flex-col">
                         <span class="font-medium text-slate-800">{{ staff.name }}</span>
                         <span class="text-xs text-slate-400">{{ staff.email }}</span>
@@ -408,9 +408,12 @@ onMounted(() => {
       <template v-if="drawerMode === 'detail' && selectedStaff">
         <div class="space-y-6">
           <div class="rounded-2xl border border-slate-100 bg-slate-50/70 px-6 py-8 text-center">
-            <div class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full border border-slate-200 bg-white text-xl font-semibold text-slate-600 shadow-sm">
-              {{ selectedStaff.name.split(' ').map((part) => part[0]).join('') }}
-            </div>
+            <AvatarImage
+              :name="selectedStaff.name"
+              :src="selectedStaff.avatar"
+              size-class="mx-auto mb-4 h-20 w-20"
+              fallback-class="border border-slate-200 bg-white text-xl font-semibold text-slate-600 shadow-sm"
+            />
             <h3 class="text-xl font-semibold text-slate-800">{{ selectedStaff.name }}</h3>
             <p class="mt-1 text-sm text-slate-500">{{ selectedStaff.roleName || selectedStaff.roleGroupName || '-' }}</p>
           </div>
@@ -515,7 +518,11 @@ onMounted(() => {
             </label>
             <label class="space-y-2 text-sm text-slate-700">
               <span class="font-medium">Timezone</span>
-              <input id="staff-timezone" v-model="formState.timezone" name="timezone" type="text" :class="inputClass('timezone')" />
+              <select id="staff-timezone" v-model="formState.timezone" name="timezone" :class="['bg-white', ...inputClass('timezone')]">
+                <option v-for="timezoneOption in WORKSPACE_STAFF_TIMEZONE_OPTIONS" :key="timezoneOption.value" :value="timezoneOption.value">
+                  {{ timezoneOption.label }}
+                </option>
+              </select>
               <p v-if="fieldErrors.timezone" class="text-xs text-rose-600">{{ fieldErrors.timezone }}</p>
             </label>
             <label class="space-y-2 text-sm text-slate-700">
