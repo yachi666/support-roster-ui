@@ -27,16 +27,16 @@ const { year, month, monthLabel } = useWorkspacePeriod()
 let mappingTimer = 0
 
 const templateShiftDefinitions = [
-  { roleGroup: 'L1_China', code: 'A', meaning: '00:00-07:00', startTime: '00:00', endTime: '07:00', timezone: 'HKT', showOnRosterPage: 'Y', remark: '' },
-  { roleGroup: 'L1_China', code: 'B', meaning: '06:30-15:30', startTime: '06:30', endTime: '15:30', timezone: 'HKT', showOnRosterPage: 'Y', remark: '' },
-  { roleGroup: 'L1_China', code: 'D', meaning: '15:30-00:30', startTime: '15:30', endTime: '00:30', timezone: 'HKT', showOnRosterPage: 'Y', remark: '' },
-  { roleGroup: 'AP_L2', code: 'DS', meaning: 'Day Shift', startTime: '09:30', endTime: '18:30', timezone: 'HKT', showOnRosterPage: 'Y', remark: '' },
-  { roleGroup: 'AP_L2', code: 'NS', meaning: 'Night Shift', startTime: '18:30', endTime: '09:30', timezone: 'HKT', showOnRosterPage: 'Y', remark: '' },
+  { team: 'L1', code: 'A', meaning: '00:00-07:00', startTime: '00:00', endTime: '07:00', timezone: 'HKT', showOnRosterPage: 'Y', remark: '' },
+  { team: 'L1', code: 'B', meaning: '06:30-15:30', startTime: '06:30', endTime: '15:30', timezone: 'HKT', showOnRosterPage: 'Y', remark: '' },
+  { team: 'L1', code: 'D', meaning: '15:30-00:30', startTime: '15:30', endTime: '00:30', timezone: 'HKT', showOnRosterPage: 'Y', remark: '' },
+  { team: 'AP L2', code: 'DS', meaning: 'Day Shift', startTime: '09:30', endTime: '18:30', timezone: 'HKT', showOnRosterPage: 'Y', remark: '' },
+  { team: 'AP L2', code: 'NS', meaning: 'Night Shift', startTime: '18:30', endTime: '09:30', timezone: 'HKT', showOnRosterPage: 'Y', remark: '' },
 ]
 
 const templateStaffShifts = [
-  { name: 'John Doe', staffId: '1001', roleGroup: 'L1_China', region: 'China', contact: '', notes: '', day1: 'A', day2: 'B', day3: 'D' },
-  { name: 'Jane Smith', staffId: '1002', roleGroup: 'AP_L2', region: 'China', contact: '', notes: '', day1: 'DS', day2: 'NS', day3: 'DS' },
+  { name: 'John Doe', staffId: '1001', team: 'L1', region: 'China', contact: '', notes: '', day1: 'A', day2: 'B', day3: 'D' },
+  { name: 'Jane Smith', staffId: '1002', team: 'AP L2', region: 'China', contact: '', notes: '', day1: 'DS', day2: 'NS', day3: 'DS' },
 ]
 
 const templateColorDefinitions = [
@@ -240,7 +240,7 @@ onBeforeUnmount(clearTimer)
                 <table class="min-w-full text-left text-sm text-slate-600">
                   <thead class="border-b border-slate-200 bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
                     <tr>
-                      <th class="px-4 py-3">role_group</th>
+                      <th class="px-4 py-3">team</th>
                       <th class="px-4 py-3">code</th>
                       <th class="px-4 py-3">meaning</th>
                       <th class="px-4 py-3">start_time</th>
@@ -250,8 +250,8 @@ onBeforeUnmount(clearTimer)
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100">
-                    <tr v-for="row in templateShiftDefinitions" :key="row.code + row.roleGroup" class="bg-white">
-                      <td class="px-4 py-2.5 font-mono text-xs">{{ row.roleGroup }}</td>
+                    <tr v-for="row in templateShiftDefinitions" :key="row.code + row.team" class="bg-white">
+                      <td class="px-4 py-2.5 font-mono text-xs">{{ row.team }}</td>
                       <td class="px-4 py-2.5 font-mono text-xs font-semibold text-teal-700">{{ row.code }}</td>
                       <td class="px-4 py-2.5">{{ row.meaning }}</td>
                       <td class="px-4 py-2.5 font-mono text-xs">{{ row.startTime }}</td>
@@ -272,7 +272,7 @@ onBeforeUnmount(clearTimer)
                     <tr>
                       <th class="px-4 py-3">name</th>
                       <th class="px-4 py-3">staff_id</th>
-                      <th class="px-4 py-3">role_group</th>
+                      <th class="px-4 py-3">team</th>
                       <th class="px-4 py-3">region</th>
                       <th class="px-4 py-3">1</th>
                       <th class="px-4 py-3">2</th>
@@ -284,7 +284,7 @@ onBeforeUnmount(clearTimer)
                     <tr v-for="row in templateStaffShifts" :key="row.staffId" class="bg-white">
                       <td class="px-4 py-2.5 font-medium text-slate-800">{{ row.name }}</td>
                       <td class="px-4 py-2.5 font-mono text-xs">{{ row.staffId }}</td>
-                      <td class="px-4 py-2.5 font-mono text-xs">{{ row.roleGroup }}</td>
+                      <td class="px-4 py-2.5 font-mono text-xs">{{ row.team }}</td>
                       <td class="px-4 py-2.5 text-xs">{{ row.region }}</td>
                       <td class="px-4 py-2.5 font-mono text-xs font-semibold text-teal-700">{{ row.day1 }}</td>
                       <td class="px-4 py-2.5 font-mono text-xs font-semibold text-teal-700">{{ row.day2 }}</td>

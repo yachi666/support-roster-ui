@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, shallowRef } from 'vue'
-import { CheckCircle2, Clock3, Filter, Globe, Mail, Pencil, Plus, Search, Trash2, XCircle } from 'lucide-vue-next'
+import { CheckCircle2, Clock3, Globe, Mail, Pencil, Plus, Search, Trash2, XCircle } from 'lucide-vue-next'
 import { api } from '@/api'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
 import AvatarImage from '../components/AvatarImage.vue'
@@ -18,15 +18,17 @@ const EMPTY_FORM = {
   region: '',
   timezone: 'UTC',
   roleName: '',
-  roleGroupId: '',
+  teamId: '',
   status: 'ACTIVE',
   notes: '',
 }
 
 const searchTerm = shallowRef('')
+const staffIdFilter = shallowRef('')
+const selectedTeamFilter = shallowRef('')
 const selectedStaffId = shallowRef(null)
 const staffList = shallowRef([])
-const roleGroups = shallowRef([])
+const teams = shallowRef([])
 const loading = shallowRef(false)
 const errorMessage = shallowRef('')
 const drawerMode = shallowRef('detail')
@@ -42,7 +44,7 @@ const staffErrorRules = [
   {
     match: /staff\s*code/i,
     field: 'staffCode',
-    message: 'Staff code is required.',
+    message: 'Staff ID is required.',
   },
   {
     match: /full\s*name|\bname\b/i,
@@ -50,9 +52,9 @@ const staffErrorRules = [
     message: 'Full name is required.',
   },
   {
-    match: /role\s*group|rolegroup/i,
-    field: 'roleGroupId',
-    message: 'Select a valid role group.',
+    match: /team/i,
+    field: 'teamId',
+    message: 'Select a valid team.',
   },
   {
     match: ['email'],
@@ -77,25 +79,28 @@ async function loadStaff() {
   }
 }
 
-async function loadRoleGroups() {
+async function loadTeams() {
   try {
-    roleGroups.value = await api.workspace.getRoleGroups()
+    teams.value = await api.workspace.getTeams()
   } catch {
-    roleGroups.value = []
+    teams.value = []
   }
 }
 
 const filteredStaff = computed(() => {
   const query = searchTerm.value.trim().toLowerCase()
-  if (!query) {
-    return staffList.value
-  }
+  const exactStaffId = staffIdFilter.value.trim().toLowerCase()
+  const teamId = selectedTeamFilter.value
 
   return staffList.value.filter((staff) => {
-    return [staff.name, staff.email, staff.teamName, staff.roleName, staff.roleGroupName, staff.staffCode, staff.id]
+    const matchesSearch = !query || [staff.name, staff.email, staff.teamName, staff.roleName, staff.staffCode, staff.id]
       .join(' ')
       .toLowerCase()
       .includes(query)
+    const visibleStaffId = String(staff.staffCode || staff.id || '').toLowerCase()
+    const matchesStaffId = !exactStaffId || visibleStaffId === exactStaffId
+    const matchesTeam = !teamId || String(staff.teamId || '') === teamId
+    return matchesSearch && matchesStaffId && matchesTeam
   })
 })
 
@@ -103,7 +108,7 @@ const selectedStaff = computed(() => {
   return staffList.value.find((staff) => staff.id === selectedStaffId.value) || null
 })
 
-const roleGroupOptions = computed(() => roleGroups.value.filter((group) => group.active !== false))
+const teamOptions = computed(() => teams.value.filter((team) => team.visible !== false))
 
 const drawerOpen = computed(() => Boolean(selectedStaff.value) || formVisible.value)
 
@@ -140,7 +145,7 @@ function fillForm(staff) {
     region: staff?.region || '',
     timezone: normalizeWorkspaceStaffTimezone(staff?.timezone),
     roleName: staff?.roleName || '',
-    roleGroupId: staff?.roleGroupId ? String(staff.roleGroupId) : '',
+    teamId: staff?.teamId ? String(staff.teamId) : '',
     status: staff?.status || 'ACTIVE',
     notes: staff?.notes || '',
   })
@@ -156,7 +161,7 @@ function buildPayload() {
     region: formState.region.trim(),
     timezone: formState.timezone.trim(),
     roleName: formState.roleName.trim(),
-    roleGroupId: formState.roleGroupId,
+    teamId: formState.teamId,
     status: formState.status,
     notes: formState.notes.trim(),
   }
@@ -165,9 +170,9 @@ function buildPayload() {
 function validateForm() {
   clearFieldErrors(fieldErrors)
 
-  if (!formState.staffCode.trim()) fieldErrors.staffCode = 'Staff code is required.'
+  if (!formState.staffCode.trim()) fieldErrors.staffCode = 'Staff ID is required.'
   if (!formState.name.trim()) fieldErrors.name = 'Full name is required.'
-  if (!formState.roleGroupId) fieldErrors.roleGroupId = 'Role group is required.'
+  if (!formState.teamId) fieldErrors.teamId = 'Team is required.'
   if (formState.phone.trim() && formState.phone.trim().length > 32) fieldErrors.phone = 'Phone must be 32 characters or fewer.'
   if (formState.slack.trim() && formState.slack.trim().length > 64) fieldErrors.slack = 'Slack handle must be 64 characters or fewer.'
   if (formState.region.trim() && formState.region.trim().length > 64) fieldErrors.region = 'Region must be 64 characters or fewer.'
@@ -285,7 +290,7 @@ function inputClass(fieldName) {
 }
 
 onMounted(() => {
-  void loadRoleGroups()
+  void loadTeams()
   void loadStaff()
 })
 </script>
@@ -311,10 +316,19 @@ onMounted(() => {
                 class="w-64 rounded-md border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
               />
             </div>
-            <button class="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50">
-              <Filter class="h-4 w-4" />
-              <span>Filter</span>
-            </button>
+            <input
+              v-model="staffIdFilter"
+              type="text"
+              placeholder="Exact Staff ID"
+              class="w-40 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+            />
+            <select
+              v-model="selectedTeamFilter"
+              class="w-44 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition-all focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+            >
+              <option value="">All Teams</option>
+              <option v-for="team in teamOptions" :key="team.id" :value="String(team.id)">{{ team.name }}</option>
+            </select>
             <button class="flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700" @click="openCreateDrawer">
               <Plus class="h-4 w-4" />
               <span>Add Staff</span>
@@ -338,7 +352,7 @@ onMounted(() => {
                 <tr>
                   <th class="px-6 py-3">Staff Name</th>
                   <th class="px-6 py-3">Staff ID</th>
-                  <th class="px-6 py-3">Role Group</th>
+                  <th class="px-6 py-3">Role Name</th>
                   <th class="px-6 py-3">Team</th>
                   <th class="px-6 py-3">Timezone</th>
                   <th class="px-6 py-3">Status</th>
@@ -362,7 +376,7 @@ onMounted(() => {
                     </div>
                   </td>
                   <td class="px-6 py-4 font-mono text-xs text-slate-500">{{ staff.staffCode || staff.id }}</td>
-                  <td class="px-6 py-4">{{ staff.roleGroupName || staff.roleName || '-' }}</td>
+                  <td class="px-6 py-4">{{ staff.roleName || '-' }}</td>
                   <td class="px-6 py-4">
                     <span class="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
                       {{ staff.teamName || '-' }}
@@ -415,7 +429,7 @@ onMounted(() => {
               fallback-class="border border-slate-200 bg-white text-xl font-semibold text-slate-600 shadow-sm"
             />
             <h3 class="text-xl font-semibold text-slate-800">{{ selectedStaff.name }}</h3>
-            <p class="mt-1 text-sm text-slate-500">{{ selectedStaff.roleName || selectedStaff.roleGroupName || '-' }}</p>
+            <p class="mt-1 text-sm text-slate-500">{{ selectedStaff.roleName || '-' }}</p>
           </div>
 
           <div>
@@ -442,12 +456,12 @@ onMounted(() => {
             <h4 class="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Roster Participation</h4>
             <div class="space-y-3 rounded-xl border border-slate-100 bg-slate-50 p-4">
               <div class="flex items-center justify-between text-sm">
-                <span class="text-slate-500">Primary Team</span>
+                <span class="text-slate-500">Team</span>
                 <span class="font-medium text-slate-800">{{ selectedStaff.teamName || '-' }}</span>
               </div>
               <div class="flex items-center justify-between text-sm">
-                <span class="text-slate-500">Role Group</span>
-                <span class="font-medium text-slate-800">{{ selectedStaff.roleGroupName || '-' }}</span>
+                <span class="text-slate-500">Role Name</span>
+                <span class="font-medium text-slate-800">{{ selectedStaff.roleName || '-' }}</span>
               </div>
               <div class="flex items-center justify-between text-sm">
                 <span class="text-slate-500">Status</span>
@@ -487,7 +501,7 @@ onMounted(() => {
 
           <div class="grid gap-4 md:grid-cols-2">
             <label class="space-y-2 text-sm text-slate-700">
-              <span class="font-medium">Staff Code</span>
+              <span class="font-medium">Staff ID</span>
               <input id="staff-staffCode" v-model="formState.staffCode" name="staffCode" type="text" :class="inputClass('staffCode')" />
               <p v-if="fieldErrors.staffCode" class="text-xs text-rose-600">{{ fieldErrors.staffCode }}</p>
             </label>
@@ -531,12 +545,12 @@ onMounted(() => {
               <p v-if="fieldErrors.roleName" class="text-xs text-rose-600">{{ fieldErrors.roleName }}</p>
             </label>
             <label class="space-y-2 text-sm text-slate-700">
-              <span class="font-medium">Role Group</span>
-              <select id="staff-roleGroupId" v-model="formState.roleGroupId" name="roleGroupId" :class="['bg-white', ...inputClass('roleGroupId')]">
-                <option value="">Select a role group</option>
-                <option v-for="group in roleGroupOptions" :key="group.id" :value="String(group.id)">{{ group.name }}</option>
+              <span class="font-medium">Team</span>
+              <select id="staff-teamId" v-model="formState.teamId" name="teamId" :class="['bg-white', ...inputClass('teamId')]">
+                <option value="">Select a team</option>
+                <option v-for="team in teamOptions" :key="team.id" :value="String(team.id)">{{ team.name }}</option>
               </select>
-              <p v-if="fieldErrors.roleGroupId" class="text-xs text-rose-600">{{ fieldErrors.roleGroupId }}</p>
+              <p v-if="fieldErrors.teamId" class="text-xs text-rose-600">{{ fieldErrors.teamId }}</p>
             </label>
             <label class="space-y-2 text-sm text-slate-700">
               <span class="font-medium">Status</span>

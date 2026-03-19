@@ -120,14 +120,10 @@ export const api = {
   
   getStaffById: (id) => request(`/staff/${id}`),
   
-  getRoleGroups: () => request('/role-groups'),
-  
   getShiftCodes: () => request('/shift-codes'),
 
   workspace: {
     getOverview: () => request('/workspace/overview'),
-
-    getRoleGroups: () => request('/workspace/role-groups'),
 
     getStaff: (keyword = '') => {
       const params = new URLSearchParams()

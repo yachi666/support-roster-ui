@@ -1,14 +1,15 @@
 <script setup>
 import { computed, onMounted, reactive, shallowRef } from 'vue'
-import { Clock3, Filter, Pencil, Plus, Search, Trash2 } from 'lucide-vue-next'
+import { Clock3, Pencil, Plus, Search, Trash2 } from 'lucide-vue-next'
 import { api } from '@/api'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
+import { normalizeWorkspaceStaffTimezone, WORKSPACE_STAFF_TIMEZONE_OPTIONS } from '../config/timezones'
 
 const EMPTY_FORM = {
-  roleGroupId: '',
+  teamId: '',
   code: '',
   meaning: '',
   startTime: '09:00',
@@ -21,8 +22,9 @@ const EMPTY_FORM = {
 }
 
 const searchTerm = shallowRef('')
+const selectedTeamFilter = shallowRef('')
 const shiftDefinitions = shallowRef([])
-const roleGroups = shallowRef([])
+const teams = shallowRef([])
 const selectedShiftId = shallowRef(null)
 const loading = shallowRef(false)
 const errorMessage = shallowRef('')
@@ -36,9 +38,9 @@ const formState = reactive({ ...EMPTY_FORM })
 
 const shiftErrorRules = [
   {
-    match: /role\s*group|rolegroup/i,
-    field: 'roleGroupId',
-    message: 'Select a valid role group.',
+    match: /team/i,
+    field: 'teamId',
+    message: 'Select a valid team.',
   },
   {
     match: /\bcode\b/i,
@@ -79,22 +81,22 @@ async function loadShiftDefinitions() {
   }
 }
 
-async function loadRoleGroups() {
+async function loadTeams() {
   try {
-    roleGroups.value = await api.workspace.getRoleGroups()
+    teams.value = await api.workspace.getTeams()
   } catch {
-    roleGroups.value = []
+    teams.value = []
   }
 }
 
 const visibleShifts = computed(() => {
   const query = searchTerm.value.trim().toLowerCase()
-  if (!query) {
-    return shiftDefinitions.value
-  }
+  const teamId = selectedTeamFilter.value
 
   return shiftDefinitions.value.filter((shift) => {
-    return [shift.code, shift.meaning, shift.roleGroupName, shift.roleGroupCode].join(' ').toLowerCase().includes(query)
+    const matchesSearch = !query || [shift.code, shift.meaning, shift.teamName, shift.teamCode].join(' ').toLowerCase().includes(query)
+    const matchesTeam = !teamId || String(shift.teamId || '') === teamId
+    return matchesSearch && matchesTeam
   })
 })
 
@@ -141,12 +143,12 @@ function resetForm() {
 
 function fillForm(shift) {
   Object.assign(formState, {
-    roleGroupId: shift?.roleGroupId ? String(shift.roleGroupId) : '',
+    teamId: shift?.teamId ? String(shift.teamId) : '',
     code: shift?.code || '',
     meaning: shift?.meaning || '',
     startTime: shift?.startTime || '09:00',
     endTime: shift?.endTime || '17:00',
-    timezone: shift?.timezone || 'UTC',
+    timezone: normalizeWorkspaceStaffTimezone(shift?.timezone),
     primaryShift: Boolean(shift?.primaryShift),
     visible: shift?.visible !== false,
     colorHex: shift?.colorHex || '#14b8a6',
@@ -169,7 +171,7 @@ function openShiftDrawer(shift) {
 function validateForm() {
   clearFieldErrors(fieldErrors)
 
-  if (!formState.roleGroupId) fieldErrors.roleGroupId = 'Role group is required.'
+  if (!formState.teamId) fieldErrors.teamId = 'Team is required.'
   if (!formState.code.trim()) fieldErrors.code = 'Shift code is required.'
   if (!/^[A-Za-z0-9_+-]{1,16}$/.test(formState.code.trim())) fieldErrors.code = 'Use 1-16 letters, numbers, _, + or -.'
   if (!formState.meaning.trim()) fieldErrors.meaning = 'Meaning is required.'
@@ -201,7 +203,7 @@ async function saveShift() {
 
   try {
     const payload = {
-      roleGroupId: formState.roleGroupId,
+      teamId: formState.teamId,
       code: formState.code.trim(),
       meaning: formState.meaning.trim(),
       startTime: formState.startTime,
@@ -271,7 +273,7 @@ function inputClass(fieldName) {
 }
 
 onMounted(() => {
-  void loadRoleGroups()
+  void loadTeams()
   void loadShiftDefinitions()
 })
 </script>
@@ -297,10 +299,13 @@ onMounted(() => {
                 class="w-64 rounded-md border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
               />
             </div>
-            <button class="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50">
-              <Filter class="h-4 w-4" />
-              Filter
-            </button>
+            <select
+              v-model="selectedTeamFilter"
+              class="w-44 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition-all focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+            >
+              <option value="">All Teams</option>
+              <option v-for="team in teams" :key="team.id" :value="String(team.id)">{{ team.name }}</option>
+            </select>
             <button class="flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700" @click="openCreateDrawer">
               <Plus class="h-4 w-4" />
               New Shift Code
@@ -324,7 +329,7 @@ onMounted(() => {
                 <tr>
                   <th class="w-20 px-6 py-3">Code</th>
                   <th class="px-6 py-3">Meaning</th>
-                  <th class="px-6 py-3">Role Groups</th>
+                  <th class="px-6 py-3">TEAM</th>
                   <th class="px-6 py-3">Time (24h)</th>
                   <th class="w-48 px-6 py-3">Timeline Preview</th>
                   <th class="px-6 py-3 text-center">Type</th>
@@ -340,7 +345,7 @@ onMounted(() => {
                     </span>
                   </td>
                   <td class="px-6 py-4 font-medium text-slate-800">{{ shift.meaning }}</td>
-                  <td class="px-6 py-4 text-xs text-slate-500">{{ shift.roleGroupName || shift.roleGroupCode || '-' }}</td>
+                  <td class="px-6 py-4 text-xs text-slate-500">{{ shift.teamName || '-' }}</td>
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-2 font-mono text-xs text-slate-600">
                       <Clock3 class="h-3.5 w-3.5 text-slate-400" />
@@ -405,12 +410,12 @@ onMounted(() => {
 
         <div class="grid gap-4 md:grid-cols-2">
           <label class="space-y-2 text-sm text-slate-700 md:col-span-2">
-            <span class="font-medium">Role Group</span>
-            <select id="shift-roleGroupId" v-model="formState.roleGroupId" name="roleGroupId" :class="['bg-white', ...inputClass('roleGroupId')]">
-              <option value="">Select a role group</option>
-              <option v-for="group in roleGroups" :key="group.id" :value="String(group.id)">{{ group.name }}</option>
+            <span class="font-medium">TEAM</span>
+            <select id="shift-teamId" v-model="formState.teamId" name="teamId" :class="['bg-white', ...inputClass('teamId')]">
+              <option value="">Select a team</option>
+              <option v-for="team in teams" :key="team.id" :value="String(team.id)">{{ team.name }}</option>
             </select>
-            <p v-if="fieldErrors.roleGroupId" class="text-xs text-rose-600">{{ fieldErrors.roleGroupId }}</p>
+            <p v-if="fieldErrors.teamId" class="text-xs text-rose-600">{{ fieldErrors.teamId }}</p>
           </label>
           <label class="space-y-2 text-sm text-slate-700">
             <span class="font-medium">Shift Code</span>
@@ -434,7 +439,11 @@ onMounted(() => {
           </label>
           <label class="space-y-2 text-sm text-slate-700">
             <span class="font-medium">Timezone</span>
-            <input id="shift-timezone" v-model="formState.timezone" name="timezone" type="text" :class="inputClass('timezone')" />
+            <select id="shift-timezone" v-model="formState.timezone" name="timezone" :class="['bg-white', ...inputClass('timezone')]">
+              <option v-for="timezoneOption in WORKSPACE_STAFF_TIMEZONE_OPTIONS" :key="timezoneOption.value" :value="timezoneOption.value">
+                {{ timezoneOption.label }}
+              </option>
+            </select>
             <p v-if="fieldErrors.timezone" class="text-xs text-rose-600">{{ fieldErrors.timezone }}</p>
           </label>
           <label class="space-y-2 text-sm text-slate-700">

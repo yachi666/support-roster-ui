@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, shallowRef } from 'vue'
-import { Eye, GripVertical, HelpCircle, Layers, Plus, Settings2, Trash2 } from 'lucide-vue-next'
+import { Eye, GripVertical, HelpCircle, Plus, Settings2, Trash2 } from 'lucide-vue-next'
 import { api } from '@/api'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
@@ -14,11 +14,9 @@ const EMPTY_FORM = {
   displayOrder: 0,
   visible: true,
   description: '',
-  roleGroupIds: [],
 }
 
 const teams = shallowRef([])
-const roleGroups = shallowRef([])
 const selectedTeamId = shallowRef(null)
 const loading = shallowRef(false)
 const errorMessage = shallowRef('')
@@ -47,11 +45,6 @@ const teamErrorRules = [
     match: /display\s*order|displayorder/i,
     field: 'displayOrder',
   },
-  {
-    match: /rolegroupids|role\s*group/i,
-    field: 'roleGroupIds',
-    message: 'Select at least one valid role group.',
-  },
 ]
 
 const sortedTeams = computed(() =>
@@ -75,18 +68,6 @@ async function loadTeams() {
   }
 }
 
-async function loadRoleGroups() {
-  try {
-    roleGroups.value = await api.workspace.getRoleGroups()
-  } catch {
-    roleGroups.value = []
-  }
-}
-
-function teamRoleGroupNames(team) {
-  return (team.roleGroups || []).map((roleGroup) => roleGroup.name).join(', ')
-}
-
 function teamColorStyle(team) {
   return { backgroundColor: team.color || '#94a3b8' }
 }
@@ -106,7 +87,6 @@ function fillForm(team) {
     displayOrder: team?.displayOrder ?? 0,
     visible: team?.visible !== false,
     description: team?.description || '',
-    roleGroupIds: (team?.roleGroups || []).map((group) => group.id),
   })
 }
 
@@ -122,15 +102,6 @@ function openTeamDrawer(team) {
   formVisible.value = true
 }
 
-function toggleRoleGroup(roleGroupId) {
-  if (formState.roleGroupIds.includes(roleGroupId)) {
-    formState.roleGroupIds = formState.roleGroupIds.filter((id) => id !== roleGroupId)
-    return
-  }
-
-  formState.roleGroupIds = [...formState.roleGroupIds, roleGroupId]
-}
-
 function validateForm() {
   clearFieldErrors(fieldErrors)
 
@@ -140,7 +111,6 @@ function validateForm() {
   if (!/^#([0-9a-fA-F]{6})$/.test(formState.color.trim())) fieldErrors.color = 'Use a 6-digit hex color.'
   if (!Number.isInteger(Number(formState.displayOrder)) || Number(formState.displayOrder) < 0) fieldErrors.displayOrder = 'Display order must be a non-negative integer.'
   if (formState.description.trim().length > 500) fieldErrors.description = 'Description must be 500 characters or fewer.'
-  if (formState.roleGroupIds.length === 0) fieldErrors.roleGroupIds = 'Select at least one role group.'
 
   return Object.keys(fieldErrors).length === 0
 }
@@ -168,7 +138,6 @@ async function saveTeam() {
       displayOrder: Number(formState.displayOrder),
       visible: formState.visible,
       description: formState.description.trim(),
-      roleGroupIds: formState.roleGroupIds,
     }
 
     if (selectedTeam.value) {
@@ -229,7 +198,6 @@ function inputClass(fieldName) {
 }
 
 onMounted(() => {
-  void loadRoleGroups()
   void loadTeams()
 })
 </script>
@@ -239,13 +207,13 @@ onMounted(() => {
     <div class="flex-1 overflow-auto p-8">
       <div class="mx-auto flex max-w-6xl flex-col gap-8">
         <WorkspacePageHeader
-          title="Team & Role Mapping"
+          title="Team Management"
           description="Configure team groupings, display orders, and downstream dashboard visibility."
         >
           <template #actions>
             <button class="inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700" @click="openCreateDrawer">
               <Plus class="h-4 w-4" />
-              Create Team Group
+              Create Team
             </button>
           </template>
         </WorkspacePageHeader>
@@ -289,10 +257,6 @@ onMounted(() => {
                   <h3 class="text-base font-semibold text-slate-800">{{ team.name }}</h3>
                   <span v-if="!team.visible" class="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Hidden</span>
                 </div>
-                <div class="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                  <Layers class="h-3.5 w-3.5 text-slate-400" />
-                  <span>Contains roles: {{ teamRoleGroupNames(team) || 'No role groups assigned' }}</span>
-                </div>
                 <div class="mt-1 text-[11px] text-slate-400">{{ team.teamCode }} · Order {{ team.displayOrder ?? '-' }}</div>
               </div>
               <div class="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
@@ -305,10 +269,10 @@ onMounted(() => {
               </div>
             </WorkspaceSurface>
             <WorkspaceSurface v-if="!loading && !sortedTeams.length" class="p-6 text-sm text-slate-500">
-              No team mappings returned by the server.
+              No teams returned by the server.
             </WorkspaceSurface>
             <button class="w-full rounded-2xl border-2 border-dashed border-slate-200 py-4 text-sm font-medium text-slate-500 transition-colors hover:border-teal-400 hover:bg-teal-50/50 hover:text-teal-600" @click="openCreateDrawer">
-              + Create New Team Group
+              + Create New Team
             </button>
           </div>
 
@@ -347,9 +311,9 @@ onMounted(() => {
       </div>
     </div>
 
-    <WorkspaceDrawer :model-value="drawerOpen" :title="selectedTeam ? 'Edit Team Group' : 'Create Team Group'" width="460px" @update:model-value="closeDrawer">
+    <WorkspaceDrawer :model-value="drawerOpen" :title="selectedTeam ? 'Edit Team' : 'Create Team'" width="460px" @update:model-value="closeDrawer">
       <template #subtitle>
-        <p class="mt-1 text-xs text-slate-500">Team definitions are persisted to the workspace team mapping service.</p>
+        <p class="mt-1 text-xs text-slate-500">Team definitions are persisted directly to the workspace team service.</p>
       </template>
 
       <form class="space-y-5" @submit.prevent="saveTeam">
@@ -358,8 +322,8 @@ onMounted(() => {
         </WorkspaceSurface>
 
         <WorkspaceSurface v-if="confirmDeleteVisible && selectedTeam" tone="muted" class="space-y-3 border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          <p>Delete team {{ selectedTeam.name }} and remove its role-group mapping?</p>
-          <p class="text-xs text-amber-800">This affects downstream grouping and dashboard visibility for every linked role group.</p>
+          <p>Delete team {{ selectedTeam.name }}?</p>
+          <p class="text-xs text-amber-800">This affects downstream grouping and dashboard visibility immediately.</p>
           <div class="flex items-center justify-end gap-2">
             <button type="button" class="rounded-md border border-amber-200 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 transition-colors hover:bg-amber-100" @click="cancelDeleteTeam">
               Keep Team
@@ -400,20 +364,6 @@ onMounted(() => {
             <textarea id="team-description" v-model="formState.description" name="description" rows="4" :class="inputClass('description')"></textarea>
             <p v-if="fieldErrors.description" class="text-xs text-rose-600">{{ fieldErrors.description }}</p>
           </label>
-        </div>
-
-        <div class="space-y-3">
-          <div class="text-sm font-medium text-slate-700">Role Groups</div>
-          <p v-if="fieldErrors.roleGroupIds" class="text-xs text-rose-600">{{ fieldErrors.roleGroupIds }}</p>
-          <div class="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
-            <label v-for="group in roleGroups" :key="group.id" class="flex items-start gap-3 rounded-lg bg-white px-3 py-3 text-sm text-slate-700 shadow-sm">
-              <input :id="`team-role-group-${group.id}`" :name="`team-role-group-${group.id}`" :checked="formState.roleGroupIds.includes(group.id)" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" @change="toggleRoleGroup(group.id)" />
-              <span>
-                <span class="block font-medium text-slate-800">{{ group.name }}</span>
-                <span class="block text-xs text-slate-500">{{ group.code }} · {{ group.category || 'General' }} · {{ group.region || 'Global' }}</span>
-              </span>
-            </label>
-          </div>
         </div>
       </form>
 

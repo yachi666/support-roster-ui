@@ -29,7 +29,7 @@ function normalizeGroups(groups, totalDays) {
       name: person.staffName,
       avatar: person.avatar,
       role: person.roleName || 'Unassigned',
-      roleGroupId: person.roleGroupId ? String(person.roleGroupId) : '',
+      teamId: person.teamId ? String(person.teamId) : '',
       schedule: buildScheduleArray(person.schedule, totalDays),
     })),
   }))
@@ -53,10 +53,10 @@ function normalizeShiftCodeOptions(options) {
   return Array.from(optionSet)
 }
 
-function normalizeShiftCodeOptionsByRoleGroup(optionsByRoleGroup) {
+function normalizeShiftCodeOptionsByTeam(optionsByTeam) {
   return Object.fromEntries(
-    Object.entries(optionsByRoleGroup || {}).map(([roleGroupId, options]) => [
-      String(roleGroupId),
+    Object.entries(optionsByTeam || {}).map(([teamId, options]) => [
+      String(teamId),
       normalizeShiftCodeOptions(options),
     ]),
   )
@@ -92,7 +92,7 @@ export function useRosterPlanner() {
   const drawerOpen = shallowRef(false)
   const selectedShiftCode = shallowRef('')
   const shiftCodeOptions = shallowRef(['Clear'])
-  const shiftCodeOptionsByRoleGroup = shallowRef({})
+  const shiftCodeOptionsByTeam = shallowRef({})
   const shiftCodeColorMap = shallowRef({})
   const loading = shallowRef(false)
   const saving = shallowRef(false)
@@ -140,9 +140,9 @@ export function useRosterPlanner() {
   const selectedAssignment = computed(() => findAssignment(rosterGroups.value, selectedCell.value))
 
   const availableShiftCodeOptions = computed(() => {
-    const roleGroupId = selectedAssignment.value?.staff?.roleGroupId
-    const roleScopedOptions = roleGroupId ? shiftCodeOptionsByRoleGroup.value[roleGroupId] : null
-    const options = roleScopedOptions && roleScopedOptions.length ? roleScopedOptions : shiftCodeOptions.value
+    const teamId = selectedAssignment.value?.group?.teamId || selectedAssignment.value?.staff?.teamId
+    const teamScopedOptions = teamId ? shiftCodeOptionsByTeam.value[String(teamId)] : null
+    const options = teamScopedOptions && teamScopedOptions.length ? teamScopedOptions : shiftCodeOptions.value
 
     if (selectedAssignment.value?.currentCode && !options.includes(selectedAssignment.value.currentCode)) {
       return normalizeShiftCodeOptions([...options, selectedAssignment.value.currentCode])
@@ -174,7 +174,7 @@ export function useRosterPlanner() {
       baseGroups.value = normalizedGroups
       rosterGroups.value = cloneGroups(normalizedGroups)
       shiftCodeOptions.value = normalizeShiftCodeOptions(response.shiftCodeOptions)
-      shiftCodeOptionsByRoleGroup.value = normalizeShiftCodeOptionsByRoleGroup(response.shiftCodeOptionsByRoleGroup)
+      shiftCodeOptionsByTeam.value = normalizeShiftCodeOptionsByTeam(response.shiftCodeOptionsByTeam)
       shiftCodeColorMap.value = response.shiftCodeColorMap || {}
       serverValidationWarning.value = response.validationWarning || ''
       pendingUpdates.value = new Map()
@@ -188,7 +188,7 @@ export function useRosterPlanner() {
       rosterGroups.value = []
       baseGroups.value = []
       shiftCodeOptions.value = ['Clear']
-      shiftCodeOptionsByRoleGroup.value = {}
+      shiftCodeOptionsByTeam.value = {}
       shiftCodeColorMap.value = {}
       serverValidationWarning.value = ''
       pendingUpdates.value = new Map()
@@ -271,7 +271,7 @@ export function useRosterPlanner() {
       baseGroups.value = normalizedGroups
       rosterGroups.value = cloneGroups(normalizedGroups)
       shiftCodeOptions.value = normalizeShiftCodeOptions(response.shiftCodeOptions)
-      shiftCodeOptionsByRoleGroup.value = normalizeShiftCodeOptionsByRoleGroup(response.shiftCodeOptionsByRoleGroup)
+      shiftCodeOptionsByTeam.value = normalizeShiftCodeOptionsByTeam(response.shiftCodeOptionsByTeam)
       shiftCodeColorMap.value = response.shiftCodeColorMap || {}
       serverValidationWarning.value = response.validationWarning || ''
       pendingUpdates.value = new Map()
