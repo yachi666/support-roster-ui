@@ -17,7 +17,7 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: { render: () => h('div') },
-      redirect: '/workspace',
+      redirect: '/viewer',
     },
     {
       path: '/viewer',
