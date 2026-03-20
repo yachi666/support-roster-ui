@@ -20,6 +20,7 @@ const dragActive = shallowRef(false)
 const previewResult = shallowRef(null)
 const applyResult = shallowRef(null)
 const errorMessage = shallowRef('')
+const successMessage = shallowRef('')
 const fileName = shallowRef('')
 const exportPending = shallowRef(false)
 const templatePending = shallowRef(false)
@@ -64,6 +65,7 @@ async function uploadFile(file) {
   previewResult.value = null
   applyResult.value = null
   errorMessage.value = ''
+  successMessage.value = ''
   fileName.value = file.name
   fileStatus.value = 'uploading'
   mappingTimer = window.setTimeout(() => {
@@ -117,7 +119,8 @@ async function applyChanges() {
 
   try {
     applyResult.value = await api.workspace.applyImport(previewResult.value.batchId)
-    fileStatus.value = 'applied'
+    successMessage.value = `${applyResult.value?.appliedRecords || 0} records were applied to ${monthLabel.value}. You can import another file now.`
+    resetImport()
   } catch (error) {
     errorMessage.value = error.message || 'Failed to apply import batch.'
     fileStatus.value = 'success'
@@ -198,6 +201,10 @@ onBeforeUnmount(clearTimer)
 
         <WorkspaceSurface v-if="errorMessage" tone="muted" class="border-rose-200 bg-rose-50 p-5 text-sm text-rose-700">
           {{ errorMessage }}
+        </WorkspaceSurface>
+
+        <WorkspaceSurface v-if="successMessage" class="border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-700">
+          {{ successMessage }}
         </WorkspaceSurface>
 
         <WorkspaceSurface class="flex items-center justify-between gap-6">
