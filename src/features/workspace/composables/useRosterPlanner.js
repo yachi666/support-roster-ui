@@ -94,6 +94,7 @@ export function useRosterPlanner() {
   const shiftCodeOptions = shallowRef(['Clear'])
   const shiftCodeOptionsByTeam = shallowRef({})
   const shiftCodeColorMap = shallowRef({})
+  const shiftDetailsByTeam = shallowRef({})
   const loading = shallowRef(false)
   const saving = shallowRef(false)
   const errorMessage = shallowRef('')
@@ -176,6 +177,7 @@ export function useRosterPlanner() {
       shiftCodeOptions.value = normalizeShiftCodeOptions(response.shiftCodeOptions)
       shiftCodeOptionsByTeam.value = normalizeShiftCodeOptionsByTeam(response.shiftCodeOptionsByTeam)
       shiftCodeColorMap.value = response.shiftCodeColorMap || {}
+      shiftDetailsByTeam.value = response.shiftDetailsByTeam || {}
       serverValidationWarning.value = response.validationWarning || ''
       pendingUpdates.value = new Map()
       saveErrorMessage.value = ''
@@ -190,6 +192,7 @@ export function useRosterPlanner() {
       shiftCodeOptions.value = ['Clear']
       shiftCodeOptionsByTeam.value = {}
       shiftCodeColorMap.value = {}
+      shiftDetailsByTeam.value = {}
       serverValidationWarning.value = ''
       pendingUpdates.value = new Map()
       errorMessage.value = error.message || 'Failed to load monthly roster.'
@@ -273,6 +276,7 @@ export function useRosterPlanner() {
       shiftCodeOptions.value = normalizeShiftCodeOptions(response.shiftCodeOptions)
       shiftCodeOptionsByTeam.value = normalizeShiftCodeOptionsByTeam(response.shiftCodeOptionsByTeam)
       shiftCodeColorMap.value = response.shiftCodeColorMap || {}
+      shiftDetailsByTeam.value = response.shiftDetailsByTeam || {}
       serverValidationWarning.value = response.validationWarning || ''
       pendingUpdates.value = new Map()
     } catch (error) {
@@ -339,6 +343,7 @@ export function useRosterPlanner() {
     validationWarning,
     shiftCodeOptions: availableShiftCodeOptions,
     shiftCodeColorMap,
+    shiftDetailsByTeam,
     allTeams,
     selectedTeamIds,
     importExportLoading,

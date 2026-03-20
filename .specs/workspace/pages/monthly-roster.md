@@ -20,3 +20,5 @@ Present the generated roster as a dense monthly matrix and allow assignment edit
 - Roster row IDs and save payload `staffId` values are transported as strings so newly created staff with Snowflake-style IDs can be saved without browser precision loss
 - Discard restores the last server snapshot for the active month
 - Validation warnings shown in the drawer come from the current roster payload's `validationWarning`
+- The roster payload also provides `shiftDetailsByTeam`; grid cells use that metadata to expose native hover tooltips with code, meaning, time window, timezone, and next-day status
+- Cell color styling prefers the team-scoped shift metadata so shared shift definitions and team-specific variants render consistently

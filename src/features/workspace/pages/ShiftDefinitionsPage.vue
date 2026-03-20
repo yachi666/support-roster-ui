@@ -3,13 +3,14 @@ import { computed, onMounted, reactive, shallowRef } from 'vue'
 import { Clock3, Pencil, Plus, Search, Trash2 } from 'lucide-vue-next'
 import { api } from '@/api'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
+import { addMinutesToTime, createTimeOptions, describeShiftWindow, normalizeTimeValue, toMinutes } from '../lib/shiftTime'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
 import { normalizeWorkspaceStaffTimezone, WORKSPACE_STAFF_TIMEZONE_OPTIONS } from '../config/timezones'
 
 const EMPTY_FORM = {
-  teamId: '',
+  teamIds: [],
   code: '',
   meaning: '',
   startTime: '09:00',
@@ -20,6 +21,8 @@ const EMPTY_FORM = {
   colorHex: '#14b8a6',
   remark: '',
 }
+
+const TIME_OPTIONS = createTimeOptions(30)
 
 const searchTerm = shallowRef('')
 const selectedTeamFilter = shallowRef('')
@@ -39,7 +42,7 @@ const formState = reactive({ ...EMPTY_FORM })
 const shiftErrorRules = [
   {
     match: /team/i,
-    field: 'teamId',
+    field: 'teamIds',
     message: 'Select a valid team.',
   },
   {
@@ -94,19 +97,16 @@ const visibleShifts = computed(() => {
   const teamId = selectedTeamFilter.value
 
   return shiftDefinitions.value.filter((shift) => {
-    const matchesSearch = !query || [shift.code, shift.meaning, shift.teamName, shift.teamCode].join(' ').toLowerCase().includes(query)
-    const matchesTeam = !teamId || String(shift.teamId || '') === teamId
+    const shiftTeams = getShiftTeams(shift)
+    const teamNames = shiftTeams.map((team) => team.name).join(' ')
+    const matchesSearch = !query || [shift.code, shift.meaning, shift.teamName, shift.teamCode, teamNames].join(' ').toLowerCase().includes(query)
+    const matchesTeam = !teamId || shiftTeams.some((team) => String(team.id) === teamId)
     return matchesSearch && matchesTeam
   })
 })
 
 const selectedShift = computed(() => shiftDefinitions.value.find((shift) => shift.id === selectedShiftId.value) || null)
 const drawerOpen = computed(() => Boolean(selectedShift.value) || formVisible.value)
-
-function toMinutes(value) {
-  const [hours = '0', minutes = '0'] = (value || '00:00').split(':')
-  return Number(hours) * 60 + Number(minutes)
-}
 
 function previewStyle(shift) {
   const start = (toMinutes(shift.startTime) / 1440) * 100
@@ -134,20 +134,59 @@ function codeIconStyle(shift) {
   }
 }
 
+const timeSummary = computed(() => describeShiftWindow(formState.startTime, formState.endTime))
+
+function getShiftTeams(shift) {
+  if (shift.teams?.length) {
+    return shift.teams
+  }
+  if (shift.teamId || shift.teamName) {
+    return [{ id: shift.teamId, name: shift.teamName || 'Unknown Team' }]
+  }
+  return []
+}
+
+function toggleFormTeam(teamId) {
+  const normalizedId = String(teamId)
+  if (formState.teamIds.includes(normalizedId)) {
+    formState.teamIds = formState.teamIds.filter((currentId) => currentId !== normalizedId)
+    return
+  }
+
+  formState.teamIds = [...formState.teamIds, normalizedId]
+}
+
+function applyDurationPreset(durationMinutes) {
+  formState.endTime = addMinutesToTime(formState.startTime, durationMinutes)
+}
+
+function handleStartTimeChange() {
+  formState.startTime = normalizeTimeValue(formState.startTime)
+  if (!formState.endTime || normalizeTimeValue(formState.endTime) === formState.startTime) {
+    applyDurationPreset(8 * 60)
+  }
+}
+
+function handleEndTimeChange() {
+  formState.endTime = normalizeTimeValue(formState.endTime)
+}
+
 function resetForm() {
-  Object.assign(formState, EMPTY_FORM)
+  Object.assign(formState, { ...EMPTY_FORM, teamIds: [] })
   formErrorMessage.value = ''
   confirmDeleteVisible.value = false
   clearFieldErrors(fieldErrors)
 }
 
 function fillForm(shift) {
+  const shiftTeams = shift?.teams?.length ? shift.teams : shift?.teamId ? [{ id: shift.teamId }] : []
+
   Object.assign(formState, {
-    teamId: shift?.teamId ? String(shift.teamId) : '',
+    teamIds: shiftTeams.map((team) => String(team.id)),
     code: shift?.code || '',
     meaning: shift?.meaning || '',
-    startTime: shift?.startTime || '09:00',
-    endTime: shift?.endTime || '17:00',
+    startTime: normalizeTimeValue(shift?.startTime) || '09:00',
+    endTime: normalizeTimeValue(shift?.endTime) || '17:00',
     timezone: normalizeWorkspaceStaffTimezone(shift?.timezone),
     primaryShift: Boolean(shift?.primaryShift),
     visible: shift?.visible !== false,
@@ -171,7 +210,7 @@ function openShiftDrawer(shift) {
 function validateForm() {
   clearFieldErrors(fieldErrors)
 
-  if (!formState.teamId) fieldErrors.teamId = 'Team is required.'
+  if (!formState.teamIds.length) fieldErrors.teamIds = 'Select at least one team.'
   if (!formState.code.trim()) fieldErrors.code = 'Shift code is required.'
   if (!/^[A-Za-z0-9_+-]{1,16}$/.test(formState.code.trim())) fieldErrors.code = 'Use 1-16 letters, numbers, _, + or -.'
   if (!formState.meaning.trim()) fieldErrors.meaning = 'Meaning is required.'
@@ -203,7 +242,7 @@ async function saveShift() {
 
   try {
     const payload = {
-      teamId: formState.teamId,
+      teamIds: formState.teamIds,
       code: formState.code.trim(),
       meaning: formState.meaning.trim(),
       startTime: formState.startTime,
@@ -345,11 +384,18 @@ onMounted(() => {
                     </span>
                   </td>
                   <td class="px-6 py-4 font-medium text-slate-800">{{ shift.meaning }}</td>
-                  <td class="px-6 py-4 text-xs text-slate-500">{{ shift.teamName || '-' }}</td>
+                  <td class="px-6 py-4">
+                    <div v-if="getShiftTeams(shift).length" class="flex flex-wrap gap-1.5">
+                      <span v-for="team in getShiftTeams(shift)" :key="team.id" class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">
+                        {{ team.name }}
+                      </span>
+                    </div>
+                    <span v-else class="text-xs text-slate-500">-</span>
+                  </td>
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-2 font-mono text-xs text-slate-600">
                       <Clock3 class="h-3.5 w-3.5 text-slate-400" />
-                      <span>{{ shift.startTime }} - {{ shift.endTime }}</span>
+                      <span>{{ normalizeTimeValue(shift.startTime) }} - {{ normalizeTimeValue(shift.endTime) }}</span>
                       <span class="rounded bg-slate-100 px-1 text-[10px] text-slate-400">{{ normalizeWorkspaceStaffTimezone(shift.timezone) }}</span>
                     </div>
                   </td>
@@ -410,12 +456,21 @@ onMounted(() => {
 
         <div class="grid gap-4 md:grid-cols-2">
           <label class="space-y-2 text-sm text-slate-700 md:col-span-2">
-            <span class="font-medium">TEAM</span>
-            <select id="shift-teamId" v-model="formState.teamId" name="teamId" :class="['bg-white', ...inputClass('teamId')]">
-              <option value="">Select a team</option>
-              <option v-for="team in teams" :key="team.id" :value="String(team.id)">{{ team.name }}</option>
-            </select>
-            <p v-if="fieldErrors.teamId" class="text-xs text-rose-600">{{ fieldErrors.teamId }}</p>
+            <span class="font-medium">TEAMS</span>
+            <div :class="['rounded-lg border bg-white p-3', fieldErrors.teamIds ? 'border-rose-300' : 'border-slate-200']">
+              <div class="mb-2 flex items-center justify-between text-xs text-slate-500">
+                <span>Choose one or more teams to share this shift definition.</span>
+                <span>{{ formState.teamIds.length }} selected</span>
+              </div>
+              <div class="grid gap-2 md:grid-cols-2">
+                <label v-for="team in teams" :key="team.id" class="flex cursor-pointer items-center gap-3 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 transition-colors hover:border-teal-300 hover:bg-teal-50/40">
+                  <input :checked="formState.teamIds.includes(String(team.id))" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" @change="toggleFormTeam(team.id)" />
+                  <span class="h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: team.color || '#94a3b8' }"></span>
+                  <span>{{ team.name }}</span>
+                </label>
+              </div>
+            </div>
+            <p v-if="fieldErrors.teamIds" class="text-xs text-rose-600">{{ fieldErrors.teamIds }}</p>
           </label>
           <label class="space-y-2 text-sm text-slate-700">
             <span class="font-medium">Shift Code</span>
@@ -429,14 +484,27 @@ onMounted(() => {
           </label>
           <label class="space-y-2 text-sm text-slate-700">
             <span class="font-medium">Start Time</span>
-            <input id="shift-startTime" v-model="formState.startTime" name="startTime" type="time" :class="inputClass('startTime')" />
+            <select id="shift-startTime" v-model="formState.startTime" name="startTime" :class="['bg-white', ...inputClass('startTime')]" @change="handleStartTimeChange">
+              <option v-for="timeOption in TIME_OPTIONS" :key="timeOption.value" :value="timeOption.value">{{ timeOption.label }}</option>
+            </select>
             <p v-if="fieldErrors.startTime" class="text-xs text-rose-600">{{ fieldErrors.startTime }}</p>
           </label>
           <label class="space-y-2 text-sm text-slate-700">
             <span class="font-medium">End Time</span>
-            <input id="shift-endTime" v-model="formState.endTime" name="endTime" type="time" :class="inputClass('endTime')" />
+            <select id="shift-endTime" v-model="formState.endTime" name="endTime" :class="['bg-white', ...inputClass('endTime')]" @change="handleEndTimeChange">
+              <option v-for="timeOption in TIME_OPTIONS" :key="timeOption.value" :value="timeOption.value">{{ timeOption.label }}</option>
+            </select>
             <p v-if="fieldErrors.endTime" class="text-xs text-rose-600">{{ fieldErrors.endTime }}</p>
           </label>
+          <div class="space-y-2 text-sm text-slate-700 md:col-span-2">
+            <span class="font-medium">Quick Duration</span>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700" @click="applyDurationPreset(8 * 60)">+8h</button>
+              <button type="button" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700" @click="applyDurationPreset(9 * 60)">+9h</button>
+              <button type="button" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700" @click="applyDurationPreset(12 * 60)">+12h</button>
+            </div>
+            <p class="text-xs text-slate-500">{{ timeSummary || 'Select a start and end time.' }}</p>
+          </div>
           <label class="space-y-2 text-sm text-slate-700">
             <span class="font-medium">Timezone</span>
             <select id="shift-timezone" v-model="formState.timezone" name="timezone" :class="['bg-white', ...inputClass('timezone')]">

@@ -13,6 +13,7 @@ Walk admins through roster file upload, validation, and apply flow.
 - Export action downloads CSV from `/api/workspace/import-export/export`
 - Export uses the backend-returned binary payload directly; the server emits UTF-8 BOM CSV plus charset metadata so Chinese names and notes remain readable in spreadsheet tools
 - Changing the shared workspace month resets any in-progress import preview so the page stays aligned with the active roster context
+- Shift Definitions template examples document that the `team` column can contain a single team or a comma-separated list of teams for shared shift definitions
 
 ## Import Template Example
 
@@ -23,10 +24,11 @@ The page displays an import template example section showing the expected Excel 
 The import Excel file contains 3 sheets:
 
 1. **Sheet 0: Shift Definitions** - Defines shift codes with time ranges
-   - Columns: `role_group`, `code`, `meaning`, `start_time`, `end_time`, `timezone`, `show_on_roster_page`, `remark`
+   - Columns: `team`, `code`, `meaning`, `start_time`, `end_time`, `timezone`, `show_on_roster_page`, `remark`
+   - `team` supports comma-separated team names when the same shift definition is shared
 
 2. **Sheet 1: Staff Shifts** - Staff daily shift assignments
-   - Columns: `name`, `staff_id`, `role_group`, `region`, `contact`, `notes`, `1`-`31` (day columns)
+   - Columns: `name`, `staff_id`, `team`, `region`, `contact`, `notes`, `1`-`31` (day columns)
 
 3. **Sheet 2: Color Definitions** - Color mapping for shift codes
    - Columns: `code`, `color_name`, `rgb`, `hex`

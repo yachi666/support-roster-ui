@@ -33,6 +33,7 @@ const {
   validationWarning,
   shiftCodeOptions,
   shiftCodeColorMap,
+  shiftDetailsByTeam,
   allTeams,
   selectedTeamIds,
   importExportLoading,
@@ -166,7 +167,15 @@ const showTeamFilter = ref(false)
     <div v-else-if="!filteredGroups.length" class="flex flex-1 items-center justify-center p-8 text-sm text-slate-500">
       No roster data returned for {{ monthLabel }}.
     </div>
-    <RosterGrid v-else :days="plannerDays" :groups="filteredGroups" :selected-cell="selectedCell" :shift-code-color-map="shiftCodeColorMap" @select-cell="openCell($event.staffId, $event.day)" />
+    <RosterGrid
+      v-else
+      :days="plannerDays"
+      :groups="filteredGroups"
+      :selected-cell="selectedCell"
+      :shift-code-color-map="shiftCodeColorMap"
+      :shift-details-by-team="shiftDetailsByTeam"
+      @select-cell="openCell($event.staffId, $event.day)"
+    />
 
     <Transition name="status-bar">
       <div

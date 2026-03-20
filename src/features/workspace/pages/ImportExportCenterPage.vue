@@ -27,7 +27,7 @@ const { year, month, monthLabel } = useWorkspacePeriod()
 let mappingTimer = 0
 
 const templateShiftDefinitions = [
-  { team: 'L1', code: 'A', meaning: '00:00-07:00', startTime: '00:00', endTime: '07:00', timezone: 'HKT', showOnRosterPage: 'Y', remark: '' },
+  { team: 'L1, AP L2', code: 'A', meaning: '00:00-07:00', startTime: '00:00', endTime: '07:00', timezone: 'HKT', showOnRosterPage: 'Y', remark: '' },
   { team: 'L1', code: 'B', meaning: '06:30-15:30', startTime: '06:30', endTime: '15:30', timezone: 'HKT', showOnRosterPage: 'Y', remark: '' },
   { team: 'L1', code: 'D', meaning: '15:30-00:30', startTime: '15:30', endTime: '00:30', timezone: 'HKT', showOnRosterPage: 'Y', remark: '' },
   { team: 'AP L2', code: 'DS', meaning: 'Day Shift', startTime: '09:30', endTime: '18:30', timezone: 'HKT', showOnRosterPage: 'Y', remark: '' },
@@ -231,7 +231,7 @@ onBeforeUnmount(clearTimer)
           <div class="space-y-6 p-6">
             <p class="text-sm text-slate-600">
               The import Excel file contains 3 sheets: <strong>Shift Definitions</strong>, <strong>Staff Shifts</strong>, and <strong>Color Definitions</strong>.
-              Below is an example of the expected format for each sheet.
+              In the Shift Definitions sheet, the <strong>team</strong> column can contain one team or multiple team names separated by commas.
             </p>
 
             <div class="space-y-3">
