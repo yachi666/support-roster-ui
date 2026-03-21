@@ -1,5 +1,26 @@
 # Spec Change Log
 
+## 2026-03-21
+
+### 摘要
+
+将 `support-roster-ui/.specs` 重排为更接近技术手册的目录体系：强化根入口与 Workspace 分册的“目录感”，统一页面说明的章节模板，并补充 Mermaid 关系图与流程图。
+
+### 主要变更
+
+| 文件 | 变更说明 |
+|------|----------|
+| `spec.md` | 重写为总目录页，补充章节目录、推荐阅读顺序与文档架构图 |
+| `architecture.md` | 改写为前端架构总览，补充系统分流图与数据流图 |
+| `modules/index.md` | 改成 Viewer 分册目录页，强化模块关系与阅读顺序 |
+| `workspace/index.md` | 改成 Workspace 分册总目录，补充章节表与信息架构图 |
+| `workspace/architecture.md` | 重写为工作台架构页，明确分层职责与集成边界 |
+| `workspace/routing.md` | 重写为路由规范页，补充路由树图 |
+| `workspace/layout.md` | 重写为壳层布局页，明确 Sidebar / Topbar / RouterView 职责 |
+| `workspace/components/shared.md` | 重写为共享组件手册，统一组件登记方式 |
+| `workspace/pages/*.md` | 统一为“页面定位 / 源码依赖 / 核心交互 / 数据边界 / 维护提示”结构 |
+| `deployment.md`、`ui-design.md`、`workspace/ui-design.md`、`modules/*.md` | 补充统一前言与阅读提示，提升整套 spec 的一致性 |
+
 ## 2026-03-17
 
 ### Summary

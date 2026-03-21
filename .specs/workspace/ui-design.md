@@ -1,4 +1,13 @@
-# Workspace UI Design
+# Workspace 视觉规范
+
+## 文档定位
+
+本文件维护 Admin Workspace 的专属视觉语言，强调高信息密度、清晰层级和编辑型工作流体验，是工作台分册中的视觉章节。
+
+## 阅读提示
+
+- 根级 `../ui-design.md` 负责共用与 Viewer 视觉；本文件只描述管理端专属风格。
+- 若组件外观变化影响交互层级或抽屉结构，也应同步回看 `layout.md` 与 `components/shared.md`。
 
 ## Scope
 

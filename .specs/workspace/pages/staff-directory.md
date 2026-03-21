@@ -1,21 +1,33 @@
-# Staff Directory Page
+# Workspace 人员目录页
 
-## Purpose
+## 页面定位
 
-Show roster participants in a searchable table and reveal profile details in a side drawer.
+人员目录页用于展示排班参与者清单，并通过抽屉完成查看详情、新建、编辑和删除等管理动作。
 
-## Behavior
+## 源码与依赖
 
-- Search matches name, email, team, role, and ID
-- Row click opens a profile drawer
-- Drawer presents contact and roster participation summary blocks
-- Add Staff opens a form drawer for POST create
-- Edit and Delete actions are available from the detail drawer and call the corresponding PUT / DELETE endpoints
-- The create/edit drawer surfaces field-level validation errors for both client-side checks and mapped backend validation/business errors
-- Delete uses an explicit confirmation panel inside the drawer instead of a second destructive click on the same button
+| 类型 | 位置 |
+|------|------|
+| 页面组件 | `src/features/workspace/pages/StaffDirectoryPage.vue` |
+| 共享组件 | `WorkspaceDrawer.vue`、`WorkspacePageHeader.vue`、`WorkspaceSurface.vue` |
+| 数据接口 | `GET/POST/PUT/DELETE /api/workspace/staff` |
 
-## Data Source
+## 核心交互
 
-- `/api/workspace/staff`
-- Drawer details reuse the selected row payload returned by the staff API
-- Create/update payloads follow the workspace staff upsert contract exposed by the backend workspace API
+- 搜索支持按姓名、邮箱、团队、角色与 ID 过滤列表。
+- 点击行打开详情抽屉，展示人员资料与排班参与摘要。
+- 新建人员通过表单抽屉提交 `POST`。
+- 编辑和删除动作从详情抽屉发起，分别调用 `PUT` 与 `DELETE`。
+- 表单需要同时承接前端校验与后端返回的字段级错误信息。
+
+## 数据边界与约束
+
+- 列表页复用 staff API 返回的数据，不单独维护另一套详情数据模型。
+- 删除操作必须通过显式确认态触发，不能与普通保存按钮混淆。
+- 人员主数据变化会影响排班、校验与导入结果，因此错误反馈必须清晰可见。
+
+## 维护提示
+
+- 若后续新增批量导入、批量编辑等子流程，应拆出独立说明，而不是堆叠在本页。
+- 字段约束、错误映射和抽屉结构变化时，需同步回写本页与后端 `staff` 资源 spec。
+

@@ -1,153 +1,101 @@
-# 前端架构设计
+# Support Roster UI 前端架构
 
-## 文档范围
+## 文档定位
 
-本文件描述 support-roster-ui 的前端运行时结构、模块边界、路由组织、状态策略与后端集成方式，不展开后端内部服务与 Excel 解析细节。
+本文件描述 `support-roster-ui` 的运行时结构、入口分流、分层职责、状态策略与后端集成方式。它只覆盖前端边界，不展开后端内部实现与 Excel 解析细节。
 
 ## 应用总览
 
-当前应用是单一 Vue SPA，通过路由承载两套产品体验：
+```mermaid
+graph TB
+    APP[Vue App]
+    ROUTER[Vue Router]
+    VIEWER[/viewer Public Viewer]
+    WORKSPACE[/workspace Admin Workspace]
+    PAGE1[PublicDashboardPage.vue]
+    PAGE2[WorkspaceLayout + RouterView]
+    DASH[Dashboard.vue]
+    API[src/api/index.js]
+    SERVER[support-roster-server REST APIs]
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│ Vue App                                                     │
-├──────────────────────────────────────────────────────────────┤
-│ App.vue                                                     │
-│  └── RouterView                                             │
-│      ├── /viewer      → PublicDashboardPage                 │
-│      │                  └── Dashboard                       │
-│      │                      ├── Header                      │
-│      │                      └── Timeline                    │
-│      └── /workspace   → Workspace Domain                    │
-│                         └── 详见 workspace/index.md         │
-├──────────────────────────────────────────────────────────────┤
-│ src/api/index.js                                            │
-│  └── fetch-based REST client                                │
-├──────────────────────────────────────────────────────────────┤
-│ HTTP                                                        │
-├──────────────────────────────────────────────────────────────┤
-│ support-roster-server                                       │
-│  └── REST APIs backed by Excel-derived roster data          │
-└──────────────────────────────────────────────────────────────┘
+    APP --> ROUTER
+    ROUTER --> VIEWER
+    ROUTER --> WORKSPACE
+    VIEWER --> PAGE1
+    PAGE1 --> DASH
+    DASH --> API
+    PAGE2 --> API
+    API --> SERVER
 ```
 
-## 目录分层
+## 顶层路由分流
 
-```
-src/
-├── api/                      # 后端接口封装
-├── assets/                   # 全局基础样式入口
-├── components/               # Public Viewer 组件
-├── data/                     # Viewer 侧历史 mock 数据
-├── features/                 # 产品域功能目录（workspace 细节见 workspace/）
-├── lib/                      # 共用工具函数
-├── pages/                    # 顶层页面包装
-├── router/                   # 应用路由
-├── stores/                   # 预留 store，当前未承载主流程
-├── App.vue                   # 根组件，仅挂载 RouterView
-└── main.js                   # 启动入口
-```
+| 路由 | 作用 | 入口组件 | 说明 |
+|------|------|----------|------|
+| `/` | 默认入口 | redirect | 统一重定向到 `/workspace` |
+| `/viewer` | 公共排班看板 | `src/pages/PublicDashboardPage.vue` | 只读、展示优先 |
+| `/workspace` | 管理工作台 | `src/features/workspace/layout/WorkspaceLayout.vue` | 编辑、校验、导入导出优先 |
 
-## 路由架构
+## 运行时分层
 
-根级架构文档只描述顶层入口分流。workspace 内部路由、页面职责与工作台结构统一维护在 `workspace/` 目录。
+| 层级 | 目录 | 职责 |
+|------|------|------|
+| 应用入口层 | `App.vue`、`main.js` | 挂载应用与路由 |
+| 页面层 | `src/pages/`、`src/features/workspace/pages/` | 组织页面状态与交互流程 |
+| 组件层 | `src/components/`、`src/features/workspace/components/` | 渲染结构、承载局部交互 |
+| 请求层 | `src/api/index.js` | 对后端 REST 接口做统一封装 |
+| 工具层 | `src/lib/`、`src/features/workspace/lib/` | 纯函数、时间与格式化辅助 |
 
-### 顶层规则
-
-| 路由 | 用途 | 入口组件 |
-|------|------|----------|
-| `/` | 默认入口，重定向到管理端 | redirect |
-| `/viewer` | 公共排班看板 | `src/pages/PublicDashboardPage.vue` |
-| `/workspace` | 管理工作台产品域 | 详见 `workspace/routing.md` |
-
-## 运行时职责划分
+## 产品域职责
 
 ### Public Viewer
 
-- 目标：展示指定日期、时区下的只读值班排班
-- 主要组件：`Dashboard.vue`、`Header.vue`、`Timeline.vue`
-- 数据来源：通过 `src/api/index.js` 拉取团队和班次接口
-- 状态策略：以页面容器本地状态为主，不依赖全局 store
+- 面向 `/viewer`，强调只读浏览与清晰展示。
+- 主要模块为 `Dashboard.vue`、`Header.vue`、`Timeline.vue`。
+- 页面状态以本地容器状态为主，不依赖全局 store。
+- 通过 `src/api/index.js` 拉取团队与班次数据。
 
 ### Admin Workspace
 
-- 工作台详细实现、路由、页面规格、共享组件与视觉规范统一维护在 `workspace/`
-- 根级文档只保留其作为第二产品域存在的事实，以及它与 `/viewer` 的入口分流关系
-
-## 状态管理策略
-
-### Viewer 使用局部页面状态
-
-Viewer 的筛选条件和数据请求生命周期只影响单个页面，当前采用容器组件本地状态即可覆盖需求：
-
-- `selectedDate`
-- `selectedTimezone`
-- `teams`
-- `shifts`
-- `loading`
-- `error`
-
-这种策略保持了数据流简单，Header 和 Timeline 通过 props 与 emits 协同，不引入额外全局依赖。
-
-- `selectedTimezone` 在 viewer 中只暴露 `UTC/HKT/IST` 三种选择，并在请求/渲染前转换为 IANA 时区。
-
-### Workspace 使用 composable 聚合交互状态
-
-workspace 状态设计与 feature 内 composable 约束，统一维护在 `workspace/architecture.md`，根级不重复描述。
+- 面向 `/workspace`，强调编辑、管理、校验与导入导出流程。
+- 采用共享壳层 + 子页面的结构组织业务。
+- 月度上下文由 workspace 侧共享状态维护，供多个页面复用。
+- 详细实现继续拆分在 `workspace/` 分册中维护。
 
 ## 数据流
 
 ### Viewer 数据流
 
-```
-Header 变更日期/时区
-  │
-  ▼
-Dashboard 监听筛选条件
-  │
-  ▼
-src/api/index.js 请求后端接口
-  │
-  ▼
-返回 TeamDto[] / ShiftDto[]
-  │
-  ▼
-Timeline 做布局计算并渲染时间轴
+```mermaid
+flowchart LR
+    H[Header 变更日期/时区] --> D[Dashboard 更新筛选条件]
+    D --> API[src/api/index.js 请求数据]
+    API --> R[返回 teams / shifts]
+    R --> T[Timeline 计算布局并渲染]
 ```
 
 ### Workspace 数据流
 
-```
-见 `workspace/architecture.md`
-```
+Workspace 的页面级数据流、共享月度状态与页面协作方式，统一收敛到 `workspace/architecture.md` 与具体页面 spec，不在根级重复展开。
+
+## 状态管理策略
+
+- Viewer 以页面局部状态为主，状态简单且作用域清晰。
+- Workspace 将跨页面的年月上下文沉淀为共享状态，其余编辑态优先留在页面或 composable 内部。
+- 当前无登录态、无 RBAC、无前端权限裁剪逻辑。
+- `src/stores/` 不是主流程依赖，不应在 spec 中假设其承载核心状态。
 
 ## 后端集成边界
 
-前端当前只与后端 REST 接口集成，不依赖后端内部实现细节。需要在 spec 中长期保持的接口边界如下：
-
-- Viewer 使用真实接口获取团队与班次
-- Workspace 的数据源与集成边界统一维护在 `workspace/architecture.md`
-- 当前无认证态、无用户会话、无基于角色的前端授权逻辑
-
-## 部署与运行边界
-
-- 本项目产出的是 Vite 构建后的静态资源目录 `dist/`
-- 可采用传统 Linux + Nginx 托管方式部署
-- 也可采用“Node 构建 + Nginx 托管静态资源”的容器镜像方式运行在 ECS Fargate
-- Fargate 方案中，`VITE_API_BASE_URL` 仍是构建时注入，而不是容器启动时动态注入
-- 容器运行、健康检查与 ALB 集成细节统一维护在 `deployment.md`
-
-## 技术约束
-
-| 主题 | 约束 |
-|------|------|
-| 身份权限 | 无登录、无 RBAC、无基于角色的界面裁剪 |
-| Viewer 实时性 | 无 websocket 或 SSE，刷新依赖手动触发/重新请求 |
-| Store 现状 | `src/stores/counter.js` 仍是模板代码，未进入主流程 |
-| 测试覆盖 | 当前未形成系统化前端测试规范 |
+- 前端仅依赖 REST 接口契约，不依赖后端内部类或数据库结构。
+- Viewer 使用只读接口；Workspace 使用 `/api/workspace/**` 管理接口。
+- 当前没有 websocket 或 SSE，数据刷新依赖显式重新请求。
+- 任何接口路径、响应结构或精度约束变化，都必须同步回写相关 spec。
 
 ## 文档分流规则
 
-- 组件职责、props、布局算法等 viewer 细节写入 `modules/`
-- workspace 壳层、路由、共享组件、状态与页面说明写入 `workspace/`
-- Public Viewer 与共用视觉语言写入 `ui-design.md`
+- Viewer 组件职责、算法与渲染细节写入 `modules/`。
+- Workspace 架构、路由、壳层、共享组件与页面说明写入 `workspace/`。
+- 部署问题写入 `deployment.md`。
+- 视觉、排版与组件观感写入 `ui-design.md` 与 `workspace/ui-design.md`。
+

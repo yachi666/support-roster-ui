@@ -1,4 +1,13 @@
-# UI 设计规范
+# Support Roster UI 视觉规范
+
+## 文档定位
+
+本文件维护前端全局视觉语言与 Public Viewer 设计约束，属于整套 spec 的“视觉总册”。它不覆盖 Workspace 专属视觉细节，后者统一收敛到 `workspace/ui-design.md`。
+
+## 阅读提示
+
+- 根级视觉规范负责共用语言与 Viewer 体验。
+- 管理端特有的密度、壳层和抽屉风格请移步 `workspace/ui-design.md`。
 
 ## 文档范围
 

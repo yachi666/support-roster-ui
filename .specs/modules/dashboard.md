@@ -1,4 +1,13 @@
-# Dashboard 模块
+# Dashboard 模块规范
+
+## 文档定位
+
+本文件描述 Public Viewer 页面容器 `Dashboard.vue` 的职责、状态编排与模块协作方式，是模块分册中的页面总控章节。
+
+## 阅读提示
+
+- 若要理解模块间调用关系，建议先读 `index.md`，再回到本页。
+- 具体顶部控件与时间轴算法分别拆在 `header.md` 与 `timeline.md`。
 
 ## 模块概述
 

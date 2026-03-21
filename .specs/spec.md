@@ -1,103 +1,87 @@
-# Support Roster UI Spec Index
+# Support Roster UI 规格总目录
 
 ## 文档定位
 
-本目录是 support-roster-ui 的正式前端规格入口，负责描述当前 Vue 应用的页面边界、架构分层、模块职责、交互约束与视觉规范。
+本目录是 `support-roster-ui` 的正式规格入口，用于沉淀 Public Viewer 与 Admin Workspace 两套前端体验的边界、结构、交互与视觉规范。整套文档按“总目录 -> 分册目录 -> 专题页”的方式组织，目标是让阅读路径更像一本可持续维护的技术手册。
 
-当前前端包含两套体验：
+## 推荐阅读顺序
 
-- Public Viewer：只读排班看板，路由位于 `/viewer`
-- Admin Workspace：管理工作台，详细规格统一收敛到 `workspace/`
-- Root Entry：入口分流关系见 `workspace/routing.md`
+1. 先读 `spec.md`，建立全局目录感。
+2. 再读 `architecture.md`，理解应用分流、分层和数据流。
+3. 若关注部署与上线边界，继续读 `deployment.md`。
+4. 只读看板相关改动进入 `modules/index.md`。
+5. 管理工作台相关改动进入 `workspace/index.md`。
+6. 视觉与交互规范分别参考 `ui-design.md` 与 `workspace/ui-design.md`。
 
-## 目录结构
+## 章节目录
 
+| 章节 | 文件 | 说明 |
+|------|------|------|
+| 总览 | `./architecture.md` | 前端运行时结构、顶层路由、状态策略与后端集成边界 |
+| 部署 | `./deployment.md` | 构建、容器化、Fargate 部署与发布约束 |
+| 视觉 | `./ui-design.md` | 全局视觉语言与 Public Viewer 设计约束 |
+| Viewer 分册 | `./modules/index.md` | Public Viewer 模块目录与模块关系 |
+| Workspace 分册 | `./workspace/index.md` | Admin Workspace 的架构、路由、页面、组件与视觉规范 |
+| 变更记录 | `./CHANGELOG.md` | 文档演进记录 |
+
+## 文档架构图
+
+```mermaid
+graph TB
+    ROOT[spec.md 总目录]
+    ARCH[architecture.md 前端架构]
+    DEPLOY[deployment.md 部署规范]
+    UIDESIGN[ui-design.md 全局视觉规范]
+    MODULES[modules/index.md Viewer 分册]
+    WORKSPACE[workspace/index.md Workspace 分册]
+    CHANGELOG[CHANGELOG.md 变更记录]
+
+    ROOT --> ARCH
+    ROOT --> DEPLOY
+    ROOT --> UIDESIGN
+    ROOT --> MODULES
+    ROOT --> WORKSPACE
+    ROOT --> CHANGELOG
+
+    MODULES --> M1[dashboard.md]
+    MODULES --> M2[header.md]
+    MODULES --> M3[timeline.md]
+
+    WORKSPACE --> W1[architecture.md]
+    WORKSPACE --> W2[routing.md]
+    WORKSPACE --> W3[layout.md]
+    WORKSPACE --> W4[components/shared.md]
+    WORKSPACE --> W5[pages/*.md]
+    WORKSPACE --> W6[ui-design.md]
 ```
-.specs/
-├── spec.md
-├── architecture.md
-├── deployment.md
-├── ui-design.md
-├── modules/
-│   ├── index.md
-│   ├── dashboard.md
-│   ├── header.md
-│   └── timeline.md
-├── workspace/
-│   ├── index.md
-│   ├── architecture.md
-│   ├── layout.md
-│   ├── routing.md
-│   ├── ui-design.md
-│   ├── components/
-│   └── pages/
-└── CHANGELOG.md
-```
 
-## 阅读顺序
-
-1. 先读 `spec.md` 了解产品边界与文档导航
-2. 再读 `architecture.md` 了解应用入口、路由和数据流
-3. 需要了解容器化与部署边界时，读 `deployment.md`
-4. Public Viewer 相关改动进入 `modules/index.md`
-5. Admin Workspace 相关改动进入 `workspace/index.md`
-6. 视觉、排版、颜色与组件风格统一参考 `ui-design.md`
-
-## 主题边界
-
-### 根级文档
-
-- `spec.md`：总入口、范围说明、导航索引、跨主题约束
-- `architecture.md`：前端整体架构与顶层分流关系，不展开 workspace 子域实现
-- `deployment.md`：前端构建产物、容器化运行方式与部署约束
-- `ui-design.md`：共用视觉规范与 Public Viewer 设计说明，workspace 视觉文档在 `workspace/ui-design.md`
+## 文档边界
 
 ### Public Viewer
 
-- `modules/`：传统只读排班看板模块说明
-- 适用对象：`src/components/`、`src/pages/PublicDashboardPage.vue`、`src/api/index.js`
+- 路由入口：`/viewer`
+- 适用代码：`src/pages/PublicDashboardPage.vue`、`src/components/*`、`src/api/index.js`
+- 关注点：模块职责、时间轴渲染、只读交互、展示型视觉规范
 
 ### Admin Workspace
 
-- `workspace/`：工作台信息架构、页面规格、共享组件、路由、布局与视觉规范
-- 适用对象：`src/features/workspace/`、`src/router/index.js`
+- 路由入口：`/workspace`
+- 适用代码：`src/features/workspace/*`、`src/router/index.js`
+- 关注点：管理工作流、共享壳层、页面职责、抽屉式编辑、月度上下文同步
 
-## 当前实现摘要
+## 通用写作规则
 
-### 技术栈
+- 文档统一以中文为主，保留必要英文术语、路径、组件名、接口名。
+- 一级入口页负责“目录导航 + 阅读指引”，不承载过细实现细节。
+- 详细规则写入对应专题页，避免根入口持续膨胀。
+- 适合结构表达、关系说明或流程说明的内容优先使用 Mermaid，而不是静态图片。
+- 页面、组件、接口、路径发生变化时，必须同步回写对应章节目录。
 
-| 层级 | 选型 | 当前用途 |
-|------|------|----------|
-| 框架 | Vue 3 | 单页应用、Composition API |
-| 构建 | Vite | 本地开发与打包 |
-| 路由 | Vue Router | 根级入口分流与页面导航 |
-| 样式 | Tailwind CSS | 前端样式系统基础设施 |
-| 状态 | Vue Reactivity | 各产品域状态细节见对应子目录 |
-| 数据请求 | fetch API 封装 | Viewer 与 Workspace 共用请求层；workspace 调用 `/api/workspace/**` |
+## 快速链接
 
-### 业务事实
-
-| 主题 | 当前事实 |
-|------|----------|
-| 主班次代码 | `OC`、`DS`、`NS`、`A`、`B`、`D` |
-| 非主班次 | `C`、`BH`、`HoL` 等不会进入 `/api/shifts` 主班次输出 |
-| 权限模型 | 当前无登录、无 RBAC、无前端角色态 |
-| Timeline 能力 | 桌面端整日一屏时间轴、窄屏兜底滚动、重叠泳道布局、Tooltip |
-
-## 变更准则
-
-- 修改 viewer 页面结构、组件职责或数据流时，更新 `modules/` 与 `architecture.md`
-- 修改构建、容器化或部署方式时，更新 `deployment.md`
-- 修改 workspace 页面、共享组件、布局或路由时，更新 `workspace/`
-- 修改 Public Viewer 或全局共用视觉语言时，更新 `ui-design.md`
-- 修改 workspace 视觉语言、界面密度或管理端样式约束时，更新 `workspace/ui-design.md`
-- 新增一级主题文档或目录时，必须同步回写本文件导航
-
-## 文档导航
-
-- [整体架构](./architecture.md)
+- [前端架构](./architecture.md)
 - [部署规范](./deployment.md)
-- [UI 设计规范](./ui-design.md)
-- [Public Viewer 模块索引](./modules/index.md)
-- [Admin Workspace 索引](./workspace/index.md)
-- [Spec 变更记录](./CHANGELOG.md)
+- [视觉规范](./ui-design.md)
+- [Public Viewer 分册](./modules/index.md)
+- [Workspace 分册](./workspace/index.md)
+
