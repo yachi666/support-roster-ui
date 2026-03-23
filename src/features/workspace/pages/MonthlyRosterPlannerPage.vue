@@ -32,7 +32,7 @@ const {
   drawerOpen,
   hasUnsavedChanges,
   pendingUpdateCount,
-  pendingUpdateKeys,
+  pendingUpdateKeySet,
   selectedAssignment,
   selectedShiftCode,
   validationWarning,
@@ -394,7 +394,7 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
       :month="month"
       :shift-code-color-map="shiftCodeColorMap"
       :shift-details-by-team="shiftDetailsByTeam"
-      :pending-update-keys="pendingUpdateKeys"
+      :pending-update-key-set="pendingUpdateKeySet"
       @select-cell="selectCell($event.staffId, $event.day)"
       @select-range="selectRange"
       @navigate-cell="handleGridNavigation"

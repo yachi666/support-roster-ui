@@ -1,4 +1,4 @@
-import { clearAuthToken, getAuthToken } from '@/lib/authToken'
+import { clearAuthToken, getAuthTokenHeader } from '@/lib/authToken'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://supportui.servier/api'
 
@@ -83,10 +83,10 @@ async function request(endpoint, options = {}) {
       ...headers,
     },
   }
-  const token = getAuthToken()
+  const tokenHeader = getAuthTokenHeader()
 
-  if (token && !config.headers.Authorization) {
-    config.headers.Authorization = token
+  if (tokenHeader && !config.headers.Authorization) {
+    config.headers.Authorization = tokenHeader
   }
 
   if (normalizedBody !== undefined) {
@@ -118,6 +118,11 @@ async function request(endpoint, options = {}) {
 export const api = {
   auth: {
     login: (payload) => request('/auth/login', {
+      method: 'POST',
+      body: payload,
+    }),
+
+    activate: (payload) => request('/auth/activate', {
       method: 'POST',
       body: payload,
     }),

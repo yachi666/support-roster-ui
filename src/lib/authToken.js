@@ -1,15 +1,31 @@
 const AUTH_TOKEN_KEY = 'support-roster-auth-token'
 
+function normalizeAuthToken(token) {
+  if (!token) {
+    return ''
+  }
+
+  return String(token).replace(/^Bearer\s+/i, '').trim()
+}
+
 export function getAuthToken() {
-  return window.localStorage.getItem(AUTH_TOKEN_KEY) || ''
+  return normalizeAuthToken(window.localStorage.getItem(AUTH_TOKEN_KEY) || '')
+}
+
+export function getAuthTokenHeader() {
+  const token = getAuthToken()
+  return token ? `Bearer ${token}` : ''
 }
 
 export function setAuthToken(token) {
-  if (!token) {
+  const normalizedToken = normalizeAuthToken(token)
+
+  if (!normalizedToken) {
     clearAuthToken()
     return
   }
-  window.localStorage.setItem(AUTH_TOKEN_KEY, token)
+
+  window.localStorage.setItem(AUTH_TOKEN_KEY, normalizedToken)
 }
 
 export function clearAuthToken() {

@@ -54,11 +54,17 @@ async function submit() {
 
   pending.value = true
   try {
-    await authStore.login({
-      staffId: formState.staffId.trim(),
-      password: formState.password.trim(),
-      newPassword: mode.value === 'activate' ? formState.newPassword.trim() : '',
-    })
+    if (mode.value === 'activate') {
+      await authStore.activate({
+        staffId: formState.staffId.trim(),
+        newPassword: formState.newPassword.trim(),
+      })
+    } else {
+      await authStore.login({
+        staffId: formState.staffId.trim(),
+        password: formState.password.trim(),
+      })
+    }
     await router.replace(redirectTarget.value)
   } catch (error) {
     errorMessage.value = error.message || 'Unable to sign in.'

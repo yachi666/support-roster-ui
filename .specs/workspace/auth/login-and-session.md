@@ -11,23 +11,26 @@
 
 1. 用户输入 `staffid`。
 2. 若账号已激活，输入密码完成登录。
-3. 若账号处于 `PENDING_ACTIVATION`，允许走首登设密流程。
-4. 登录成功后，前端保存 token，并立即调用 `/api/auth/me` 建立用户上下文。
+3. 若账号处于 `PENDING_ACTIVATION`，前端调用独立的首登设密接口完成激活，而不是复用普通登录接口。
+4. 登录或激活成功后，前端保存 token，并立即调用 `/api/auth/me` 建立用户上下文。
 5. 用户跳转到原本想访问的 workspace 页面。
 
 ## 首登设密约束
 
 - 首版允许仅凭 `staffid` 首登设密，但必须在 UI 上明确这是内网/测试阶段方案。
+- 已激活账号再次走首登设密时，接口应明确返回“密码已初始化，请直接登录”，避免退化成普通登录错误。
 - 正式上线前需要替换为更安全的激活校验方式。
 
 ## 会话恢复
 
 - token 存在时，应用启动阶段尝试调用 `/api/auth/me`。
+- 前端本地仅保存裸 token；发请求时统一拼接 `Authorization: Bearer <token>`，避免刷新后因 header 形态不一致导致会话恢复失败。
 - 若 `me` 成功，恢复 `auth store`。
 - 若返回 `401`，清空本地 token，并保留用户在 `/login`。
 
 ## API 协作
 
+- 普通登录使用 `/api/auth/login`；首登设密使用 `/api/auth/activate`。
 - 所有受保护请求通过统一 `api/index.js` 注入 `Authorization` Header。
 - `401` 代表会话失效，需要清 token 并跳转登录页。
 - `403` 代表有登录态但权限不足，页面应展示明确提示。
