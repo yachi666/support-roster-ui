@@ -204,12 +204,12 @@ export function useRosterPlanner() {
     serverValidationWarning.value = ''
 
     try {
-      const response = await api.workspace.getValidation(year.value, month.value)
+      const response = await api.workspace.getValidation(year.value, month.value, { summaryOnly: true })
       if (requestSequence !== validationRequestSequence) {
         return
       }
 
-      serverValidationWarning.value = response?.issues?.find((issue) => issue.severity?.toLowerCase() === 'high')?.description || ''
+      serverValidationWarning.value = response?.topIssue?.description || ''
     } catch (error) {
       if (requestSequence !== validationRequestSequence) {
         return

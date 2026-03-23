@@ -286,7 +286,20 @@ export const api = {
       body: payload,
     }),
 
-    getValidation: (year, month) => request(`/workspace/validation?year=${year}&month=${month}`),
+    getValidation: (year, month, options = {}) => {
+      const params = new URLSearchParams()
+      if (year != null) {
+        params.set('year', year)
+      }
+      if (month != null) {
+        params.set('month', month)
+      }
+      if (options.summaryOnly) {
+        params.set('summaryOnly', 'true')
+      }
+      const query = params.toString()
+      return request(`/workspace/validation${query ? `?${query}` : ''}`)
+    },
 
     resolveValidationIssues: (payload) => request('/workspace/validation/resolve', {
       method: 'POST',
