@@ -40,11 +40,11 @@ const yearOptions = computed(() => {
 })
 
 function handleYearChange(event) {
-  setWorkspaceYear(event.target.value)
+  void setWorkspaceYear(event.target.value)
 }
 
 function handleMonthChange(event) {
-  setWorkspaceMonth(event.target.value)
+  void setWorkspaceMonth(event.target.value)
 }
 
 function handleTimezoneChange(event) {
@@ -68,7 +68,7 @@ function handleTimezoneChange(event) {
       </div>
 
       <div class="hidden items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-1 shadow-sm xl:flex">
-        <button class="rounded-md p-1.5 text-slate-500 transition-colors hover:bg-white hover:text-slate-800" @click="goToPreviousMonth">
+        <button class="rounded-md p-1.5 text-slate-500 transition-colors hover:bg-white hover:text-slate-800" @click="void goToPreviousMonth()">
           <ChevronLeft class="h-4 w-4" />
         </button>
         <div class="min-w-[116px] text-center">
@@ -95,7 +95,7 @@ function handleTimezoneChange(event) {
         >
           <option v-for="option in yearOptions" :key="option" :value="option">{{ option }}</option>
         </select>
-        <button class="rounded-md p-1.5 text-slate-500 transition-colors hover:bg-white hover:text-slate-800" @click="goToNextMonth">
+        <button class="rounded-md p-1.5 text-slate-500 transition-colors hover:bg-white hover:text-slate-800" @click="void goToNextMonth()">
           <ChevronRight class="h-4 w-4" />
         </button>
         <div class="mx-1 h-6 w-px bg-slate-200"></div>

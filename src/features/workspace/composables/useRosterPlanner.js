@@ -82,6 +82,33 @@ function findAssignment(groups, cell) {
   return null
 }
 
+function applyScheduleUpdate({ rosterGroups, baseGroups, pendingUpdates, staffId, day, shiftCode }) {
+  const assignment = findAssignment(rosterGroups.value, { staffId, day })
+  if (!assignment) {
+    return false
+  }
+
+  const normalizedCode = shiftCode || ''
+  const updateKey = `${staffId}:${day}`
+  const nextUpdates = new Map(pendingUpdates.value)
+  const originalCode = findCellCode(baseGroups.value, staffId, day)
+
+  assignment.staff.schedule[day - 1] = normalizedCode
+
+  if (normalizedCode === originalCode) {
+    nextUpdates.delete(updateKey)
+  } else {
+    nextUpdates.set(updateKey, {
+      staffId,
+      day,
+      shiftCode: normalizedCode,
+    })
+  }
+
+  pendingUpdates.value = nextUpdates
+  return true
+}
+
 export function useRosterPlanner() {
   const { year, month, monthLabel, goToPreviousMonth, goToNextMonth } = useWorkspacePeriod()
   const rosterGroups = ref([])
@@ -99,6 +126,7 @@ export function useRosterPlanner() {
   const saving = shallowRef(false)
   const errorMessage = shallowRef('')
   const saveErrorMessage = shallowRef('')
+  const saveSuccessMessage = shallowRef('')
   const serverValidationWarning = shallowRef('')
   const pendingUpdates = ref(new Map())
   const selectedTeamIds = ref([])
@@ -107,6 +135,8 @@ export function useRosterPlanner() {
 
   const plannerDays = computed(() => createPlannerDays(year.value, month.value))
   const hasUnsavedChanges = computed(() => pendingUpdates.value.size > 0)
+  const pendingUpdateCount = computed(() => pendingUpdates.value.size)
+  const pendingUpdateKeys = computed(() => Array.from(pendingUpdates.value.keys()))
 
   const allTeams = computed(() => {
     const teamMap = new Map()
@@ -157,10 +187,6 @@ export function useRosterPlanner() {
   }, { immediate: true })
 
   const validationWarning = computed(() => {
-    if (!selectedAssignment.value) {
-      return ''
-    }
-
     return serverValidationWarning.value
   })
 
@@ -181,6 +207,7 @@ export function useRosterPlanner() {
       serverValidationWarning.value = response.validationWarning || ''
       pendingUpdates.value = new Map()
       saveErrorMessage.value = ''
+      saveSuccessMessage.value = ''
 
       if (selectedCell.value && !findAssignment(rosterGroups.value, selectedCell.value)) {
         selectedCell.value = null
@@ -196,6 +223,7 @@ export function useRosterPlanner() {
       serverValidationWarning.value = ''
       pendingUpdates.value = new Map()
       errorMessage.value = error.message || 'Failed to load monthly roster.'
+      saveSuccessMessage.value = ''
     } finally {
       loading.value = false
     }
@@ -227,30 +255,113 @@ export function useRosterPlanner() {
 
     const code = selectedShiftCode.value === 'Clear' ? '' : selectedShiftCode.value
     const { staff, day } = selectedAssignment.value
-    const updateKey = `${staff.id}:${day}`
-    const nextUpdates = new Map(pendingUpdates.value)
-    const originalCode = findCellCode(baseGroups.value, staff.id, day)
+    applyScheduleUpdate({
+      rosterGroups,
+      baseGroups,
+      pendingUpdates,
+      staffId: staff.id,
+      day,
+      shiftCode: code,
+    })
+    saveSuccessMessage.value = ''
+    drawerOpen.value = false
+  }
 
-    staff.schedule[day - 1] = code
+  function copySelectedWeekToNextWeek() {
+    if (!selectedAssignment.value) {
+      return null
+    }
 
-    if (code === originalCode) {
-      nextUpdates.delete(updateKey)
-    } else {
-      nextUpdates.set(updateKey, {
-        staffId: staff.id,
+    const totalDays = plannerDays.value.length
+    const currentDate = new Date(year.value, month.value - 1, selectedAssignment.value.day)
+    const dayOfWeek = currentDate.getDay()
+    const mondayOffset = (dayOfWeek + 6) % 7
+    const sourceWeekStart = Math.max(1, selectedAssignment.value.day - mondayOffset)
+    const sourceWeekEnd = Math.min(totalDays, sourceWeekStart + 6)
+
+    let copiedCount = 0
+    let firstTargetDay = null
+
+    for (let sourceDay = sourceWeekStart; sourceDay <= sourceWeekEnd; sourceDay += 1) {
+      const targetDay = sourceDay + 7
+      if (targetDay > totalDays) {
+        continue
+      }
+
+      const sourceCode = selectedAssignment.value.staff.schedule[sourceDay - 1] || ''
+      const didApply = applyScheduleUpdate({
+        rosterGroups,
+        baseGroups,
+        pendingUpdates,
+        staffId: selectedAssignment.value.staff.id,
+        day: targetDay,
+        shiftCode: sourceCode,
+      })
+
+      if (didApply) {
+        copiedCount += 1
+        if (firstTargetDay == null) {
+          firstTargetDay = targetDay
+        }
+      }
+    }
+
+    if (!copiedCount || firstTargetDay == null) {
+      return null
+    }
+
+    saveSuccessMessage.value = ''
+
+    return {
+      copiedCount,
+      firstTargetDay,
+      staffId: selectedAssignment.value.staff.id,
+    }
+  }
+
+  function applySelectedRange(endDay) {
+    if (!selectedAssignment.value) {
+      return null
+    }
+
+    const totalDays = plannerDays.value.length
+    const normalizedEndDay = Math.min(Math.max(Number(endDay), selectedAssignment.value.day), totalDays)
+    const code = selectedShiftCode.value === 'Clear' ? '' : selectedShiftCode.value
+    let updatedCount = 0
+
+    for (let day = selectedAssignment.value.day; day <= normalizedEndDay; day += 1) {
+      const didApply = applyScheduleUpdate({
+        rosterGroups,
+        baseGroups,
+        pendingUpdates,
+        staffId: selectedAssignment.value.staff.id,
         day,
         shiftCode: code,
       })
+
+      if (didApply) {
+        updatedCount += 1
+      }
     }
 
-    pendingUpdates.value = nextUpdates
-    drawerOpen.value = false
+    if (!updatedCount) {
+      return null
+    }
+
+    saveSuccessMessage.value = ''
+
+    return {
+      updatedCount,
+      endDay: normalizedEndDay,
+      staffId: selectedAssignment.value.staff.id,
+    }
   }
 
   function discardChanges() {
     rosterGroups.value = cloneGroups(baseGroups.value)
     pendingUpdates.value = new Map()
     saveErrorMessage.value = ''
+    saveSuccessMessage.value = ''
     drawerOpen.value = false
     selectedCell.value = null
   }
@@ -262,6 +373,7 @@ export function useRosterPlanner() {
 
     saving.value = true
     saveErrorMessage.value = ''
+    saveSuccessMessage.value = ''
 
     try {
       const response = await api.workspace.saveRoster({
@@ -279,6 +391,7 @@ export function useRosterPlanner() {
       shiftDetailsByTeam.value = response.shiftDetailsByTeam || {}
       serverValidationWarning.value = response.validationWarning || ''
       pendingUpdates.value = new Map()
+      saveSuccessMessage.value = 'Roster changes saved successfully.'
     } catch (error) {
       saveErrorMessage.value = error.message || 'Failed to save monthly roster changes.'
     } finally {
@@ -335,9 +448,12 @@ export function useRosterPlanner() {
     saving,
     errorMessage,
     saveErrorMessage,
+    saveSuccessMessage,
     selectedCell,
     drawerOpen,
     hasUnsavedChanges,
+    pendingUpdateCount,
+    pendingUpdateKeys,
     selectedAssignment,
     selectedShiftCode,
     validationWarning,
@@ -352,6 +468,8 @@ export function useRosterPlanner() {
     closeDrawer,
     setShiftCode,
     applySelectedShift,
+    copySelectedWeekToNextWeek,
+    applySelectedRange,
     discardChanges,
     saveChanges,
     toggleTeamFilter,

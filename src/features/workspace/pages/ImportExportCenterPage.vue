@@ -1,12 +1,16 @@
 <script setup>
 import { computed, onBeforeUnmount, shallowRef, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 import {
   AlertTriangle,
+  ArrowRight,
   CheckCircle2,
   ChevronRight,
   Download,
   FileSpreadsheet,
   RefreshCw,
+  ShieldAlert,
+  Sparkles,
   UploadCloud,
 } from 'lucide-vue-next'
 import { api } from '@/api'
@@ -52,6 +56,105 @@ const stepStates = computed(() => ({
   mapping: ['mapping', 'success', 'applying', 'applied'].includes(fileStatus.value),
   apply: ['success', 'applying', 'applied'].includes(fileStatus.value),
 }))
+
+const templateSheetCards = computed(() => [
+  {
+    title: 'Shift Definitions',
+    subtitle: 'Define codes, time windows, timezones, and whether a code appears on the roster page.',
+    count: `${templateShiftDefinitions.length} sample rows`,
+  },
+  {
+    title: 'Staff Shifts',
+    subtitle: 'Provide staff identity and one code per day across the target month.',
+    count: `${templateStaffShifts.length} sample rows`,
+  },
+  {
+    title: 'Color Definitions',
+    subtitle: 'Map shift codes to consistent color tokens used by the viewer and workspace grid.',
+    count: `${templateColorDefinitions.length} sample rows`,
+  },
+])
+
+const previewIssues = computed(() =>
+  (previewResult.value?.issues || []).map((issue) => ({
+    ...issue,
+    severity: ['high', 'medium', 'low'].includes(issue.severity) ? issue.severity : 'low',
+  })),
+)
+
+const issueSummary = computed(() => ({
+  high: previewIssues.value.filter((issue) => issue.severity === 'high').length,
+  medium: previewIssues.value.filter((issue) => issue.severity === 'medium').length,
+  low: previewIssues.value.filter((issue) => issue.severity === 'low').length,
+}))
+
+const topPreviewIssue = computed(() =>
+  [...previewIssues.value].sort((left, right) => {
+    const leftWeight = left.severity === 'high' ? 0 : left.severity === 'medium' ? 1 : 2
+    const rightWeight = right.severity === 'high' ? 0 : right.severity === 'medium' ? 1 : 2
+    return leftWeight - rightWeight
+  })[0] ?? null,
+)
+
+const previewHealth = computed(() => {
+  if (!previewResult.value) {
+    return {
+      tone: 'neutral',
+      label: 'Waiting for file',
+      description: 'Upload a workbook to generate a preview batch, issue list, and apply decision.',
+    }
+  }
+
+  if ((previewResult.value.invalidRecords || 0) > 0 || issueSummary.value.high > 0) {
+    return {
+      tone: 'warning',
+      label: 'Review before apply',
+      description: 'The preview found invalid rows or blocking issues. Review the issue list before applying.',
+    }
+  }
+
+  if ((previewResult.value.validRecords || 0) > 0) {
+    return {
+      tone: 'good',
+      label: 'Ready to apply',
+      description: 'The preview returned valid rows and no blocking issues. You can apply this batch when ready.',
+    }
+  }
+
+  return {
+    tone: 'neutral',
+    label: 'No importable rows',
+    description: 'The workbook uploaded successfully, but the preview did not yield rows that can be applied.',
+  }
+})
+
+const previewSummaryCards = computed(() => [
+  {
+    label: 'Parsed rows',
+    value: previewResult.value?.totalRecords || 0,
+    tone: 'neutral',
+    description: 'All rows the server parsed from the workbook.',
+  },
+  {
+    label: 'Ready to apply',
+    value: previewResult.value?.validRecords || 0,
+    tone: 'good',
+    description: 'Rows that passed validation and can be applied.',
+  },
+  {
+    label: 'Need review',
+    value: previewResult.value?.invalidRecords || 0,
+    tone: 'warning',
+    description: 'Rows blocked by validation findings or mapping issues.',
+  },
+])
+
+const canApplyPreview = computed(() =>
+  Boolean(previewResult.value?.batchId) && ['success', 'applied'].includes(fileStatus.value),
+)
+
+const currentBatchDisplay = computed(() => previewResult.value?.batchId || 'Not created yet')
+const latestFileDisplay = computed(() => fileName.value || 'No file uploaded')
 
 function clearTimer() {
   if (mappingTimer) {
@@ -119,8 +222,8 @@ async function applyChanges() {
 
   try {
     applyResult.value = await api.workspace.applyImport(previewResult.value.batchId)
-    successMessage.value = `${applyResult.value?.appliedRecords || 0} records were applied to ${monthLabel.value}. You can import another file now.`
-    resetImport()
+    successMessage.value = `${applyResult.value?.appliedRecords || 0} records were applied to ${monthLabel.value}.`
+    fileStatus.value = 'applied'
   } catch (error) {
     errorMessage.value = error.message || 'Failed to apply import batch.'
     fileStatus.value = 'success'
@@ -177,6 +280,7 @@ function resetImport() {
   previewResult.value = null
   applyResult.value = null
   errorMessage.value = ''
+  successMessage.value = ''
   fileName.value = ''
 }
 
@@ -189,12 +293,31 @@ onBeforeUnmount(clearTimer)
 
 <template>
   <div class="flex h-full flex-col bg-slate-50">
-    <div class="flex-1 overflow-auto p-8">
-      <div class="mx-auto flex max-w-5xl flex-col gap-8">
+    <div class="flex-1 overflow-auto p-6 xl:p-8">
+      <div class="mx-auto flex max-w-[1280px] flex-col gap-6">
         <WorkspacePageHeader
           title="Import / Export Center"
-          :description="`Sync your master roster via Excel or download the latest schedule for ${monthLabel}.`"
-        />
+          :description="`Preflight workbook imports, inspect issues before apply, and export the active roster for ${monthLabel}.`"
+        >
+          <template #actions>
+            <button
+              class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              :disabled="templatePending"
+              @click="downloadTemplate"
+            >
+              <Download class="h-4 w-4" />
+              {{ templatePending ? 'Downloading...' : 'Download Template' }}
+            </button>
+            <button
+              class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              :disabled="exportPending"
+              @click="exportRoster"
+            >
+              <FileSpreadsheet class="h-4 w-4" />
+              {{ exportPending ? 'Exporting...' : 'Export Excel' }}
+            </button>
+          </template>
+        </WorkspacePageHeader>
 
         <label for="workspace-import-file" class="sr-only">Upload roster Excel file</label>
         <input id="workspace-import-file" name="workspace-import-file" type="file" accept=".xlsx,.xls" class="sr-only" @change="handleFileChange" />
@@ -207,43 +330,396 @@ onBeforeUnmount(clearTimer)
           {{ successMessage }}
         </WorkspaceSurface>
 
-        <WorkspaceSurface class="flex items-center justify-between gap-6">
-          <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-teal-50 text-teal-600">
-              <Download class="h-6 w-6" />
-            </div>
-            <div>
-              <h2 class="text-base font-semibold text-slate-800">Export Current Roster</h2>
-              <p class="mt-0.5 text-sm text-slate-500">Download the active schedule for {{ monthLabel }}</p>
-            </div>
-          </div>
-          <button class="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" :disabled="exportPending" @click="exportRoster">
-            <FileSpreadsheet class="h-4 w-4 text-emerald-600" />
-            {{ exportPending ? 'Exporting...' : 'Export Excel' }}
-          </button>
-        </WorkspaceSurface>
+        <div class="grid gap-6 xl:grid-cols-[1.65fr_1fr]">
+          <WorkspaceSurface
+            :padded="false"
+            class="overflow-hidden border-slate-200 bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.18),transparent_34%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent_28%),linear-gradient(180deg,#ffffff,rgba(248,250,252,0.98))]"
+          >
+            <div class="grid gap-8 px-6 py-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8 lg:py-8">
+              <div class="space-y-5">
+                <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  <Sparkles class="h-3.5 w-3.5 text-teal-500" />
+                  Import preflight desk
+                </div>
 
-        <WorkspaceSurface :padded="false">
-          <div class="flex items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/50 px-6 py-4">
-            <div class="flex items-center gap-2">
-              <FileSpreadsheet class="h-5 w-5 text-slate-400" />
-              <h2 class="text-base font-semibold text-slate-800">Import Template Example</h2>
+                <div>
+                  <h2 class="max-w-2xl text-3xl font-semibold tracking-tight text-slate-950 lg:text-[2.4rem]">
+                    {{ previewHealth.label }}
+                  </h2>
+                  <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-600 lg:text-[15px]">
+                    {{ previewHealth.description }}
+                  </p>
+                </div>
+
+                <div class="grid gap-3 sm:grid-cols-3">
+                  <div class="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
+                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Target month</div>
+                    <div class="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{{ monthLabel }}</div>
+                    <div class="mt-1 text-xs leading-6 text-slate-500">Uploads and exports stay aligned with the shared workspace period.</div>
+                  </div>
+                  <div class="min-w-0 rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
+                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Preview batch</div>
+                    <div class="mt-2 break-all font-mono text-sm font-semibold leading-6 text-slate-950">{{ currentBatchDisplay }}</div>
+                    <div class="mt-1 text-xs leading-6 text-slate-500">Created after preview and reused by the apply action.</div>
+                  </div>
+                  <div class="min-w-0 rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
+                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Latest file</div>
+                    <div class="mt-2 break-words text-base font-semibold leading-6 tracking-tight text-slate-950">{{ latestFileDisplay }}</div>
+                    <div class="mt-1 text-xs leading-6 text-slate-500">The preflight desk always reflects the latest uploaded workbook.</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-[28px] border border-slate-200 bg-white/85 p-5 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Workflow</div>
+                  <span
+                    :class="[
+                      'inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]',
+                      previewHealth.tone === 'good'
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                        : previewHealth.tone === 'warning'
+                          ? 'border-amber-200 bg-amber-50 text-amber-700'
+                          : 'border-slate-200 bg-slate-100 text-slate-700',
+                    ]"
+                  >
+                    {{ previewHealth.label }}
+                  </span>
+                </div>
+
+                <div class="mt-5 space-y-4">
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">1 · Download template</div>
+                    <div class="mt-1 text-sm font-semibold text-slate-900">Use the official workbook shape</div>
+                    <div class="mt-1 text-xs leading-6 text-slate-500">Keep team names, shift codes, and sheet names aligned with the template reference below.</div>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">2 · Preview import</div>
+                    <div class="mt-1 text-sm font-semibold text-slate-900">Generate a validation batch first</div>
+                    <div class="mt-1 text-xs leading-6 text-slate-500">The server returns parsed counts plus issue details before any roster data is applied.</div>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">3 · Apply only when ready</div>
+                    <div class="mt-1 text-sm font-semibold text-slate-900">Use preview findings as the decision gate</div>
+                    <div class="mt-1 text-xs leading-6 text-slate-500">If the preview shows blocking issues, open Validation Center before applying.</div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <button class="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" :disabled="templatePending" @click="downloadTemplate">
-              <Download class="h-4 w-4 text-teal-600" />
-              {{ templatePending ? 'Downloading...' : 'Download Template' }}
-            </button>
+          </WorkspaceSurface>
+
+          <WorkspaceSurface :padded="false" class="overflow-hidden">
+            <div class="border-b border-slate-100 px-6 py-5">
+              <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Template guide</div>
+              <h2 class="mt-2 text-lg font-semibold tracking-tight text-slate-900">Workbook shape at a glance</h2>
+            </div>
+            <div class="space-y-3 p-4">
+              <div
+                v-for="sheet in templateSheetCards"
+                :key="sheet.title"
+                class="rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#fff,rgba(248,250,252,0.96))] p-4 shadow-sm"
+              >
+                <div class="flex items-center justify-between gap-3">
+                  <div class="min-w-0">
+                    <div class="text-sm font-semibold text-slate-900">{{ sheet.title }}</div>
+                    <div class="mt-1 text-xs leading-6 text-slate-500">{{ sheet.subtitle }}</div>
+                  </div>
+                  <span class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    {{ sheet.count }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </WorkspaceSurface>
+        </div>
+
+        <WorkspaceSurface :padded="false" class="overflow-hidden">
+          <div class="border-b border-slate-100 bg-slate-50/50 px-6 py-4">
+            <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div class="flex items-center gap-2">
+                <UploadCloud class="h-5 w-5 text-slate-400" />
+                <h2 class="text-base font-semibold text-slate-800">Import workbook</h2>
+              </div>
+
+              <div class="flex items-center gap-2 text-xs text-slate-500">
+                <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">Upload</span>
+                <span class="text-slate-300">→</span>
+                <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">Preview</span>
+                <span class="text-slate-300">→</span>
+                <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">Apply</span>
+              </div>
+            </div>
           </div>
 
           <div class="space-y-6 p-6">
-            <p class="text-sm text-slate-600">
-              The import Excel file contains 3 sheets: <strong>Shift Definitions</strong>, <strong>Staff Shifts</strong>, and <strong>Color Definitions</strong>.
-              In the Shift Definitions sheet, the <strong>team</strong> column can contain one team or multiple team names separated by commas.
+            <div class="mx-auto flex max-w-2xl items-center">
+              <div class="flex flex-1 flex-col items-center gap-2">
+                <div :class="cn('flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors', stepStates.upload ? 'border-teal-500 bg-teal-50 text-teal-600' : 'border-slate-300 bg-white text-slate-400')">1</div>
+                <span :class="cn('text-xs font-medium', stepStates.upload ? 'text-teal-700' : 'text-slate-500')">Upload</span>
+              </div>
+              <div class="-mt-6 h-px w-16 bg-slate-200"></div>
+              <div class="flex flex-1 flex-col items-center gap-2">
+                <div :class="cn('flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors', stepStates.mapping ? 'border-teal-500 bg-teal-50 text-teal-600' : 'border-slate-300 bg-white text-slate-400')">2</div>
+                <span :class="cn('text-xs font-medium', stepStates.mapping ? 'text-teal-700' : 'text-slate-500')">Preview</span>
+              </div>
+              <div class="-mt-6 h-px w-16 bg-slate-200"></div>
+              <div class="flex flex-1 flex-col items-center gap-2">
+                <div :class="cn('flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors', stepStates.apply ? 'border-teal-500 bg-teal-50 text-teal-600' : 'border-slate-300 bg-white text-slate-400')">3</div>
+                <span :class="cn('text-xs font-medium', stepStates.apply ? 'text-teal-700' : 'text-slate-500')">Apply</span>
+              </div>
+            </div>
+
+            <div
+              v-if="fileStatus === 'idle'"
+              :class="cn(
+                'cursor-pointer rounded-[28px] border-2 border-dashed p-12 text-center transition-colors',
+                dragActive ? 'border-teal-400 bg-teal-50/60' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50',
+              )"
+              @dragover.prevent="dragActive = true"
+              @dragleave="dragActive = false"
+              @drop.prevent="handleDrop"
+            >
+              <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-slate-100 bg-white shadow-sm">
+                <FileSpreadsheet class="h-8 w-8 text-emerald-500" />
+              </div>
+              <h3 class="mb-1 text-lg font-semibold text-slate-700">Click to upload or drag & drop</h3>
+              <p class="mx-auto mb-6 max-w-sm text-sm text-slate-500">
+                Upload a roster workbook for {{ monthLabel }}. The server will preview row counts and validation issues before anything is applied.
+              </p>
+              <label for="workspace-import-file" class="inline-flex cursor-pointer rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50">
+                Browse files
+              </label>
+            </div>
+
+            <div v-else-if="fileStatus === 'uploading'" class="flex flex-col items-center justify-center rounded-[28px] border border-slate-200 bg-slate-50 p-12">
+              <RefreshCw class="mb-4 h-8 w-8 animate-spin text-teal-500" />
+              <h3 class="text-base font-semibold text-slate-700">Uploading workbook...</h3>
+              <p class="mt-2 text-sm text-slate-500">{{ fileName }}</p>
+              <div class="mt-4 h-2 w-64 overflow-hidden rounded-full bg-slate-200">
+                <div class="h-full w-1/2 animate-pulse bg-teal-500"></div>
+              </div>
+            </div>
+
+            <div v-else-if="fileStatus === 'mapping'" class="flex flex-col items-center justify-center rounded-[28px] border border-slate-200 bg-slate-50 p-12">
+              <RefreshCw class="mb-4 h-8 w-8 animate-spin text-teal-500" />
+              <h3 class="text-base font-semibold text-slate-700">Running preflight checks...</h3>
+              <p class="mt-2 text-sm text-slate-500">Parsing workbook structure, validating rows, and preparing the preview batch.</p>
+            </div>
+
+            <div v-else-if="fileStatus === 'error'" class="rounded-[28px] border border-rose-200 bg-rose-50 p-8 text-center">
+              <AlertTriangle class="mx-auto mb-3 h-8 w-8 text-rose-500" />
+              <h3 class="text-base font-semibold text-rose-800">Import preview failed</h3>
+              <p class="mt-2 text-sm text-rose-700">{{ errorMessage }}</p>
+              <button class="mt-5 rounded-xl border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-rose-700 transition-colors hover:bg-rose-100" @click="resetImport">
+                Reset
+              </button>
+            </div>
+
+            <div v-else class="space-y-6">
+              <div class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+                <div
+                  :class="[
+                    'flex flex-col gap-4 border-b p-6 lg:flex-row lg:items-center lg:justify-between',
+                    previewHealth.tone === 'good'
+                      ? 'border-emerald-200 bg-emerald-50/50'
+                      : previewHealth.tone === 'warning'
+                        ? 'border-amber-200 bg-amber-50/50'
+                        : 'border-slate-200 bg-slate-50/60',
+                  ]"
+                >
+                  <div class="flex items-center gap-3">
+                    <div
+                      :class="[
+                        'flex h-11 w-11 items-center justify-center rounded-full',
+                        previewHealth.tone === 'good'
+                          ? 'bg-emerald-100 text-emerald-600'
+                          : previewHealth.tone === 'warning'
+                            ? 'bg-amber-100 text-amber-600'
+                            : 'bg-slate-100 text-slate-600',
+                      ]"
+                    >
+                      <CheckCircle2 v-if="previewHealth.tone === 'good'" class="h-5 w-5" />
+                      <ShieldAlert v-else-if="previewHealth.tone === 'warning'" class="h-5 w-5" />
+                      <FileSpreadsheet v-else class="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 class="text-base font-semibold text-slate-800">{{ fileStatus === 'applied' ? 'Import applied' : previewHealth.label }}</h3>
+                      <p class="mt-0.5 break-words text-sm leading-6 text-slate-500">{{ latestFileDisplay }} · Batch {{ currentBatchDisplay }}</p>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                    <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ previewResult?.totalRecords || 0 }} parsed</span>
+                    <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ previewResult?.validRecords || 0 }} ready</span>
+                    <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ previewResult?.invalidRecords || 0 }} blocked</span>
+                  </div>
+                </div>
+
+                <div class="grid gap-4 p-6 xl:grid-cols-[1.2fr_0.8fr]">
+                  <div class="space-y-4">
+                    <div class="grid gap-4 md:grid-cols-3">
+                      <div
+                        v-for="card in previewSummaryCards"
+                        :key="card.label"
+                        class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4"
+                      >
+                        <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ card.label }}</div>
+                        <div class="mt-2 text-3xl font-semibold tracking-tight text-slate-950">{{ card.value }}</div>
+                        <div class="mt-1 text-xs leading-6 text-slate-500">{{ card.description }}</div>
+                      </div>
+                    </div>
+
+                    <div
+                      v-if="topPreviewIssue"
+                      class="rounded-2xl border border-amber-200 bg-amber-50/70 p-5"
+                    >
+                      <div class="flex flex-wrap items-center gap-2">
+                        <span
+                          :class="[
+                                'inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]',
+                            topPreviewIssue.severity === 'high'
+                              ? 'border-rose-200 bg-rose-50 text-rose-700'
+                              : topPreviewIssue.severity === 'medium'
+                                ? 'border-amber-200 bg-amber-50 text-amber-700'
+                                : 'border-sky-200 bg-sky-50 text-sky-700',
+                          ]"
+                        >
+                          {{ topPreviewIssue.severity }}
+                        </span>
+                        <span class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+                          {{ topPreviewIssue.team || topPreviewIssue.type || topPreviewIssue.date || 'Issue' }}
+                        </span>
+                      </div>
+                      <div class="mt-3 text-sm font-semibold text-slate-900">{{ topPreviewIssue.type || 'Top preview issue' }}</div>
+                      <div class="mt-1 text-sm leading-7 text-slate-600">{{ topPreviewIssue.description }}</div>
+                      <RouterLink
+                        to="/workspace/validation"
+                        class="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-100"
+                      >
+                        Open Validation Center
+                        <ArrowRight class="h-3.5 w-3.5" />
+                      </RouterLink>
+                    </div>
+
+                    <div class="rounded-2xl border border-slate-200 bg-white p-5">
+                      <div class="flex items-center justify-between gap-3">
+                        <div>
+                          <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Preview issue list</div>
+                          <div class="mt-1 text-sm font-semibold text-slate-900">Findings returned by the preview API</div>
+                        </div>
+                        <span class="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                          {{ previewIssues.length }} issue{{ previewIssues.length === 1 ? '' : 's' }}
+                        </span>
+                      </div>
+
+                      <ul class="mt-4 space-y-3">
+                        <li v-if="!previewIssues.length" class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm text-slate-500">
+                          No validation issues were returned. This batch is ready for final review and apply.
+                        </li>
+                        <li
+                          v-for="issue in previewIssues"
+                          :key="issue.id || `${issue.type}-${issue.description}`"
+                          class="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50/70 p-4"
+                        >
+                          <div class="flex flex-wrap items-center gap-2">
+                            <span
+                              :class="[
+                                'inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]',
+                                issue.severity === 'high'
+                                  ? 'border-rose-200 bg-rose-50 text-rose-700'
+                                  : issue.severity === 'medium'
+                                    ? 'border-amber-200 bg-amber-50 text-amber-700'
+                                    : 'border-sky-200 bg-sky-50 text-sky-700',
+                              ]"
+                            >
+                              {{ issue.severity }}
+                            </span>
+                            <span class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+                              {{ issue.team || issue.type || issue.date || '-' }}
+                            </span>
+                          </div>
+                          <div class="text-sm font-medium text-slate-800">{{ issue.description }}</div>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div class="space-y-4">
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+                      <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Issue breakdown</div>
+                      <div class="mt-4 space-y-3">
+                        <div class="flex items-center justify-between rounded-2xl border border-rose-100 bg-rose-50/70 px-4 py-3">
+                          <span class="text-sm font-medium text-slate-700">High severity</span>
+                          <span class="text-sm font-semibold text-rose-700">{{ issueSummary.high }}</span>
+                        </div>
+                        <div class="flex items-center justify-between rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3">
+                          <span class="text-sm font-medium text-slate-700">Medium severity</span>
+                          <span class="text-sm font-semibold text-amber-700">{{ issueSummary.medium }}</span>
+                        </div>
+                        <div class="flex items-center justify-between rounded-2xl border border-sky-100 bg-sky-50/70 px-4 py-3">
+                          <span class="text-sm font-medium text-slate-700">Low severity</span>
+                          <span class="text-sm font-semibold text-sky-700">{{ issueSummary.low }}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="rounded-2xl border border-slate-200 bg-white p-5">
+                      <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Next step</div>
+                      <div class="mt-2 text-sm font-semibold text-slate-900">
+                        {{ fileStatus === 'applied' ? 'Batch already applied' : previewHealth.label }}
+                      </div>
+                      <div class="mt-2 text-xs leading-6 text-slate-500">
+                        {{ fileStatus === 'applied'
+                          ? `${applyResult?.appliedRecords || 0} record(s) were applied for ${monthLabel}. Keep this preview for reference or reset to import another file.`
+                          : previewHealth.description }}
+                      </div>
+
+                      <div class="mt-4 flex flex-col gap-2">
+                        <button
+                          class="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          :disabled="!canApplyPreview || fileStatus === 'applying' || fileStatus === 'applied'"
+                          @click="applyChanges"
+                        >
+                          {{ fileStatus === 'applying' ? 'Applying...' : fileStatus === 'applied' ? 'Applied' : 'Apply Changes' }}
+                          <ChevronRight class="h-4 w-4" />
+                        </button>
+                        <RouterLink
+                          to="/workspace/validation"
+                          class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                        >
+                          Review in Validation Center
+                          <ArrowRight class="h-4 w-4" />
+                        </RouterLink>
+                        <button
+                          class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                          @click="resetImport"
+                        >
+                          Reset import
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </WorkspaceSurface>
+
+        <WorkspaceSurface :padded="false" class="overflow-hidden">
+          <div class="border-b border-slate-100 px-6 py-5">
+            <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Template reference</div>
+            <h2 class="mt-2 text-lg font-semibold tracking-tight text-slate-900">Sample rows from the official workbook</h2>
+          </div>
+
+          <div class="space-y-6 p-6">
+            <p class="text-sm leading-7 text-slate-600">
+              The import workbook contains three sheets: <strong>Shift Definitions</strong>, <strong>Staff Shifts</strong>, and <strong>Color Definitions</strong>.
+              In <strong>Shift Definitions</strong>, the <strong>team</strong> column can contain a single team or multiple team names separated by commas.
             </p>
 
             <div class="space-y-3">
               <h3 class="text-sm font-semibold text-slate-800">Sheet 1: Shift Definitions</h3>
-              <div class="overflow-x-auto rounded-lg border border-slate-200">
+              <div class="overflow-x-auto rounded-2xl border border-slate-200">
                 <table class="min-w-full text-left text-sm text-slate-600">
                   <thead class="border-b border-slate-200 bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
                     <tr>
@@ -273,7 +749,7 @@ onBeforeUnmount(clearTimer)
 
             <div class="space-y-3">
               <h3 class="text-sm font-semibold text-slate-800">Sheet 2: Staff Shifts</h3>
-              <div class="overflow-x-auto rounded-lg border border-slate-200">
+              <div class="overflow-x-auto rounded-2xl border border-slate-200">
                 <table class="min-w-full text-left text-sm text-slate-600">
                   <thead class="border-b border-slate-200 bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
                     <tr>
@@ -305,7 +781,7 @@ onBeforeUnmount(clearTimer)
 
             <div class="space-y-3">
               <h3 class="text-sm font-semibold text-slate-800">Sheet 3: Color Definitions</h3>
-              <div class="overflow-x-auto rounded-lg border border-slate-200">
+              <div class="overflow-x-auto rounded-2xl border border-slate-200">
                 <table class="min-w-full text-left text-sm text-slate-600">
                   <thead class="border-b border-slate-200 bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
                     <tr>
@@ -329,137 +805,6 @@ onBeforeUnmount(clearTimer)
                     </tr>
                   </tbody>
                 </table>
-              </div>
-            </div>
-          </div>
-        </WorkspaceSurface>
-
-        <WorkspaceSurface :padded="false" class="overflow-hidden">
-          <div class="flex items-center gap-2 border-b border-slate-100 bg-slate-50/50 px-6 py-4">
-            <UploadCloud class="h-5 w-5 text-slate-400" />
-            <h2 class="text-base font-semibold text-slate-800">Import Master Excel</h2>
-          </div>
-
-          <div class="space-y-6 p-6">
-            <div class="mx-auto mb-8 flex max-w-2xl items-center">
-              <div class="flex flex-1 flex-col items-center gap-2">
-                <div :class="cn('flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors', stepStates.upload ? 'border-teal-500 bg-teal-50 text-teal-600' : 'border-slate-300 bg-white text-slate-400')">1</div>
-                <span :class="cn('text-xs font-medium', stepStates.upload ? 'text-teal-700' : 'text-slate-500')">Upload</span>
-              </div>
-              <div class="-mt-6 h-px w-16 bg-slate-200"></div>
-              <div class="flex flex-1 flex-col items-center gap-2">
-                <div :class="cn('flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors', stepStates.mapping ? 'border-teal-500 bg-teal-50 text-teal-600' : 'border-slate-300 bg-white text-slate-400')">2</div>
-                <span :class="cn('text-xs font-medium', stepStates.mapping ? 'text-teal-700' : 'text-slate-500')">Map & Validate</span>
-              </div>
-              <div class="-mt-6 h-px w-16 bg-slate-200"></div>
-              <div class="flex flex-1 flex-col items-center gap-2">
-                <div :class="cn('flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors', stepStates.apply ? 'border-teal-500 bg-teal-50 text-teal-600' : 'border-slate-300 bg-white text-slate-400')">3</div>
-                <span :class="cn('text-xs font-medium', stepStates.apply ? 'text-teal-700' : 'text-slate-500')">Apply</span>
-              </div>
-            </div>
-
-            <div
-              v-if="fileStatus === 'idle'"
-              :class="cn(
-                'cursor-pointer rounded-xl border-2 border-dashed p-12 text-center transition-colors',
-                dragActive ? 'border-teal-400 bg-teal-50/50' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-              )"
-              @dragover.prevent="dragActive = true"
-              @dragleave="dragActive = false"
-              @drop.prevent="handleDrop"
-            >
-              <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-slate-100 bg-white shadow-sm">
-                <FileSpreadsheet class="h-8 w-8 text-emerald-500" />
-              </div>
-              <h3 class="mb-1 text-lg font-semibold text-slate-700">Click to upload or drag & drop</h3>
-              <p class="mx-auto mb-6 max-w-sm text-sm text-slate-500">Support for standard .xlsx schedule formats. Dates must be in YYYY-MM-DD format.</p>
-              <label for="workspace-import-file" class="inline-flex rounded-md border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 cursor-pointer">
-                Browse Files
-              </label>
-            </div>
-
-            <div v-else-if="fileStatus === 'uploading'" class="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-12">
-              <RefreshCw class="mb-4 h-8 w-8 animate-spin text-teal-500" />
-              <h3 class="text-base font-semibold text-slate-700">Uploading and Parsing...</h3>
-              <p class="mt-2 text-sm text-slate-500">{{ fileName }}</p>
-              <div class="mt-4 h-2 w-64 overflow-hidden rounded-full bg-slate-200">
-                <div class="h-full w-1/2 animate-pulse bg-teal-500"></div>
-              </div>
-            </div>
-
-            <div v-else-if="fileStatus === 'mapping'" class="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-12">
-              <RefreshCw class="mb-4 h-8 w-8 animate-spin text-teal-500" />
-              <h3 class="text-base font-semibold text-slate-700">Validating Shift Codes...</h3>
-              <p class="mt-2 text-sm text-slate-500">Checking team rules and cross-day conflicts</p>
-            </div>
-
-            <div v-else-if="fileStatus === 'error'" class="rounded-xl border border-rose-200 bg-rose-50 p-8 text-center">
-              <AlertTriangle class="mx-auto mb-3 h-8 w-8 text-rose-500" />
-              <h3 class="text-base font-semibold text-rose-800">Import Preview Failed</h3>
-              <p class="mt-2 text-sm text-rose-700">{{ errorMessage }}</p>
-              <button class="mt-5 rounded-md border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-rose-700 transition-colors hover:bg-rose-100" @click="resetImport">
-                Reset
-              </button>
-            </div>
-
-            <div v-else class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-              <div class="flex items-center justify-between border-b border-slate-100 bg-emerald-50/30 p-6">
-                <div class="flex items-center gap-3">
-                  <CheckCircle2 class="h-6 w-6 text-emerald-500" />
-                  <div>
-                    <h3 class="text-base font-semibold text-slate-800">{{ fileStatus === 'applied' ? 'Import Applied' : 'Validation Complete' }}</h3>
-                    <p class="mt-0.5 text-sm text-slate-500">{{ fileName }} • {{ previewResult?.totalRecords || 0 }} records parsed</p>
-                  </div>
-                </div>
-                <div class="text-right text-sm font-semibold text-emerald-600">
-                  {{ fileStatus === 'applied' ? `${applyResult?.appliedRecords || 0} applied` : `${previewResult?.validRecords || 0} valid / ${previewResult?.invalidRecords || 0} invalid` }}
-                </div>
-              </div>
-
-              <div class="flex flex-col gap-6 border-b border-slate-100 bg-slate-50 p-6 lg:flex-row">
-                <div class="flex-1 rounded-lg border border-slate-200 bg-white p-4">
-                  <h4 class="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    <AlertTriangle class="h-4 w-4 text-amber-500" />
-                    Issues Found
-                  </h4>
-                  <ul class="space-y-2 text-sm text-slate-700">
-                    <li v-if="!previewResult?.issues?.length" class="text-slate-500">No validation issues were returned.</li>
-                    <li v-for="issue in previewResult?.issues || []" :key="issue.id || `${issue.type}-${issue.description}`" class="flex items-center justify-between gap-4">
-                      <span>{{ issue.description }}</span>
-                      <span class="text-xs text-slate-400">{{ issue.team || issue.type || issue.date || '-' }}</span>
-                    </li>
-                  </ul>
-                </div>
-                <div class="flex-1 rounded-lg border border-slate-200 bg-white p-4">
-                  <h4 class="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    <CheckCircle2 class="h-4 w-4 text-emerald-500" />
-                    Changes Summary
-                  </h4>
-                  <ul class="space-y-2 text-sm text-slate-700">
-                    <li class="flex items-center justify-between">
-                      <span>Total parsed records</span>
-                      <span class="text-xs font-medium text-emerald-600">{{ previewResult?.totalRecords || 0 }}</span>
-                    </li>
-                    <li class="flex items-center justify-between">
-                      <span>Valid records</span>
-                      <span class="text-xs font-medium text-sky-600">{{ previewResult?.validRecords || 0 }}</span>
-                    </li>
-                    <li class="flex items-center justify-between">
-                      <span>Invalid records</span>
-                      <span class="text-xs font-medium text-amber-600">{{ previewResult?.invalidRecords || 0 }}</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              <div class="flex items-center justify-end gap-3 p-6">
-                <button class="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50" @click="resetImport">
-                  Cancel Import
-                </button>
-                <button class="flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60" :disabled="fileStatus === 'applying' || fileStatus === 'applied'" @click="applyChanges">
-                  {{ fileStatus === 'applying' ? 'Applying...' : fileStatus === 'applied' ? 'Applied' : 'Apply Changes' }}
-                  <ChevronRight class="h-4 w-4" />
-                </button>
               </div>
             </div>
           </div>

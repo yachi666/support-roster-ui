@@ -37,8 +37,10 @@ Dashboard.vue
 | `selectedTimezone` | `string` | 归一化后的 UTC/HKT/IST | 当前选中时区 |
 | `teams` | `TeamDto[]` | `[]` | 团队列表 |
 | `shifts` | `ShiftDto[]` | `[]` | 排班数据 |
-| `loading` | `boolean` | `false` | 加载状态 |
-| `error` | `string \| null` | `null` | 错误信息 |
+| `loadingTeams` | `boolean` | `false` | 团队加载状态 |
+| `loadingShifts` | `boolean` | `false` | 班次加载状态 |
+| `teamError` | `string \| null` | `null` | 团队加载错误 |
+| `shiftError` | `string \| null` | `null` | 班次加载错误 |
 
 ### 计算属性
 
@@ -80,12 +82,16 @@ watch([selectedDate, selectedTimezone], () => {
 
 ```javascript
 async function fetchTeams() {
+  loadingTeams.value = true
+  teamError.value = null
   try {
     const data = await api.getTeams()
     teams.value = data
   } catch (err) {
     console.error('Failed to fetch teams:', err)
-    error.value = 'Failed to load teams'
+    teamError.value = 'Failed to load teams'
+  } finally {
+    loadingTeams.value = false
   }
 }
 ```
@@ -94,16 +100,16 @@ async function fetchTeams() {
 
 ```javascript
 async function fetchShifts() {
-  loading.value = true
-  error.value = null
+  loadingShifts.value = true
+  shiftError.value = null
   try {
     const data = await api.getShifts(formattedDate.value, null, toIanaTimezone(selectedTimezone.value))
     shifts.value = data
   } catch (err) {
     console.error('Failed to fetch shifts:', err)
-    error.value = 'Failed to load shifts'
+    shiftError.value = 'Failed to load shifts'
   } finally {
-    loading.value = false
+    loadingShifts.value = false
   }
 }
 ```
@@ -147,19 +153,16 @@ async function fetchShifts() {
 
 ## 条件渲染
 
-### 加载状态
+### 加载 / 空态 / 错误状态
 
 ```vue
-<div v-if="loading" class="flex items-center justify-center h-full">
-  <div class="text-gray-500">Loading...</div>
-</div>
-```
-
-### 错误状态
-
-```vue
-<div v-else-if="error" class="flex items-center justify-center h-full">
-  <div class="text-red-500">{{ error }}</div>
+<div v-if="isLoading || hasError || isEmptyState || isNoTeamsState">
+  <StateCard
+    :title="stateTitle"
+    :description="stateDescription"
+    :action-label="stateActionLabel"
+    @action="retryViewerState"
+  />
 </div>
 ```
 
@@ -174,6 +177,15 @@ async function fetchShifts() {
   :shifts="shifts"
 />
 ```
+
+---
+
+## 反馈状态约束
+
+- 团队加载失败与班次加载失败需分开描述，避免用户无法判断是哪一类数据缺失。
+- 当返回 0 个班次时，应展示明确空态，而不是渲染一个看起来“空白但像加载失败”的时间轴。
+- 状态卡片应保留当前日期与时区上下文，帮助用户确认自己正在查看的条件。
+- 错误态与空态都应提供显式刷新/重试入口，避免用户只能依赖浏览器刷新。
 
 ---
 
