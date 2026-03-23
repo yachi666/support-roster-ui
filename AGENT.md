@@ -14,6 +14,7 @@
 - spec 目录结构要保持清晰，按主题拆分，例如：`modules/`、`workspace/`、`architecture`、`ui-design`。
 - 单个 spec 文件应尽量聚焦单一主题，避免把页面逻辑、组件实现、接口约束、视觉规范、交互流程混在同一文件中。
 - 文件命名保持语义化和可读性，优先使用 kebab-case。
+- 涉及本地联调、脚本重启、服务健康检查或浏览器自动化验证时，优先参考 `.specs/development.md`，并在流程变化时同步更新该文档。
 
 ## Update Workflow
 

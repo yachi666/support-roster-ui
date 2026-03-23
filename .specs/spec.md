@@ -18,6 +18,7 @@
 | 章节 | 文件 | 说明 |
 |------|------|------|
 | 总览 | `./architecture.md` | 前端运行时结构、顶层路由、状态策略与后端集成边界 |
+| 开发联调 | `./development.md` | 本地重启脚本、服务健康检查、日志定位与浏览器验证方法 |
 | 部署 | `./deployment.md` | 构建、容器化、Fargate 部署与发布约束 |
 | 视觉 | `./ui-design.md` | 全局视觉语言与 Public Viewer 设计约束 |
 | Viewer 分册 | `./modules/index.md` | Public Viewer 模块目录与模块关系 |
@@ -37,6 +38,7 @@ graph TB
     CHANGELOG[CHANGELOG.md 变更记录]
 
     ROOT --> ARCH
+    ROOT --> DEV[development.md 本地联调]
     ROOT --> DEPLOY
     ROOT --> UIDESIGN
     ROOT --> MODULES
@@ -80,8 +82,8 @@ graph TB
 ## 快速链接
 
 - [前端架构](./architecture.md)
+- [开发联调与浏览器验证](./development.md)
 - [部署规范](./deployment.md)
 - [视觉规范](./ui-design.md)
 - [Public Viewer 分册](./modules/index.md)
 - [Workspace 分册](./workspace/index.md)
-

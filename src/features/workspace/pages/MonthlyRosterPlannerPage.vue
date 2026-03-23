@@ -1,18 +1,19 @@
 <script setup>
 import {
+  AlertTriangle,
   Download,
   Filter,
   Save,
   Search,
   Upload,
-  X,
 } from 'lucide-vue-next'
-import { RouterLink } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeRouteLeave, RouterLink } from 'vue-router'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
 import AssignmentDrawer from '../components/roster/AssignmentDrawer.vue'
 import RosterGrid from '../components/roster/RosterGrid.vue'
 import { useRosterPlanner } from '../composables/useRosterPlanner'
-import { ref } from 'vue'
+import { registerWorkspacePeriodGuard } from '../composables/useWorkspacePeriod'
 
 const {
   plannerDays,
@@ -25,9 +26,12 @@ const {
   saving,
   errorMessage,
   saveErrorMessage,
+  saveSuccessMessage,
   selectedCell,
   drawerOpen,
   hasUnsavedChanges,
+  pendingUpdateCount,
+  pendingUpdateKeys,
   selectedAssignment,
   selectedShiftCode,
   validationWarning,
@@ -42,6 +46,8 @@ const {
   closeDrawer,
   setShiftCode,
   applySelectedShift,
+  copySelectedWeekToNextWeek,
+  applySelectedRange,
   discardChanges,
   saveChanges,
   toggleTeamFilter,
@@ -51,6 +57,161 @@ const {
 } = useRosterPlanner()
 
 const showTeamFilter = ref(false)
+const selectedRange = ref(null)
+const hasRangeSelection = computed(() => {
+  return Boolean(
+    selectedRange.value &&
+    selectedRange.value.staffId &&
+    selectedRange.value.endDay > selectedRange.value.startDay,
+  )
+})
+const selectedRangeSummary = computed(() => {
+  if (!hasRangeSelection.value) {
+    return ''
+  }
+
+  return `Selected days ${selectedRange.value.startDay}-${selectedRange.value.endDay}`
+})
+
+const activeFilterSummary = computed(() => {
+  const filters = []
+
+  if (searchTerm.value.trim()) {
+    filters.push(`Search: ${searchTerm.value.trim()}`)
+  }
+
+  if (selectedTeamIds.value.length > 0) {
+    filters.push(`${selectedTeamIds.value.length} team filter${selectedTeamIds.value.length > 1 ? 's' : ''}`)
+  }
+
+  return filters
+})
+
+const visibleStaffRows = computed(() =>
+  filteredGroups.value.flatMap((group) =>
+    group.staff.map((person) => ({
+      staffId: person.id,
+      teamId: group.teamId,
+    })),
+  ),
+)
+
+function confirmDiscardPendingChanges() {
+  if (!hasUnsavedChanges.value) {
+    return true
+  }
+
+  return window.confirm(`You have ${pendingUpdateCount.value} unsaved roster change(s). Leave without saving?`)
+}
+
+function selectCell(staffId, day) {
+  selectedCell.value = { staffId, day }
+  selectedRange.value = { staffId, startDay: day, endDay: day }
+}
+
+function selectRange({ staffId, startDay, endDay, openEditor = false }) {
+  selectedCell.value = { staffId, day: startDay }
+  selectedRange.value = { staffId, startDay, endDay }
+
+  if (openEditor) {
+    openCell(staffId, startDay)
+  }
+}
+
+function clearRangeSelection() {
+  if (!selectedCell.value?.staffId || !selectedCell.value?.day) {
+    selectedRange.value = null
+    return
+  }
+
+  selectedRange.value = {
+    staffId: selectedCell.value.staffId,
+    startDay: selectedCell.value.day,
+    endDay: selectedCell.value.day,
+  }
+}
+
+function handleGridNavigation({ rowDelta, dayDelta, staffId, day }) {
+  const rows = visibleStaffRows.value
+  if (!rows.length) {
+    return
+  }
+
+  const currentIndex = rows.findIndex((row) => row.staffId === (staffId || selectedCell.value?.staffId))
+  const safeIndex = currentIndex === -1 ? 0 : currentIndex
+  const nextIndex = Math.min(Math.max(safeIndex + rowDelta, 0), rows.length - 1)
+  const nextDay = Math.min(Math.max((day || selectedCell.value?.day || 1) + dayDelta, 1), plannerDays.value.length)
+
+  selectCell(rows[nextIndex].staffId, nextDay)
+}
+
+function openSelectedCell(payload) {
+  const staffId = payload?.staffId || selectedCell.value?.staffId
+  const day = payload?.day || selectedCell.value?.day
+
+  if (!staffId || !day) {
+    return
+  }
+
+  openCell(staffId, day)
+}
+
+function applyAndAdvanceDay() {
+  if (!selectedCell.value) {
+    return
+  }
+
+  const { staffId, day } = selectedCell.value
+  applySelectedShift()
+
+  const nextDay = day + 1
+  if (nextDay > plannerDays.value.length) {
+    return
+  }
+
+  openCell(staffId, nextDay)
+}
+
+function copyWeekForward() {
+  const result = copySelectedWeekToNextWeek()
+  if (!result) {
+    return
+  }
+
+  openCell(result.staffId, result.firstTargetDay)
+}
+
+function applyRangeForward(endDay) {
+  const result = applySelectedRange(endDay)
+  if (!result) {
+    return
+  }
+
+  openCell(result.staffId, result.endDay)
+}
+
+let unregisterPeriodGuard = null
+
+function handleBeforeUnload(event) {
+  if (!hasUnsavedChanges.value) {
+    return
+  }
+
+  event.preventDefault()
+  event.returnValue = ''
+}
+
+onMounted(() => {
+  unregisterPeriodGuard = registerWorkspacePeriodGuard(() => confirmDiscardPendingChanges())
+  window.addEventListener('beforeunload', handleBeforeUnload)
+})
+
+onBeforeUnmount(() => {
+  unregisterPeriodGuard?.()
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+})
+
+onBeforeRouteLeave(() => confirmDiscardPendingChanges())
 </script>
 
 <template>
@@ -59,7 +220,12 @@ const showTeamFilter = ref(false)
       <div class="flex items-center gap-4">
         <div>
           <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Monthly Roster</div>
-          <div class="text-sm font-semibold text-slate-800">{{ monthLabel }}</div>
+          <div class="flex items-center gap-2 text-sm font-semibold text-slate-800">
+            <span>{{ monthLabel }}</span>
+            <span v-if="hasUnsavedChanges" class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-amber-700">
+              {{ pendingUpdateCount }} unsaved
+            </span>
+          </div>
         </div>
       </div>
 
@@ -139,6 +305,44 @@ const showTeamFilter = ref(false)
       </div>
     </div>
 
+    <div v-if="hasUnsavedChanges || activeFilterSummary.length || validationWarning || hasRangeSelection" class="border-b border-slate-200 bg-slate-50/80 px-4 py-3">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
+          {{ monthLabel }}
+        </span>
+        <span v-if="hasUnsavedChanges" class="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-800">
+          {{ pendingUpdateCount }} pending edit{{ pendingUpdateCount > 1 ? 's' : '' }}
+        </span>
+        <span
+          v-for="item in activeFilterSummary"
+          :key="item"
+          class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600"
+        >
+          {{ item }}
+        </span>
+        <span class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600">
+          Arrow keys move, Enter edits
+        </span>
+        <span
+          v-if="hasRangeSelection"
+          class="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700"
+        >
+          {{ selectedRangeSummary }}
+        </span>
+        <button
+          v-if="hasRangeSelection"
+          class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-800"
+          @click="clearRangeSelection"
+        >
+          Clear range
+        </button>
+      </div>
+      <div v-if="validationWarning" class="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <AlertTriangle class="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
+        <span>{{ validationWarning }}</span>
+      </div>
+    </div>
+
     <WorkspaceSurface v-if="errorMessage" tone="muted" class="m-4 border-rose-200 bg-rose-50 p-5 text-sm text-rose-700">
       <div class="flex items-center justify-between gap-4">
         <span>{{ errorMessage }}</span>
@@ -150,6 +354,10 @@ const showTeamFilter = ref(false)
 
     <div v-if="saveErrorMessage" class="mx-4 mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
       {{ saveErrorMessage }}
+    </div>
+
+    <div v-if="saveSuccessMessage" class="mx-4 mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+      {{ saveSuccessMessage }}
     </div>
 
     <div v-if="importExportError" class="mx-4 mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -172,9 +380,16 @@ const showTeamFilter = ref(false)
       :days="plannerDays"
       :groups="filteredGroups"
       :selected-cell="selectedCell"
+      :selected-range="selectedRange"
+      :year="year"
+      :month="month"
       :shift-code-color-map="shiftCodeColorMap"
       :shift-details-by-team="shiftDetailsByTeam"
-      @select-cell="openCell($event.staffId, $event.day)"
+      :pending-update-keys="pendingUpdateKeys"
+      @select-cell="selectCell($event.staffId, $event.day)"
+      @select-range="selectRange"
+      @navigate-cell="handleGridNavigation"
+      @open-selected-cell="openSelectedCell"
     />
 
     <Transition name="status-bar">
@@ -184,7 +399,7 @@ const showTeamFilter = ref(false)
       >
         <div class="flex items-center gap-2">
           <div class="h-2 w-2 rounded-full bg-amber-400 animate-pulse"></div>
-          <span class="text-sm font-medium">You have unsaved changes</span>
+          <span class="text-sm font-medium">You have {{ pendingUpdateCount }} unsaved change{{ pendingUpdateCount > 1 ? 's' : '' }}</span>
         </div>
         <div class="flex items-center gap-2">
           <button class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-slate-700" @click="discardChanges">
@@ -201,6 +416,7 @@ const showTeamFilter = ref(false)
     <AssignmentDrawer
       v-model="drawerOpen"
       :assignment="selectedAssignment"
+      :selected-range="selectedRange"
       :selected-shift-code="selectedShiftCode"
       :shift-code-options="shiftCodeOptions"
       :validation-warning="validationWarning"
@@ -208,6 +424,10 @@ const showTeamFilter = ref(false)
       :month="month"
       @select-code="setShiftCode"
       @apply="applySelectedShift"
+      @apply-and-next="applyAndAdvanceDay"
+      @copy-week="copyWeekForward"
+      @apply-range="applyRangeForward"
+      @clear-range="clearRangeSelection"
     />
   </div>
 </template>

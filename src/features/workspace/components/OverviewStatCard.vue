@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue'
 import { AlertTriangle, CheckCircle2, Clock3 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -25,18 +26,85 @@ const progressToneMap = {
   error: 'bg-rose-400',
   neutral: 'bg-sky-400',
 }
+
+const badgeToneMap = {
+  good: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  warning: 'border-amber-200 bg-amber-50 text-amber-700',
+  error: 'border-rose-200 bg-rose-50 text-rose-700',
+  neutral: 'border-sky-200 bg-sky-50 text-sky-700',
+}
+
+const cardToneMap = {
+  good: 'border-emerald-100/80 bg-[linear-gradient(180deg,rgba(236,253,245,0.95),rgba(255,255,255,1))]',
+  warning: 'border-amber-100/80 bg-[linear-gradient(180deg,rgba(255,251,235,0.96),rgba(255,255,255,1))]',
+  error: 'border-rose-100/80 bg-[linear-gradient(180deg,rgba(255,241,242,0.96),rgba(255,255,255,1))]',
+  neutral: 'border-sky-100/80 bg-[linear-gradient(180deg,rgba(240,249,255,0.96),rgba(255,255,255,1))]',
+}
+
+const statusLabelMap = {
+  good: 'Healthy',
+  warning: 'Needs attention',
+  error: 'Critical',
+  neutral: 'Tracking',
+}
+
+const normalizedStatus = computed(() => {
+  return iconMap[props.stat?.status] ? props.stat.status : 'neutral'
+})
+
+const progressValue = computed(() => {
+  const numericProgress = Number(props.stat?.progress ?? 0)
+  return Math.min(100, Math.max(0, Number.isFinite(numericProgress) ? numericProgress : 0))
+})
 </script>
 
 <template>
-  <div class="group relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-    <div class="flex items-center justify-between">
-      <span class="text-sm font-medium text-slate-500">{{ stat.label }}</span>
-      <component :is="iconMap[stat.status]" :class="['h-4 w-4', toneMap[stat.status]]" />
+  <div
+    :class="[
+      'group relative overflow-hidden rounded-[28px] border p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)] transition-transform duration-200 hover:-translate-y-0.5',
+      cardToneMap[normalizedStatus],
+    ]"
+  >
+    <div class="absolute inset-x-6 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(148,163,184,0.45),transparent)]"></div>
+
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <div class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+          {{ stat.label }}
+        </div>
+        <div class="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
+          {{ stat.value }}
+        </div>
+      </div>
+      <div class="flex flex-col items-end gap-2">
+        <span
+          :class="[
+            'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]',
+            badgeToneMap[normalizedStatus],
+          ]"
+        >
+          <component :is="iconMap[normalizedStatus]" class="h-3.5 w-3.5" />
+          {{ statusLabelMap[normalizedStatus] }}
+        </span>
+        <component :is="iconMap[normalizedStatus]" :class="['h-5 w-5', toneMap[normalizedStatus]]" />
+      </div>
     </div>
-    <div class="mt-3 text-3xl font-semibold text-slate-800">{{ stat.value }}</div>
-    <div class="mt-1 text-xs text-slate-400">{{ stat.trend }}</div>
-    <div class="absolute bottom-0 left-0 h-1 w-full bg-slate-100">
-      <div :class="['h-full', progressToneMap[stat.status]]" :style="{ width: `${stat.progress}%` }"></div>
+
+    <div class="mt-4 text-sm leading-6 text-slate-600">
+      {{ stat.trend }}
+    </div>
+
+    <div class="mt-5">
+      <div class="mb-2 flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">
+        <span>Health index</span>
+        <span>{{ progressValue }}%</span>
+      </div>
+      <div class="h-2 rounded-full bg-white/80 ring-1 ring-inset ring-slate-200/70">
+        <div
+          :class="['h-full rounded-full transition-all', progressToneMap[normalizedStatus]]"
+          :style="{ width: `${progressValue}%` }"
+        ></div>
+      </div>
     </div>
   </div>
 </template>

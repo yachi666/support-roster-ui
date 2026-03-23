@@ -123,7 +123,20 @@ export const api = {
   getShiftCodes: () => request('/shift-codes'),
 
   workspace: {
-    getOverview: () => request('/workspace/overview'),
+    getOverview: (year, month) => {
+      const params = new URLSearchParams()
+
+      if (year != null) {
+        params.set('year', String(year))
+      }
+
+      if (month != null) {
+        params.set('month', String(month))
+      }
+
+      const query = params.toString()
+      return request(`/workspace/overview${query ? `?${query}` : ''}`)
+    },
 
     getStaff: (keyword = '') => {
       const params = new URLSearchParams()

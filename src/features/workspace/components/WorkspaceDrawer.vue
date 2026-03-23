@@ -1,4 +1,6 @@
 <script setup>
+import { onBeforeUnmount, watch } from 'vue'
+
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   title: { type: String, default: '' },
@@ -10,6 +12,29 @@ const emit = defineEmits(['update:modelValue'])
 function closeDrawer() {
   emit('update:modelValue', false)
 }
+
+function handleKeydown(event) {
+  if (event.key === 'Escape') {
+    closeDrawer()
+  }
+}
+
+watch(
+  () => props.modelValue,
+  (isOpen) => {
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeydown)
+      return
+    }
+
+    window.removeEventListener('keydown', handleKeydown)
+  },
+  { immediate: true },
+)
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <template>
@@ -22,6 +47,9 @@ function closeDrawer() {
       v-if="props.modelValue"
       class="fixed right-0 top-0 z-50 flex h-screen max-w-full flex-col border-l border-slate-200 bg-white shadow-[-16px_0_48px_rgba(15,23,42,0.08)]"
       :style="{ width: props.width }"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="title || 'Workspace drawer'"
     >
       <header class="flex items-center justify-between border-b border-slate-100 bg-slate-50/70 px-6 py-4">
         <div>
