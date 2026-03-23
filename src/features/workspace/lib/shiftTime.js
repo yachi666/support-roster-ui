@@ -37,6 +37,14 @@ export function createTimeOptions(stepMinutes = 30) {
   })
 }
 
+export function normalizeDurationMinutes(value) {
+  const minutes = Number(value)
+  if (!Number.isFinite(minutes) || minutes <= 0) {
+    return 0
+  }
+  return Math.min(MINUTES_PER_DAY, Math.round(minutes))
+}
+
 export function calculateShiftDuration(startTime, endTime) {
   const startMinutes = toMinutes(startTime)
   let endMinutes = toMinutes(endTime)
@@ -53,6 +61,39 @@ export function calculateShiftDuration(startTime, endTime) {
   }
 }
 
+export function calculateShiftWindow(startTime, durationOrEndTime) {
+  const normalizedStart = normalizeTimeValue(startTime)
+  if (!normalizedStart) {
+    return {
+      startTime: '',
+      endTime: '',
+      durationMinutes: 0,
+      overnight: false,
+    }
+  }
+
+  const durationMinutes = typeof durationOrEndTime === 'number'
+      || /^\d+$/.test(String(durationOrEndTime ?? ''))
+    ? normalizeDurationMinutes(durationOrEndTime)
+    : calculateShiftDuration(normalizedStart, durationOrEndTime).minutes
+
+  if (!durationMinutes) {
+    return {
+      startTime: normalizedStart,
+      endTime: '',
+      durationMinutes: 0,
+      overnight: false,
+    }
+  }
+
+  return {
+    startTime: normalizedStart,
+    endTime: addMinutesToTime(normalizedStart, durationMinutes),
+    durationMinutes,
+    overnight: durationMinutes === MINUTES_PER_DAY || toMinutes(normalizedStart) + durationMinutes > MINUTES_PER_DAY,
+  }
+}
+
 export function formatDurationLabel(totalMinutes) {
   const hours = Math.floor(totalMinutes / 60)
   const minutes = totalMinutes % 60
@@ -64,17 +105,14 @@ export function formatDurationLabel(totalMinutes) {
   return `${hours}h ${minutes}m`
 }
 
-export function describeShiftWindow(startTime, endTime) {
-  const normalizedStart = normalizeTimeValue(startTime)
-  const normalizedEnd = normalizeTimeValue(endTime)
-
-  if (!normalizedStart || !normalizedEnd) {
+export function describeShiftWindow(startTime, durationOrEndTime) {
+  const window = calculateShiftWindow(startTime, durationOrEndTime)
+  if (!window.startTime || !window.endTime || !window.durationMinutes) {
     return ''
   }
 
-  const duration = calculateShiftDuration(normalizedStart, normalizedEnd)
-  const suffix = duration.overnight ? 'next day' : 'same day'
-  return `${normalizedStart} - ${normalizedEnd} · ${formatDurationLabel(duration.minutes)} · ${suffix}`
+  const suffix = window.overnight ? 'next day' : 'same day'
+  return `${window.startTime} - ${window.endTime} · ${formatDurationLabel(window.durationMinutes)} · ${suffix}`
 }
 
 export function buildShiftTooltip(detail) {
@@ -87,7 +125,7 @@ export function buildShiftTooltip(detail) {
     lines.push(detail.meaning)
   }
 
-  const windowLabel = describeShiftWindow(detail.startTime, detail.endTime)
+  const windowLabel = describeShiftWindow(detail.startTime, detail.durationMinutes ?? detail.endTime)
   if (windowLabel) {
     lines.push(windowLabel)
   }

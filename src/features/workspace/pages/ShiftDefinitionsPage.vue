@@ -1,9 +1,19 @@
 <script setup>
 import { computed, onMounted, reactive, shallowRef } from 'vue'
-import { Clock3, Pencil, Plus, Search, Trash2 } from 'lucide-vue-next'
+import { Clock3, Plus, Search, Trash2 } from 'lucide-vue-next'
 import { api } from '@/api'
+import { useAuthStore } from '@/stores/auth'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
-import { addMinutesToTime, createTimeOptions, describeShiftWindow, normalizeTimeValue, toMinutes } from '../lib/shiftTime'
+import {
+  addMinutesToTime,
+  calculateShiftWindow,
+  createTimeOptions,
+  describeShiftWindow,
+  formatDurationLabel,
+  normalizeDurationMinutes,
+  normalizeTimeValue,
+  toMinutes,
+} from '../lib/shiftTime'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
@@ -14,7 +24,7 @@ const EMPTY_FORM = {
   code: '',
   meaning: '',
   startTime: '09:00',
-  endTime: '17:00',
+  durationMinutes: 8 * 60,
   timezone: 'UTC',
   primaryShift: false,
   visible: true,
@@ -38,6 +48,7 @@ const formErrorMessage = shallowRef('')
 const confirmDeleteVisible = shallowRef(false)
 const fieldErrors = reactive({})
 const formState = reactive({ ...EMPTY_FORM })
+const authStore = useAuthStore()
 
 const shiftErrorRules = [
   {
@@ -58,8 +69,8 @@ const shiftErrorRules = [
     field: 'startTime',
   },
   {
-    match: /end\s*time|endtime/i,
-    field: 'endTime',
+    match: /duration|minutes/i,
+    field: 'durationMinutes',
   },
   {
     match: /timezone/i,
@@ -99,7 +110,7 @@ const visibleShifts = computed(() => {
   return shiftDefinitions.value.filter((shift) => {
     const shiftTeams = getShiftTeams(shift)
     const teamNames = shiftTeams.map((team) => team.name).join(' ')
-    const matchesSearch = !query || [shift.code, shift.meaning, shift.teamName, shift.teamCode, teamNames].join(' ').toLowerCase().includes(query)
+    const matchesSearch = !query || [shift.code, shift.meaning, shift.teamName, teamNames].join(' ').toLowerCase().includes(query)
     const matchesTeam = !teamId || shiftTeams.some((team) => String(team.id) === teamId)
     return matchesSearch && matchesTeam
   })
@@ -110,11 +121,17 @@ const drawerOpen = computed(() => Boolean(selectedShift.value) || formVisible.va
 
 function previewStyle(shift) {
   const start = (toMinutes(shift.startTime) / 1440) * 100
-  let end = (toMinutes(shift.endTime) / 1440) * 100
+  const durationMinutes = normalizeDurationMinutes(shift.durationMinutes)
 
-  if (end <= start) {
-    end = 100
+  if (durationMinutes >= 1440) {
+    return {
+      left: '0%',
+      right: '0%',
+      backgroundColor: shift.colorHex || '#94a3b8',
+    }
   }
+
+  const end = Math.min(1440, toMinutes(shift.startTime) + durationMinutes)
 
   return {
     left: `${start}%`,
@@ -134,7 +151,17 @@ function codeIconStyle(shift) {
   }
 }
 
-const timeSummary = computed(() => describeShiftWindow(formState.startTime, formState.endTime))
+const timeSummary = computed(() => describeShiftWindow(formState.startTime, formState.durationMinutes))
+const endTimePreview = computed(() => {
+  if (!formState.startTime || !normalizeDurationMinutes(formState.durationMinutes)) {
+    return ''
+  }
+  return addMinutesToTime(formState.startTime, normalizeDurationMinutes(formState.durationMinutes))
+})
+const durationLabel = computed(() => {
+  const durationMinutes = normalizeDurationMinutes(formState.durationMinutes)
+  return durationMinutes ? formatDurationLabel(durationMinutes) : ''
+})
 
 function getShiftTeams(shift) {
   if (shift.teams?.length) {
@@ -157,18 +184,15 @@ function toggleFormTeam(teamId) {
 }
 
 function applyDurationPreset(durationMinutes) {
-  formState.endTime = addMinutesToTime(formState.startTime, durationMinutes)
+  formState.durationMinutes = durationMinutes
 }
 
 function handleStartTimeChange() {
   formState.startTime = normalizeTimeValue(formState.startTime)
-  if (!formState.endTime || normalizeTimeValue(formState.endTime) === formState.startTime) {
-    applyDurationPreset(8 * 60)
-  }
 }
 
-function handleEndTimeChange() {
-  formState.endTime = normalizeTimeValue(formState.endTime)
+function handleDurationChange() {
+  formState.durationMinutes = normalizeDurationMinutes(formState.durationMinutes)
 }
 
 function resetForm() {
@@ -186,7 +210,7 @@ function fillForm(shift) {
     code: shift?.code || '',
     meaning: shift?.meaning || '',
     startTime: normalizeTimeValue(shift?.startTime) || '09:00',
-    endTime: normalizeTimeValue(shift?.endTime) || '17:00',
+    durationMinutes: calculateShiftWindow(shift?.startTime, shift?.durationMinutes ?? shift?.endTime).durationMinutes || 8 * 60,
     timezone: normalizeWorkspaceStaffTimezone(shift?.timezone),
     primaryShift: Boolean(shift?.primaryShift),
     visible: shift?.visible !== false,
@@ -196,12 +220,18 @@ function fillForm(shift) {
 }
 
 function openCreateDrawer() {
+  if (authStore.isReadonly) {
+    return
+  }
   selectedShiftId.value = null
   resetForm()
   formVisible.value = true
 }
 
 function openShiftDrawer(shift) {
+  if (authStore.isReadonly) {
+    return
+  }
   selectedShiftId.value = shift.id
   fillForm(shift)
   formVisible.value = true
@@ -215,8 +245,9 @@ function validateForm() {
   if (!/^[A-Za-z0-9_+-]{1,16}$/.test(formState.code.trim())) fieldErrors.code = 'Use 1-16 letters, numbers, _, + or -.'
   if (!formState.meaning.trim()) fieldErrors.meaning = 'Meaning is required.'
   if (!formState.startTime) fieldErrors.startTime = 'Start time is required.'
-  if (!formState.endTime) fieldErrors.endTime = 'End time is required.'
-  if (formState.startTime && formState.endTime && formState.startTime === formState.endTime) fieldErrors.endTime = 'End time must differ from start time.'
+  if (!normalizeDurationMinutes(formState.durationMinutes)) fieldErrors.durationMinutes = 'Duration is required.'
+  if (normalizeDurationMinutes(formState.durationMinutes) > 1440) fieldErrors.durationMinutes = 'Duration must be 1440 minutes or fewer.'
+  if (normalizeDurationMinutes(formState.durationMinutes) % 30 !== 0) fieldErrors.durationMinutes = 'Duration must use 30-minute steps.'
   if (formState.colorHex.trim() && !/^#([0-9a-fA-F]{6})$/.test(formState.colorHex.trim())) fieldErrors.colorHex = 'Use a 6-digit hex color.'
   if (!formState.timezone.trim()) fieldErrors.timezone = 'Timezone is required.'
   if (formState.timezone.trim().length > 64) fieldErrors.timezone = 'Timezone must be 64 characters or fewer.'
@@ -226,7 +257,7 @@ function validateForm() {
 }
 
 async function saveShift() {
-  if (submitPending.value) {
+  if (submitPending.value || authStore.isReadonly) {
     return
   }
 
@@ -246,7 +277,7 @@ async function saveShift() {
       code: formState.code.trim(),
       meaning: formState.meaning.trim(),
       startTime: formState.startTime,
-      endTime: formState.endTime,
+      durationMinutes: Number(formState.durationMinutes),
       timezone: formState.timezone.trim(),
       primaryShift: formState.primaryShift,
       visible: formState.visible,
@@ -276,7 +307,7 @@ function promptDeleteShift() {
 }
 
 async function confirmDeleteShift() {
-  if (!selectedShift.value || deletePending.value) {
+  if (!selectedShift.value || deletePending.value || authStore.isReadonly) {
     return
   }
 
@@ -345,7 +376,7 @@ onMounted(() => {
               <option value="">All Teams</option>
               <option v-for="team in teams" :key="team.id" :value="String(team.id)">{{ team.name }}</option>
             </select>
-            <button class="flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700" @click="openCreateDrawer">
+            <button v-if="!authStore.isReadonly" class="flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700" @click="openCreateDrawer">
               <Plus class="h-4 w-4" />
               New Shift Code
             </button>
@@ -395,7 +426,7 @@ onMounted(() => {
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-2 font-mono text-xs text-slate-600">
                       <Clock3 class="h-3.5 w-3.5 text-slate-400" />
-                      <span>{{ normalizeTimeValue(shift.startTime) }} - {{ normalizeTimeValue(shift.endTime) }}</span>
+                      <span>{{ describeShiftWindow(shift.startTime, shift.durationMinutes ?? shift.endTime) }}</span>
                       <span class="rounded bg-slate-100 px-1 text-[10px] text-slate-400">{{ normalizeWorkspaceStaffTimezone(shift.timezone) }}</span>
                     </div>
                   </td>
@@ -441,7 +472,7 @@ onMounted(() => {
           {{ formErrorMessage }}
         </WorkspaceSurface>
 
-        <WorkspaceSurface v-if="confirmDeleteVisible && selectedShift" tone="muted" class="space-y-3 border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <WorkspaceSurface v-if="confirmDeleteVisible && selectedShift && !authStore.isReadonly" tone="muted" class="space-y-3 border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           <p>Delete shift code {{ selectedShift.code }}?</p>
           <p class="text-xs text-amber-800">This removes the definition from planners and future roster edits immediately.</p>
           <div class="flex items-center justify-end gap-2">
@@ -490,11 +521,19 @@ onMounted(() => {
             <p v-if="fieldErrors.startTime" class="text-xs text-rose-600">{{ fieldErrors.startTime }}</p>
           </label>
           <label class="space-y-2 text-sm text-slate-700">
-            <span class="font-medium">End Time</span>
-            <select id="shift-endTime" v-model="formState.endTime" name="endTime" :class="['bg-white', ...inputClass('endTime')]" @change="handleEndTimeChange">
-              <option v-for="timeOption in TIME_OPTIONS" :key="timeOption.value" :value="timeOption.value">{{ timeOption.label }}</option>
-            </select>
-            <p v-if="fieldErrors.endTime" class="text-xs text-rose-600">{{ fieldErrors.endTime }}</p>
+            <span class="font-medium">Duration (minutes)</span>
+            <input
+              id="shift-durationMinutes"
+              v-model="formState.durationMinutes"
+              name="durationMinutes"
+              type="number"
+              min="30"
+              max="1440"
+              step="30"
+              :class="inputClass('durationMinutes')"
+              @change="handleDurationChange"
+            />
+            <p v-if="fieldErrors.durationMinutes" class="text-xs text-rose-600">{{ fieldErrors.durationMinutes }}</p>
           </label>
           <div class="space-y-2 text-sm text-slate-700 md:col-span-2">
             <span class="font-medium">Quick Duration</span>
@@ -502,8 +541,10 @@ onMounted(() => {
               <button type="button" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700" @click="applyDurationPreset(8 * 60)">+8h</button>
               <button type="button" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700" @click="applyDurationPreset(9 * 60)">+9h</button>
               <button type="button" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700" @click="applyDurationPreset(12 * 60)">+12h</button>
+              <button type="button" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700" @click="applyDurationPreset(24 * 60)">+24h</button>
             </div>
-            <p class="text-xs text-slate-500">{{ timeSummary || 'Select a start and end time.' }}</p>
+            <p class="text-xs text-slate-500">{{ timeSummary || 'Select a start time and duration.' }}</p>
+            <p v-if="endTimePreview" class="text-xs text-slate-400">Ends at {{ endTimePreview }} · {{ durationLabel }}</p>
           </div>
           <label class="space-y-2 text-sm text-slate-700">
             <span class="font-medium">Timezone</span>
@@ -538,7 +579,7 @@ onMounted(() => {
       <template #footer>
         <div class="flex items-center justify-between gap-3">
           <button
-            v-if="selectedShift"
+            v-if="selectedShift && !authStore.isReadonly"
             type="button"
             class="inline-flex items-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="deletePending"
@@ -550,7 +591,7 @@ onMounted(() => {
           <div v-else></div>
           <div class="flex items-center gap-3">
             <button type="button" class="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50" @click="closeDrawer">Cancel</button>
-            <button type="button" class="inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60" :disabled="submitPending" @click="saveShift">
+            <button v-if="!authStore.isReadonly" type="button" class="inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60" :disabled="submitPending" @click="saveShift">
               <Pencil class="h-4 w-4" />
               {{ submitPending ? 'Saving...' : selectedShift ? 'Save Changes' : 'Create Shift' }}
             </button>

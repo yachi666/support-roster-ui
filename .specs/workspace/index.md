@@ -29,6 +29,7 @@
 | 页面：导入导出 | `./pages/import-export.md` | Excel 预览、应用、导出、模板下载 |
 | 页面：校验中心 | `./pages/validation-center.md` | 问题聚合、筛选、批量处理 |
 | 视觉规范 | `./ui-design.md` | 管理端视觉语言与组件观感 |
+| 认证与访问控制 | `./auth/index.md` | 登录页、会话、权限控制与账号管理页 |
 
 ## 信息架构图
 

@@ -3,7 +3,8 @@ export const workspaceNavigation = [
   { label: 'Monthly Roster', to: '/workspace/roster', icon: 'CalendarDays' },
   { label: 'Staff Directory', to: '/workspace/staff', icon: 'Users' },
   { label: 'Shift Definitions', to: '/workspace/shifts', icon: 'Clock3' },
-  { label: 'Teams', to: '/workspace/teams', icon: 'Network' },
+  { label: 'Teams', to: '/workspace/teams', icon: 'Network', roles: ['admin'] },
+  { label: 'Accounts', to: '/workspace/accounts', icon: 'Users', roles: ['admin'] },
   { label: 'Import / Export', to: '/workspace/import-export', icon: 'UploadCloud' },
   { label: 'Validation', to: '/workspace/validation', icon: 'AlertTriangle' },
 ]
