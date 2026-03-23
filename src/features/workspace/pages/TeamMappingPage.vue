@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, shallowRef } from 'vue'
-import { Eye, GripVertical, HelpCircle, Plus, Settings2, Trash2 } from 'lucide-vue-next'
+import { GripVertical, HelpCircle, Plus, Trash2 } from 'lucide-vue-next'
 import { api } from '@/api'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
@@ -45,6 +45,8 @@ const sortedTeams = computed(() =>
 )
 
 const visibleTeams = computed(() => sortedTeams.value.filter((team) => team.visible))
+const hiddenTeams = computed(() => sortedTeams.value.filter((team) => !team.visible))
+const totalTeamsCount = computed(() => sortedTeams.value.length)
 const selectedTeam = computed(
   () => teams.value.find((team) => team.id === selectedTeamId.value) || null,
 )
@@ -287,7 +289,7 @@ onMounted(() => {
       <div class="mx-auto flex max-w-6xl flex-col gap-8">
         <WorkspacePageHeader
           title="Team Management"
-          description="Configure team groupings, display orders, and downstream dashboard visibility."
+          description="Configure team groupings, drag-to-reorder presentation, and downstream dashboard visibility."
         >
           <template #actions>
             <button
@@ -336,9 +338,44 @@ onMounted(() => {
 
         <div class="grid gap-8 lg:grid-cols-3">
           <div class="space-y-4 lg:col-span-2">
-            <h2 class="px-2 text-sm font-semibold uppercase tracking-wide text-slate-700">
-              Active Teams
-            </h2>
+            <div class="grid gap-3 sm:grid-cols-3">
+              <WorkspaceSurface class="border-slate-200/80 bg-white/90 p-4">
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  Total Teams
+                </p>
+                <p class="mt-2 text-2xl font-semibold text-slate-900">{{ totalTeamsCount }}</p>
+                <p class="mt-1 text-sm text-slate-500">All managed groups in this workspace.</p>
+              </WorkspaceSurface>
+              <WorkspaceSurface class="border-emerald-100 bg-emerald-50/80 p-4">
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600">
+                  Visible
+                </p>
+                <p class="mt-2 text-2xl font-semibold text-emerald-900">
+                  {{ visibleTeams.length }}
+                </p>
+                <p class="mt-1 text-sm text-emerald-800/75">Shown on the downstream dashboard.</p>
+              </WorkspaceSurface>
+              <WorkspaceSurface class="border-slate-200 bg-slate-100/80 p-4">
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Hidden
+                </p>
+                <p class="mt-2 text-2xl font-semibold text-slate-800">{{ hiddenTeams.length }}</p>
+                <p class="mt-1 text-sm text-slate-600">
+                  Still schedulable, but not publicly shown.
+                </p>
+              </WorkspaceSurface>
+            </div>
+
+            <div class="flex items-end justify-between gap-4 px-2">
+              <div>
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-700">
+                  Active Teams
+                </h2>
+                <p class="mt-1 text-sm text-slate-500">
+                  Drag cards to reorder how teams appear in downstream views.
+                </p>
+              </div>
+            </div>
             <WorkspaceSurface v-if="loading" class="p-6 text-sm text-slate-500"
               >Loading team mappings...</WorkspaceSurface
             >
@@ -370,7 +407,7 @@ onMounted(() => {
                 <div class="absolute inset-0 bg-white/15"></div>
               </div>
               <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-3">
+                <div class="flex flex-wrap items-center gap-3">
                   <h3 class="text-base font-semibold text-slate-800">{{ team.name }}</h3>
                   <span
                     class="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]"
@@ -392,27 +429,41 @@ onMounted(() => {
                 <p v-else class="mt-1 text-sm text-slate-400">
                   Drag to reorder this team in downstream dashboards.
                 </p>
+                <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                  <span
+                    class="rounded-full border px-2.5 py-1 font-medium"
+                    :class="
+                      team.visible
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                        : 'border-slate-200 bg-slate-50 text-slate-500'
+                    "
+                  >
+                    {{ team.visible ? 'Shown in public viewer' : 'Kept internal only' }}
+                  </span>
+                  <span
+                    class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-500"
+                  >
+                    Click to edit
+                  </span>
+                </div>
               </div>
-              <div
-                class="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100"
-              >
-                <button
-                  class="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-                >
-                  <Settings2 class="h-4 w-4" />
-                </button>
-                <button
-                  class="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-                >
-                  <Eye class="h-4 w-4" />
-                </button>
+              <div class="hidden text-right md:block">
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">Drag</p>
+                <p class="mt-1 text-xs text-slate-400">Move in list</p>
               </div>
             </WorkspaceSurface>
             <WorkspaceSurface
               v-if="!loading && !sortedTeams.length"
               class="p-6 text-sm text-slate-500"
             >
-              No teams returned by the server.
+              <div
+                class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center"
+              >
+                <p class="text-base font-medium text-slate-700">No teams yet</p>
+                <p class="mt-2 text-sm text-slate-500">
+                  Create your first team to define dashboard grouping and visibility.
+                </p>
+              </div>
             </WorkspaceSurface>
             <button
               class="w-full rounded-2xl border-2 border-dashed border-slate-200 py-4 text-sm font-medium text-slate-500 transition-colors hover:border-teal-400 hover:bg-teal-50/50 hover:text-teal-600"
@@ -424,11 +475,43 @@ onMounted(() => {
 
           <div>
             <div class="sticky top-8 space-y-4">
-              <h2 class="px-2 text-sm font-semibold uppercase tracking-wide text-slate-700">
-                Dashboard Preview
-              </h2>
-              <WorkspaceSurface :padded="false" class="overflow-hidden">
-                <div class="flex items-center justify-between bg-slate-800 px-4 py-3">
+              <WorkspaceSurface class="border-slate-200/80 bg-white/90 p-4">
+                <div class="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-700">
+                      Dashboard Preview
+                    </h2>
+                    <p class="mt-1 text-sm text-slate-500">
+                      This mirrors the public viewer order for visible teams.
+                    </p>
+                  </div>
+                  <span
+                    class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600"
+                  >
+                    {{ visibleTeams.length }} visible
+                  </span>
+                </div>
+                <div v-if="hiddenTeams.length" class="mt-4 border-t border-slate-100 pt-4">
+                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Hidden from dashboard
+                  </p>
+                  <div class="mt-2 flex flex-wrap gap-2">
+                    <span
+                      v-for="team in hiddenTeams"
+                      :key="team.id"
+                      class="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600"
+                    >
+                      {{ team.name }}
+                    </span>
+                  </div>
+                </div>
+              </WorkspaceSurface>
+
+              <WorkspaceSurface
+                :padded="false"
+                class="overflow-hidden border-slate-200/80 shadow-sm"
+              >
+                <div class="flex items-center justify-between bg-slate-900 px-4 py-3">
                   <span class="text-xs font-semibold text-white">Public On-Call Viewer</span>
                   <div class="flex gap-1.5">
                     <div class="h-2 w-2 rounded-full bg-slate-600"></div>
@@ -436,21 +519,42 @@ onMounted(() => {
                     <div class="h-2 w-2 rounded-full bg-slate-600"></div>
                   </div>
                 </div>
-                <div class="space-y-4 bg-slate-50 p-4">
-                  <div v-for="team in visibleTeams" :key="team.id" class="space-y-2">
-                    <div class="flex items-center gap-2">
-                      <div class="h-2 w-2 rounded-full" :style="teamColorStyle(team)"></div>
-                      <span class="text-xs font-semibold uppercase tracking-wide text-slate-700">{{
-                        team.name
-                      }}</span>
-                    </div>
-                    <div
-                      class="flex gap-2 rounded border border-slate-200 bg-white p-2 text-[11px] text-slate-500"
-                    >
-                      <div class="h-6 w-6 flex-shrink-0 rounded-full bg-slate-100"></div>
-                      <div>
-                        <div class="mb-1 h-2 w-16 rounded bg-slate-200"></div>
-                        <div class="h-1.5 w-12 rounded bg-slate-100"></div>
+                <div class="space-y-4 bg-gradient-to-b from-slate-50 to-white p-4">
+                  <div
+                    v-for="team in visibleTeams"
+                    :key="team.id"
+                    class="rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm"
+                  >
+                    <div class="flex items-start gap-3">
+                      <div class="mt-0.5 h-3 w-3 rounded-full" :style="teamColorStyle(team)"></div>
+                      <div class="min-w-0 flex-1">
+                        <div class="flex items-center justify-between gap-3">
+                          <span
+                            class="truncate text-xs font-semibold uppercase tracking-wide text-slate-700"
+                          >
+                            {{ team.name }}
+                          </span>
+                          <span
+                            class="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400"
+                          >
+                            Live
+                          </span>
+                        </div>
+                        <p
+                          v-if="team.description"
+                          class="mt-1 line-clamp-2 text-xs leading-5 text-slate-500"
+                        >
+                          {{ team.description }}
+                        </p>
+                        <div
+                          class="mt-3 flex gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-[11px] text-slate-500"
+                        >
+                          <div class="h-7 w-7 flex-shrink-0 rounded-full bg-white shadow-sm"></div>
+                          <div class="flex-1">
+                            <div class="mb-1 h-2 w-20 rounded bg-slate-200"></div>
+                            <div class="h-1.5 w-14 rounded bg-slate-100"></div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
