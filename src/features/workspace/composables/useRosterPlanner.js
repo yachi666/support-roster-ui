@@ -35,16 +35,23 @@ function normalizeGroups(groups, totalDays) {
   }))
 }
 
-function findCellCode(groups, staffId, day) {
-  for (const group of groups) {
-    const staff = group.staff.find((entry) => entry.id === staffId)
+function buildStaffIndex(groups) {
+  const index = new Map()
 
-    if (staff) {
-      return staff.schedule[day - 1] || ''
+  for (const group of groups) {
+    for (const staff of group.staff) {
+      index.set(staff.id, {
+        group,
+        staff,
+      })
     }
   }
 
-  return ''
+  return index
+}
+
+function findCellCode(staffIndex, staffId, day) {
+  return staffIndex.get(staffId)?.staff?.schedule?.[day - 1] || ''
 }
 
 function normalizeShiftCodeOptions(options) {
@@ -62,28 +69,26 @@ function normalizeShiftCodeOptionsByTeam(optionsByTeam) {
   )
 }
 
-function findAssignment(groups, cell) {
+function findAssignment(staffIndex, cell) {
   if (!cell) {
     return null
   }
 
-  for (const group of groups) {
-    const staff = group.staff.find((entry) => entry.id === cell.staffId)
-    if (staff) {
-      return {
-        group,
-        staff,
-        day: cell.day,
-        currentCode: staff.schedule[cell.day - 1] || '',
-      }
+  const indexedAssignment = staffIndex.get(cell.staffId)
+  if (indexedAssignment) {
+    return {
+      group: indexedAssignment.group,
+      staff: indexedAssignment.staff,
+      day: cell.day,
+      currentCode: indexedAssignment.staff.schedule[cell.day - 1] || '',
     }
   }
 
   return null
 }
 
-function applyScheduleUpdate({ rosterGroups, baseGroups, pendingUpdates, staffId, day, shiftCode }) {
-  const assignment = findAssignment(rosterGroups.value, { staffId, day })
+function applyScheduleUpdate({ rosterStaffIndex, baseStaffIndex, pendingUpdates, staffId, day, shiftCode }) {
+  const assignment = findAssignment(rosterStaffIndex.value, { staffId, day })
   if (!assignment) {
     return false
   }
@@ -91,7 +96,7 @@ function applyScheduleUpdate({ rosterGroups, baseGroups, pendingUpdates, staffId
   const normalizedCode = shiftCode || ''
   const updateKey = `${staffId}:${day}`
   const nextUpdates = new Map(pendingUpdates.value)
-  const originalCode = findCellCode(baseGroups.value, staffId, day)
+  const originalCode = findCellCode(baseStaffIndex.value, staffId, day)
 
   assignment.staff.schedule[day - 1] = normalizedCode
 
@@ -113,6 +118,8 @@ export function useRosterPlanner() {
   const { year, month, monthLabel, goToPreviousMonth, goToNextMonth } = useWorkspacePeriod()
   const rosterGroups = ref([])
   const baseGroups = ref([])
+  const rosterStaffIndex = computed(() => buildStaffIndex(rosterGroups.value))
+  const baseStaffIndex = computed(() => buildStaffIndex(baseGroups.value))
   const timezone = shallowRef('UTC')
   const searchTerm = shallowRef('')
   const selectedCell = ref(null)
@@ -136,7 +143,7 @@ export function useRosterPlanner() {
   const plannerDays = computed(() => createPlannerDays(year.value, month.value))
   const hasUnsavedChanges = computed(() => pendingUpdates.value.size > 0)
   const pendingUpdateCount = computed(() => pendingUpdates.value.size)
-  const pendingUpdateKeys = computed(() => Array.from(pendingUpdates.value.keys()))
+  const pendingUpdateKeySet = computed(() => new Set(pendingUpdates.value.keys()))
 
   const allTeams = computed(() => {
     const teamMap = new Map()
@@ -168,7 +175,7 @@ export function useRosterPlanner() {
       .filter((group) => group.staff.length > 0)
   })
 
-  const selectedAssignment = computed(() => findAssignment(rosterGroups.value, selectedCell.value))
+  const selectedAssignment = computed(() => findAssignment(rosterStaffIndex.value, selectedCell.value))
 
   const availableShiftCodeOptions = computed(() => {
     const teamId = selectedAssignment.value?.group?.teamId || selectedAssignment.value?.staff?.teamId
@@ -190,6 +197,28 @@ export function useRosterPlanner() {
     return serverValidationWarning.value
   })
 
+  let validationRequestSequence = 0
+
+  async function refreshValidationWarning() {
+    const requestSequence = ++validationRequestSequence
+    serverValidationWarning.value = ''
+
+    try {
+      const response = await api.workspace.getValidation(year.value, month.value)
+      if (requestSequence !== validationRequestSequence) {
+        return
+      }
+
+      serverValidationWarning.value = response?.issues?.find((issue) => issue.severity?.toLowerCase() === 'high')?.description || ''
+    } catch (error) {
+      if (requestSequence !== validationRequestSequence) {
+        return
+      }
+
+      serverValidationWarning.value = ''
+    }
+  }
+
   async function loadRoster() {
     loading.value = true
     errorMessage.value = ''
@@ -204,15 +233,17 @@ export function useRosterPlanner() {
       shiftCodeOptionsByTeam.value = normalizeShiftCodeOptionsByTeam(response.shiftCodeOptionsByTeam)
       shiftCodeColorMap.value = response.shiftCodeColorMap || {}
       shiftDetailsByTeam.value = response.shiftDetailsByTeam || {}
-      serverValidationWarning.value = response.validationWarning || ''
+      serverValidationWarning.value = ''
       pendingUpdates.value = new Map()
       saveErrorMessage.value = ''
       saveSuccessMessage.value = ''
 
-      if (selectedCell.value && !findAssignment(rosterGroups.value, selectedCell.value)) {
+      if (selectedCell.value && !findAssignment(rosterStaffIndex.value, selectedCell.value)) {
         selectedCell.value = null
         drawerOpen.value = false
       }
+
+      void refreshValidationWarning()
     } catch (error) {
       rosterGroups.value = []
       baseGroups.value = []
@@ -220,6 +251,7 @@ export function useRosterPlanner() {
       shiftCodeOptionsByTeam.value = {}
       shiftCodeColorMap.value = {}
       shiftDetailsByTeam.value = {}
+      validationRequestSequence += 1
       serverValidationWarning.value = ''
       pendingUpdates.value = new Map()
       errorMessage.value = error.message || 'Failed to load monthly roster.'
@@ -256,8 +288,8 @@ export function useRosterPlanner() {
     const code = selectedShiftCode.value === 'Clear' ? '' : selectedShiftCode.value
     const { staff, day } = selectedAssignment.value
     applyScheduleUpdate({
-      rosterGroups,
-      baseGroups,
+      rosterStaffIndex,
+      baseStaffIndex,
       pendingUpdates,
       staffId: staff.id,
       day,
@@ -290,8 +322,8 @@ export function useRosterPlanner() {
 
       const sourceCode = selectedAssignment.value.staff.schedule[sourceDay - 1] || ''
       const didApply = applyScheduleUpdate({
-        rosterGroups,
-        baseGroups,
+        rosterStaffIndex,
+        baseStaffIndex,
         pendingUpdates,
         staffId: selectedAssignment.value.staff.id,
         day: targetDay,
@@ -331,8 +363,8 @@ export function useRosterPlanner() {
 
     for (let day = selectedAssignment.value.day; day <= normalizedEndDay; day += 1) {
       const didApply = applyScheduleUpdate({
-        rosterGroups,
-        baseGroups,
+        rosterStaffIndex,
+        baseStaffIndex,
         pendingUpdates,
         staffId: selectedAssignment.value.staff.id,
         day,
@@ -389,9 +421,10 @@ export function useRosterPlanner() {
       shiftCodeOptionsByTeam.value = normalizeShiftCodeOptionsByTeam(response.shiftCodeOptionsByTeam)
       shiftCodeColorMap.value = response.shiftCodeColorMap || {}
       shiftDetailsByTeam.value = response.shiftDetailsByTeam || {}
-      serverValidationWarning.value = response.validationWarning || ''
+      serverValidationWarning.value = ''
       pendingUpdates.value = new Map()
       saveSuccessMessage.value = 'Roster changes saved successfully.'
+      void refreshValidationWarning()
     } catch (error) {
       saveErrorMessage.value = error.message || 'Failed to save monthly roster changes.'
     } finally {
@@ -453,7 +486,7 @@ export function useRosterPlanner() {
     drawerOpen,
     hasUnsavedChanges,
     pendingUpdateCount,
-    pendingUpdateKeys,
+    pendingUpdateKeySet,
     selectedAssignment,
     selectedShiftCode,
     validationWarning,

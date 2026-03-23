@@ -56,6 +56,12 @@ export const useAuthStore = defineStore('auth', () => {
     return response.currentUser
   }
 
+  async function activate(payload) {
+    const response = await api.auth.activate(payload)
+    applySession(response.token, response.currentUser)
+    return response.currentUser
+  }
+
   async function logout() {
     if (getAuthToken()) {
       try {
@@ -105,6 +111,7 @@ export const useAuthStore = defineStore('auth', () => {
     canWriteWorkspace,
     initSession,
     login,
+    activate,
     logout,
     refreshCurrentUser,
     changePassword,

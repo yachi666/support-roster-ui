@@ -17,6 +17,7 @@
 
 - [ ] 使用 `SUPPORT_BOOTSTRAP_ADMIN_STAFF_CODE` 对应的 `staffid` 可以进入首登设密流程。
 - [ ] 首登设密成功后，能够进入 workspace 主界面。
+- [ ] 已激活账号再次尝试首登设密时，会提示“密码已初始化，请直接登录”。
 - [ ] 当前用户信息展示为 `admin`。
 - [ ] 可以访问 `/workspace/accounts`。
 - [ ] 管理员接管后，移除 `SUPPORT_BOOTSTRAP_ADMIN_STAFF_CODE` 并重启，原管理员仍能正常登录。
