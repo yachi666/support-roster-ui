@@ -8,7 +8,6 @@ import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
 
 const EMPTY_FORM = {
-  teamCode: '',
   name: '',
   color: '#14b8a6',
   displayOrder: 0,
@@ -32,10 +31,6 @@ const fieldErrors = reactive({})
 const formState = reactive({ ...EMPTY_FORM })
 
 const teamErrorRules = [
-  {
-    match: /team\s*code|teamcode/i,
-    field: 'teamCode',
-  },
   {
     match: /team\s*name|\bname\b/i,
     field: 'name',
@@ -151,7 +146,6 @@ function resetForm() {
 
 function fillForm(team) {
   Object.assign(formState, {
-    teamCode: team?.teamCode || '',
     name: team?.name || '',
     color: team?.color || '#14b8a6',
     displayOrder: team?.displayOrder ?? 0,
@@ -179,8 +173,6 @@ function openTeamDrawer(team) {
 function validateForm() {
   clearFieldErrors(fieldErrors)
 
-  if (!formState.teamCode.trim()) fieldErrors.teamCode = 'Team code is required.'
-  if (!/^[A-Za-z0-9_-]{1,24}$/.test(formState.teamCode.trim())) fieldErrors.teamCode = 'Use 1-24 letters, numbers, _ or -.'
   if (!formState.name.trim()) fieldErrors.name = 'Team name is required.'
   if (!/^#([0-9a-fA-F]{6})$/.test(formState.color.trim())) fieldErrors.color = 'Use a 6-digit hex color.'
   if (!Number.isInteger(Number(formState.displayOrder)) || Number(formState.displayOrder) < 0) fieldErrors.displayOrder = 'Display order must be a non-negative integer.'
@@ -206,7 +198,6 @@ async function saveTeam() {
 
   try {
     const payload = {
-      teamCode: formState.teamCode.trim(),
       name: formState.name.trim(),
       color: formState.color.trim(),
       displayOrder: Number(formState.displayOrder),
@@ -342,7 +333,7 @@ onMounted(() => {
                   <h3 class="text-base font-semibold text-slate-800">{{ team.name }}</h3>
                   <span v-if="!team.visible" class="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Hidden</span>
                 </div>
-                <div class="mt-1 text-[11px] text-slate-400">{{ team.teamCode }} · Order {{ team.displayOrder ?? '-' }}</div>
+                <div class="mt-1 text-[11px] text-slate-400">Order {{ team.displayOrder ?? '-' }}</div>
               </div>
               <div class="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
                 <button class="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600">
@@ -420,11 +411,6 @@ onMounted(() => {
         </WorkspaceSurface>
 
         <div class="grid gap-4 md:grid-cols-2">
-          <label class="space-y-2 text-sm text-slate-700">
-            <span class="font-medium">Team Code</span>
-            <input id="team-teamCode" v-model="formState.teamCode" name="teamCode" type="text" :class="inputClass('teamCode')" />
-            <p v-if="fieldErrors.teamCode" class="text-xs text-rose-600">{{ fieldErrors.teamCode }}</p>
-          </label>
           <label class="space-y-2 text-sm text-slate-700">
             <span class="font-medium">Team Name</span>
             <input id="team-name" v-model="formState.name" name="name" type="text" :class="inputClass('name')" />

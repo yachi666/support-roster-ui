@@ -11,6 +11,7 @@ const props = defineProps({
   selectedShiftCode: { type: String, default: '' },
   shiftCodeOptions: { type: Array, required: true },
   validationWarning: { type: String, default: '' },
+  readonly: { type: Boolean, default: false },
   year: { type: Number, required: true },
   month: { type: Number, required: true },
 })
@@ -175,6 +176,10 @@ function formatDayRange(startDay, endDay) {
           </div>
         </div>
 
+        <div v-if="readonly" class="rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-800">
+          Readonly mode is enabled. You can inspect assignments here, but roster changes are disabled.
+        </div>
+
         <div>
           <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-600">Shift Code</label>
           <div class="grid grid-cols-3 gap-2">
@@ -188,6 +193,7 @@ function formatDayRange(startDay, endDay) {
                   ? 'border-indigo-200 bg-indigo-50 font-semibold text-indigo-700 shadow-[0_0_0_2px_rgba(99,102,241,0.2)]'
                   : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
               ]"
+              :disabled="readonly"
               @click="emit('select-code', code)"
             >
               {{ code }}
@@ -202,6 +208,7 @@ function formatDayRange(startDay, endDay) {
               v-if="selectedRange && selectedRange.endDay > assignment.day"
               type="button"
               class="text-[11px] font-medium text-slate-500 transition-colors hover:text-slate-700"
+              :disabled="readonly"
               @click="emit('clear-range')"
             >
               Reset to single day
@@ -217,7 +224,8 @@ function formatDayRange(startDay, endDay) {
               </span>
               <select
                 v-model="rangeEndDay"
-                class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+                class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                :disabled="readonly"
               >
                 <option v-for="day in rangeEndOptions" :key="day" :value="day">
                   Day {{ day }}
@@ -227,6 +235,7 @@ function formatDayRange(startDay, endDay) {
             <button
               type="button"
               class="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700"
+              :disabled="readonly"
               @click="emit('apply-range', rangeEndDay)"
             >
               Apply to Range
@@ -242,6 +251,7 @@ function formatDayRange(startDay, endDay) {
               :key="option.label"
               type="button"
               class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700"
+              :disabled="readonly"
               @click="emit('select-code', option.code || 'Clear')"
             >
               <span>{{ option.label }}</span>
@@ -261,8 +271,9 @@ function formatDayRange(startDay, endDay) {
           <button
             type="button"
             class="mt-3 inline-flex items-center rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700"
-            @click="emit('copy-week')"
-          >
+             :disabled="readonly"
+             @click="emit('copy-week')"
+           >
             Copy Week to Next Week
           </button>
         </div>
@@ -291,7 +302,7 @@ function formatDayRange(startDay, endDay) {
         <button
           type="button"
           class="flex flex-1 items-center justify-center gap-2 rounded-md border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-medium text-teal-700 shadow-sm transition-colors hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-60"
-          :disabled="!hasSelectionChanged"
+          :disabled="readonly || !hasSelectionChanged"
           @click="emit('apply-and-next')"
         >
           <Check class="h-4 w-4" />
@@ -300,11 +311,11 @@ function formatDayRange(startDay, endDay) {
         <button
           type="button"
           class="flex flex-1 items-center justify-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
-          :disabled="!hasSelectionChanged"
+          :disabled="readonly || !hasSelectionChanged"
           @click="emit('apply')"
         >
           <Check class="h-4 w-4" />
-          {{ hasSelectionChanged ? 'Apply Change' : 'No Changes Yet' }}
+          {{ readonly ? 'Readonly Mode' : hasSelectionChanged ? 'Apply Change' : 'No Changes Yet' }}
         </button>
       </div>
     </template>

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, shallowRef, watch } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import {
   AlertTriangle,
   CalendarDays,
@@ -12,10 +12,13 @@ import {
 } from 'lucide-vue-next'
 import { api } from '@/api'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth'
 import { workspaceNavigation } from '../config/navigation'
 import { useWorkspacePeriod } from '../composables/useWorkspacePeriod'
 
 const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
 const validationIssueCount = shallowRef(null)
 const { year, month } = useWorkspacePeriod()
 
@@ -39,12 +42,36 @@ async function loadValidationIssueCount() {
 }
 
 const navigation = computed(() =>
-  workspaceNavigation.map((item) => ({
-    ...item,
-    count: item.to === '/workspace/validation' ? validationIssueCount.value : undefined,
-    active: item.to === '/workspace' ? route.path === '/workspace' : route.path.startsWith(item.to),
-  })),
+  workspaceNavigation
+    .filter((item) => !item.roles || authStore.hasAnyRole(item.roles))
+    .map((item) => ({
+      ...item,
+      count: item.to === '/workspace/validation' ? validationIssueCount.value : undefined,
+      active: item.to === '/workspace' ? route.path === '/workspace' : route.path.startsWith(item.to),
+    })),
 )
+
+const currentUserLabel = computed(() => authStore.currentUser?.staffName || 'Workspace User')
+const currentRoleLabel = computed(() => {
+  if (authStore.isAdmin) return 'Admin'
+  if (authStore.isEditor) return 'Editor'
+  if (authStore.isReadonly) return 'Readonly'
+  return 'Workspace'
+})
+const currentInitials = computed(() => {
+  const source = authStore.currentUser?.staffName || authStore.currentUser?.staffId || 'WU'
+  return source
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || '')
+    .join('') || 'WU'
+})
+
+async function handleLogout() {
+  await authStore.logout()
+  await router.push('/login')
+}
 
 watch([year, month], () => {
   void loadValidationIssueCount()
@@ -99,15 +126,18 @@ watch([year, month], () => {
     </nav>
 
     <div class="border-t border-slate-100 p-4">
-      <div class="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-slate-50">
+      <div class="flex items-center gap-3 rounded-md px-2 py-2">
         <div class="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 bg-slate-200 text-xs font-semibold text-slate-600">
-          SA
+          {{ currentInitials }}
         </div>
         <div class="flex flex-col">
-          <span class="text-sm font-medium text-slate-700">Sarah Admin</span>
-          <span class="text-[11px] text-slate-500">Super Admin</span>
+          <span class="text-sm font-medium text-slate-700">{{ currentUserLabel }}</span>
+          <span class="text-[11px] text-slate-500">{{ currentRoleLabel }}</span>
         </div>
       </div>
+      <button class="mt-3 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50" @click="void handleLogout()">
+        Logout
+      </button>
     </div>
   </aside>
 </template>

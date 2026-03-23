@@ -1,3 +1,5 @@
+import { clearAuthToken, getAuthToken } from '@/lib/authToken'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://supportui.servier/api'
 
 class ApiError extends Error {
@@ -81,6 +83,11 @@ async function request(endpoint, options = {}) {
       ...headers,
     },
   }
+  const token = getAuthToken()
+
+  if (token && !config.headers.Authorization) {
+    config.headers.Authorization = token
+  }
 
   if (normalizedBody !== undefined) {
     config.body = normalizedBody
@@ -94,6 +101,9 @@ async function request(endpoint, options = {}) {
     const response = await fetch(url, config)
     
     if (!response.ok) {
+      if (response.status === 401) {
+        clearAuthToken()
+      }
       const errorDetails = await parseErrorResponse(response)
       throw new ApiError(errorDetails.message, errorDetails)
     }
@@ -106,6 +116,24 @@ async function request(endpoint, options = {}) {
 }
 
 export const api = {
+  auth: {
+    login: (payload) => request('/auth/login', {
+      method: 'POST',
+      body: payload,
+    }),
+
+    logout: () => request('/auth/logout', {
+      method: 'POST',
+    }),
+
+    me: () => request('/auth/me'),
+
+    changePassword: (payload) => request('/auth/change-password', {
+      method: 'POST',
+      body: payload,
+    }),
+  },
+
   getTeams: () => request('/teams'),
   
   getShifts: (date, teamId = null, timezone = 'UTC') => {
@@ -209,6 +237,41 @@ export const api = {
 
     deleteTeam: (id) => request(`/workspace/teams/${id}`, {
       method: 'DELETE',
+    }),
+
+    getAccounts: (keyword = '') => {
+      const params = new URLSearchParams()
+
+      if (keyword.trim()) {
+        params.set('keyword', keyword.trim())
+      }
+
+      const query = params.toString()
+      return request(`/workspace/accounts${query ? `?${query}` : ''}`)
+    },
+
+    getAccount: (id) => request(`/workspace/accounts/${id}`),
+
+    createAccount: (payload) => request('/workspace/accounts', {
+      method: 'POST',
+      body: payload,
+    }),
+
+    updateAccount: (id, payload) => request(`/workspace/accounts/${id}`, {
+      method: 'PUT',
+      body: payload,
+    }),
+
+    resetAccountPassword: (id) => request(`/workspace/accounts/${id}/reset-password`, {
+      method: 'POST',
+    }),
+
+    enableAccount: (id) => request(`/workspace/accounts/${id}/enable`, {
+      method: 'POST',
+    }),
+
+    disableAccount: (id) => request(`/workspace/accounts/${id}/disable`, {
+      method: 'POST',
     }),
 
     getRoster: (year, month) => request(`/workspace/roster?year=${year}&month=${month}`),

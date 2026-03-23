@@ -9,6 +9,7 @@ import {
 } from 'lucide-vue-next'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { onBeforeRouteLeave, RouterLink } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
 import AssignmentDrawer from '../components/roster/AssignmentDrawer.vue'
 import RosterGrid from '../components/roster/RosterGrid.vue'
@@ -55,6 +56,7 @@ const {
   exportRoster,
   reloadRoster,
 } = useRosterPlanner()
+const authStore = useAuthStore()
 
 const showTeamFilter = ref(false)
 const selectedRange = ref(null)
@@ -157,7 +159,7 @@ function openSelectedCell(payload) {
 }
 
 function applyAndAdvanceDay() {
-  if (!selectedCell.value) {
+  if (authStore.isReadonly || !selectedCell.value) {
     return
   }
 
@@ -173,6 +175,9 @@ function applyAndAdvanceDay() {
 }
 
 function copyWeekForward() {
+  if (authStore.isReadonly) {
+    return
+  }
   const result = copySelectedWeekToNextWeek()
   if (!result) {
     return
@@ -182,6 +187,9 @@ function copyWeekForward() {
 }
 
 function applyRangeForward(endDay) {
+  if (authStore.isReadonly) {
+    return
+  }
   const result = applySelectedRange(endDay)
   if (!result) {
     return
@@ -288,6 +296,7 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
         </div>
         <div class="h-4 w-px bg-slate-200"></div>
         <RouterLink
+          v-if="!authStore.isReadonly"
           to="/workspace/import-export"
           class="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
         >
@@ -394,7 +403,7 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
 
     <Transition name="status-bar">
       <div
-        v-if="hasUnsavedChanges"
+        v-if="hasUnsavedChanges && !authStore.isReadonly"
         class="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-6 rounded-xl border border-slate-700 bg-slate-800 px-5 py-3 text-white shadow-lg shadow-slate-900/20"
       >
         <div class="flex items-center gap-2">
@@ -405,9 +414,9 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
           <button class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-slate-700" @click="discardChanges">
             Discard
           </button>
-          <button class="flex items-center gap-1.5 rounded-md bg-teal-500 px-4 py-1.5 text-xs font-semibold text-slate-900 shadow-sm transition-colors hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-70" :disabled="saving" @click="saveChanges">
+          <button class="flex items-center gap-1.5 rounded-md bg-teal-500 px-4 py-1.5 text-xs font-semibold text-slate-900 shadow-sm transition-colors hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-70" :disabled="saving || authStore.isReadonly" @click="!authStore.isReadonly && saveChanges()">
             <Save class="h-3.5 w-3.5" />
-            {{ saving ? 'Saving...' : 'Save Changes' }}
+            {{ authStore.isReadonly ? 'Readonly Mode' : saving ? 'Saving...' : 'Save Changes' }}
           </button>
         </div>
       </div>
@@ -416,18 +425,19 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
     <AssignmentDrawer
       v-model="drawerOpen"
       :assignment="selectedAssignment"
+      :readonly="authStore.isReadonly"
       :selected-range="selectedRange"
       :selected-shift-code="selectedShiftCode"
       :shift-code-options="shiftCodeOptions"
       :validation-warning="validationWarning"
       :year="year"
       :month="month"
-      @select-code="setShiftCode"
-      @apply="applySelectedShift"
+      @select-code="!authStore.isReadonly && setShiftCode($event)"
+      @apply="!authStore.isReadonly && applySelectedShift()"
       @apply-and-next="applyAndAdvanceDay"
       @copy-week="copyWeekForward"
       @apply-range="applyRangeForward"
-      @clear-range="clearRangeSelection"
+      @clear-range="!authStore.isReadonly && clearRangeSelection()"
     />
   </div>
 </template>

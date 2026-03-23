@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, shallowRef } from 'vue'
 import { CheckCircle2, Clock3, Globe, Mail, Pencil, Plus, Search, Trash2, XCircle } from 'lucide-vue-next'
 import { api } from '@/api'
+import { useAuthStore } from '@/stores/auth'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
 import AvatarImage from '../components/AvatarImage.vue'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
@@ -39,6 +40,7 @@ const formErrorMessage = shallowRef('')
 const confirmDeleteVisible = shallowRef(false)
 const fieldErrors = reactive({})
 const formState = reactive({ ...EMPTY_FORM })
+const authStore = useAuthStore()
 
 const staffErrorRules = [
   {
@@ -186,6 +188,9 @@ function validateForm() {
 }
 
 function openCreateDrawer() {
+  if (authStore.isReadonly) {
+    return
+  }
   drawerMode.value = 'create'
   selectedStaffId.value = null
   resetForm()
@@ -200,7 +205,7 @@ function openDetailDrawer(staffId) {
 }
 
 function openEditDrawer() {
-  if (!selectedStaff.value) {
+  if (!selectedStaff.value || authStore.isReadonly) {
     return
   }
 
@@ -210,7 +215,7 @@ function openEditDrawer() {
 }
 
 async function submitForm() {
-  if (submitPending.value) {
+  if (submitPending.value || authStore.isReadonly) {
     return
   }
 
@@ -253,7 +258,7 @@ function promptDeleteStaff() {
 }
 
 async function confirmDeleteStaff() {
-  if (!selectedStaff.value || deletePending.value) {
+  if (!selectedStaff.value || deletePending.value || authStore.isReadonly) {
     return
   }
 
@@ -329,7 +334,7 @@ onMounted(() => {
               <option value="">All Teams</option>
               <option v-for="team in teamOptions" :key="team.id" :value="String(team.id)">{{ team.name }}</option>
             </select>
-            <button class="flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700" @click="openCreateDrawer">
+            <button v-if="!authStore.isReadonly" class="flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700" @click="openCreateDrawer">
               <Plus class="h-4 w-4" />
               <span>Add Staff</span>
             </button>
@@ -478,7 +483,7 @@ onMounted(() => {
             {{ formErrorMessage }}
           </WorkspaceSurface>
 
-          <WorkspaceSurface v-if="confirmDeleteVisible" tone="muted" class="space-y-3 border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <WorkspaceSurface v-if="confirmDeleteVisible && !authStore.isReadonly" tone="muted" class="space-y-3 border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
             <p>Delete {{ selectedStaff.name }} from the workspace staff registry?</p>
             <p class="text-xs text-amber-800">This removes the staff record immediately. Existing roster assignments may lose their linked profile.</p>
             <div class="flex items-center justify-end gap-2">
@@ -571,7 +576,7 @@ onMounted(() => {
       <template #footer>
         <div class="flex items-center justify-between gap-3">
           <button
-            v-if="drawerMode === 'detail' && selectedStaff"
+            v-if="drawerMode === 'detail' && selectedStaff && !authStore.isReadonly"
             type="button"
             class="inline-flex items-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="deletePending"
@@ -587,7 +592,7 @@ onMounted(() => {
               Cancel
             </button>
             <button
-              v-if="drawerMode === 'detail' && selectedStaff"
+              v-if="drawerMode === 'detail' && selectedStaff && !authStore.isReadonly"
               type="button"
               class="inline-flex items-center gap-2 rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-700"
               @click="openEditDrawer"
@@ -596,7 +601,7 @@ onMounted(() => {
               Edit
             </button>
             <button
-              v-else
+              v-else-if="!authStore.isReadonly"
               type="button"
               class="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
               :disabled="submitPending"

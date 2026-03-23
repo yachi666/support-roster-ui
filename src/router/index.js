@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { h } from 'vue'
+import { useAuthStore } from '@/stores/auth'
 import PublicDashboardPage from '@/pages/PublicDashboardPage.vue'
+import LoginPage from '@/pages/LoginPage.vue'
 import WorkspaceLayout from '@/features/workspace/layout/WorkspaceLayout.vue'
 import OverviewDashboardPage from '@/features/workspace/pages/OverviewDashboardPage.vue'
 import MonthlyRosterPlannerPage from '@/features/workspace/pages/MonthlyRosterPlannerPage.vue'
@@ -9,6 +11,7 @@ import ShiftDefinitionsPage from '@/features/workspace/pages/ShiftDefinitionsPag
 import TeamMappingPage from '@/features/workspace/pages/TeamMappingPage.vue'
 import ImportExportCenterPage from '@/features/workspace/pages/ImportExportCenterPage.vue'
 import ValidationCenterPage from '@/features/workspace/pages/ValidationCenterPage.vue'
+import AccountManagementPage from '@/features/workspace/pages/AccountManagementPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -25,8 +28,15 @@ const router = createRouter({
       component: PublicDashboardPage,
     },
     {
+      path: '/login',
+      name: 'login',
+      component: LoginPage,
+      meta: { guestOnly: true },
+    },
+    {
       path: '/workspace',
       component: WorkspaceLayout,
+      meta: { requiresAuth: true },
       children: [
         {
           path: '',
@@ -52,6 +62,7 @@ const router = createRouter({
           path: 'teams',
           name: 'workspace-teams',
           component: TeamMappingPage,
+          meta: { roles: ['admin'] },
         },
         {
           path: 'import-export',
@@ -63,9 +74,46 @@ const router = createRouter({
           name: 'workspace-validation',
           component: ValidationCenterPage,
         },
+        {
+          path: 'accounts',
+          name: 'workspace-accounts',
+          component: AccountManagementPage,
+          meta: { roles: ['admin'] },
+        },
       ],
     },
   ],
+})
+
+router.beforeEach(async (to) => {
+  const authStore = useAuthStore()
+
+  if (!authStore.initialized) {
+    await authStore.initSession()
+  }
+
+  if (to.meta.guestOnly && authStore.isAuthenticated) {
+    return typeof to.query.redirect === 'string' ? to.query.redirect : '/workspace'
+  }
+
+  const requiresAuth = to.matched.some((record) => record.meta?.requiresAuth)
+  if (!requiresAuth) {
+    return true
+  }
+
+  if (!authStore.isAuthenticated) {
+    return {
+      path: '/login',
+      query: { redirect: to.fullPath },
+    }
+  }
+
+  const requiredRoles = to.matched.flatMap((record) => record.meta?.roles || [])
+  if (requiredRoles.length && !authStore.hasAnyRole(requiredRoles)) {
+    return '/workspace'
+  }
+
+  return true
 })
 
 export default router

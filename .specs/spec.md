@@ -23,6 +23,7 @@
 | 视觉 | `./ui-design.md` | 全局视觉语言与 Public Viewer 设计约束 |
 | Viewer 分册 | `./modules/index.md` | Public Viewer 模块目录与模块关系 |
 | Workspace 分册 | `./workspace/index.md` | Admin Workspace 的架构、路由、页面、组件与视觉规范 |
+| Workspace Auth 专题 | `./workspace/auth/index.md` | 登录、会话、权限与账号管理 |
 | 变更记录 | `./CHANGELOG.md` | 文档演进记录 |
 
 ## 文档架构图

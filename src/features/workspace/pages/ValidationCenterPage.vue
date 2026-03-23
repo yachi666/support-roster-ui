@@ -15,6 +15,7 @@ import {
 } from 'lucide-vue-next'
 import { api } from '@/api'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
 import { useWorkspacePeriod } from '../composables/useWorkspacePeriod'
@@ -32,6 +33,7 @@ const actionErrorMessage = shallowRef('')
 const resolvePending = shallowRef(false)
 const resolvingIssueIds = shallowRef([])
 const { year, month, monthLabel } = useWorkspacePeriod()
+const authStore = useAuthStore()
 
 const severityMeta = {
   high: {
@@ -224,7 +226,7 @@ function toggleAll() {
 }
 
 async function resolveIssues(issueIds) {
-  if (!issueIds.length || resolvePending.value) {
+  if (!issueIds.length || resolvePending.value || authStore.isReadonly) {
     return
   }
 
@@ -319,6 +321,7 @@ watch([year, month], () => {
               Refresh
             </button>
             <button
+              v-if="!authStore.isReadonly"
               class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
               :disabled="resolvableSelectedIssueIds.length === 0 || resolvePending"
               @click="resolveSelectedIssues"
@@ -430,7 +433,7 @@ watch([year, month], () => {
 
                 <div class="mt-5 flex flex-wrap gap-2">
                   <button
-                    v-if="prioritizedIssue.resolvable"
+                    v-if="prioritizedIssue.resolvable && !authStore.isReadonly"
                     class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-60"
                     :disabled="resolvePending"
                     @click="resolveSingleIssue(prioritizedIssue.id)"
@@ -657,7 +660,7 @@ watch([year, month], () => {
 
                     <div class="flex flex-wrap items-center gap-2 xl:justify-end">
                       <button
-                        v-if="issue.resolvable"
+                        v-if="issue.resolvable && !authStore.isReadonly"
                         class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-60"
                         :disabled="resolvePending"
                         @click="resolveSingleIssue(issue.id)"

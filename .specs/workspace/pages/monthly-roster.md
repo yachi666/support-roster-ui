@@ -49,6 +49,7 @@ flowchart LR
 
 - `staffId` 按字符串传输，避免浏览器处理大整数时丢精度。
 - `shiftDetailsByTeam` 用于单元格 hover 展示班次说明、时间窗口、时区与跨天信息。
+- 单元格展示的班次编码以服务端按 `shiftDefinitionId` 解析后的最新值为准，因此 Shift Code 改名会同步体现在历史排班中。
 - `validationWarning` 用于提示当前月视图对应的服务端告警。
 - 当前 workspace 的 `year`、`month`、`timezone` 应同步到 URL query，提升刷新恢复、回退和分享链接的一致性。
 - 页面只负责排班编辑体验，不负责定义班次或维护人员主数据。

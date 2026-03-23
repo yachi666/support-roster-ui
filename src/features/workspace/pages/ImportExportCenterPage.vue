@@ -15,6 +15,7 @@ import {
 } from 'lucide-vue-next'
 import { api } from '@/api'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
 import { useWorkspacePeriod } from '../composables/useWorkspacePeriod'
@@ -29,6 +30,7 @@ const fileName = shallowRef('')
 const exportPending = shallowRef(false)
 const templatePending = shallowRef(false)
 const { year, month, monthLabel } = useWorkspacePeriod()
+const authStore = useAuthStore()
 let mappingTimer = 0
 
 const templateShiftDefinitions = [
@@ -150,7 +152,7 @@ const previewSummaryCards = computed(() => [
 ])
 
 const canApplyPreview = computed(() =>
-  Boolean(previewResult.value?.batchId) && ['success', 'applied'].includes(fileStatus.value),
+  !authStore.isReadonly && Boolean(previewResult.value?.batchId) && ['success', 'applied'].includes(fileStatus.value),
 )
 
 const currentBatchDisplay = computed(() => previewResult.value?.batchId || 'Not created yet')
@@ -164,6 +166,10 @@ function clearTimer() {
 }
 
 async function uploadFile(file) {
+  if (authStore.isReadonly) {
+    errorMessage.value = 'Readonly users cannot preview imports.'
+    return
+  }
   clearTimer()
   previewResult.value = null
   applyResult.value = null
@@ -213,7 +219,7 @@ function handleDrop(event) {
 }
 
 async function applyChanges() {
-  if (!previewResult.value?.batchId || fileStatus.value === 'applying') {
+  if (!previewResult.value?.batchId || fileStatus.value === 'applying' || authStore.isReadonly) {
     return
   }
 
@@ -486,7 +492,7 @@ onBeforeUnmount(clearTimer)
               <p class="mx-auto mb-6 max-w-sm text-sm text-slate-500">
                 Upload a roster workbook for {{ monthLabel }}. The server will preview row counts and validation issues before anything is applied.
               </p>
-              <label for="workspace-import-file" class="inline-flex cursor-pointer rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50">
+              <label v-if="!authStore.isReadonly" for="workspace-import-file" class="inline-flex cursor-pointer rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50">
                 Browse files
               </label>
             </div>
@@ -680,7 +686,7 @@ onBeforeUnmount(clearTimer)
                           :disabled="!canApplyPreview || fileStatus === 'applying' || fileStatus === 'applied'"
                           @click="applyChanges"
                         >
-                          {{ fileStatus === 'applying' ? 'Applying...' : fileStatus === 'applied' ? 'Applied' : 'Apply Changes' }}
+                          {{ authStore.isReadonly ? 'Readonly Mode' : fileStatus === 'applying' ? 'Applying...' : fileStatus === 'applied' ? 'Applied' : 'Apply Changes' }}
                           <ChevronRight class="h-4 w-4" />
                         </button>
                         <RouterLink
