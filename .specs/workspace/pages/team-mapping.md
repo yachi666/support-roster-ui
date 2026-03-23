@@ -6,25 +6,27 @@
 
 ## 源码与依赖
 
-| 类型 | 位置 |
-|------|------|
-| 页面组件 | `src/features/workspace/pages/TeamMappingPage.vue` |
+| 类型     | 位置                                                                     |
+| -------- | ------------------------------------------------------------------------ |
+| 页面组件 | `src/features/workspace/pages/TeamMappingPage.vue`                       |
 | 共享组件 | `WorkspaceDrawer.vue`、`WorkspacePageHeader.vue`、`WorkspaceSurface.vue` |
-| 数据接口 | `GET/POST/PUT/DELETE /api/workspace/teams` |
+| 数据接口 | `GET/POST/PUT/DELETE /api/workspace/teams`                               |
 
 ## 核心交互
 
-- 团队卡片展示顺序、可见性与颜色等关键信息。
+- 团队卡片展示名称、描述、可见性与颜色等关键信息。
 - 隐藏团队仍可在管理端看见，但会被明确标注为不进入下游展示。
 - 右侧预览区提供面向公开看板的紧凑只读视图。
 - 新建、编辑、删除通过抽屉表单完成。
-- 保存失败时，需要对名称、颜色、顺序与描述字段返回明确错误。
+- 排序通过列表拖拽完成，界面不再暴露手动填写 `Display Order` 输入框。
+- 保存失败时，需要对名称、颜色与描述字段返回明确错误；排序异常通过拖拽保存错误提示反馈。
 
 ## 数据边界与约束
 
 - 团队是 Viewer 与 Workspace 之间共享的重要分组概念，修改后会影响多个视图。
 - 团队业务标识仅为 `Team Name`；UI 不再维护单独的 `Team Code` 字段。
 - 团队排序与可见性属于显式管理行为，不能隐式由前端本地规则推导。
+- `displayOrder` 仍作为持久化字段写入接口，但在工作台 UI 中属于内部实现细节，不直接展示给用户编辑。
 - 删除操作必须给出明确确认，而不是弱化为普通按钮点击。
 
 ## 维护提示
