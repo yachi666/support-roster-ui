@@ -38,7 +38,7 @@
 
 - Node.js `^20.19.0 || >=22.12.0`
 - npm
-- 可访问的后端 API（本地默认 `http://localhost:8080/api`）
+- 可访问的后端 API（本地默认 `http://127.0.0.1:8080/api`）
 
 ### Install
 
@@ -55,7 +55,7 @@ npm run dev
 默认开发环境通过 `.env.development` 使用：
 
 ```bash
-VITE_API_BASE_URL=http://localhost:8080/api
+VITE_API_BASE_URL=http://127.0.0.1:8080/api
 ```
 
 ### Build for Production
@@ -85,7 +85,7 @@ npm run preview
 
 | Variable | Purpose | Example |
 |----------|---------|---------|
-| `VITE_API_BASE_URL` | 后端 API 基础地址 | `http://localhost:8080/api` |
+| `VITE_API_BASE_URL` | 后端 API 基础地址 | `http://127.0.0.1:8080/api` |
 
 生产环境示例见 `.env.production`。
 
