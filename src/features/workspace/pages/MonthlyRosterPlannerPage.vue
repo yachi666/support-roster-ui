@@ -9,6 +9,7 @@ import {
 } from 'lucide-vue-next'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { onBeforeRouteLeave, RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
 import AssignmentDrawer from '../components/roster/AssignmentDrawer.vue'
@@ -57,6 +58,7 @@ const {
   reloadRoster,
 } = useRosterPlanner()
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const showTeamFilter = ref(false)
 const selectedRange = ref(null)
@@ -72,18 +74,21 @@ const selectedRangeSummary = computed(() => {
     return ''
   }
 
-  return `Selected days ${selectedRange.value.startDay}-${selectedRange.value.endDay}`
+  return t('workspace.roster.selectedDays', {
+    startDay: selectedRange.value.startDay,
+    endDay: selectedRange.value.endDay,
+  })
 })
 
 const activeFilterSummary = computed(() => {
   const filters = []
 
   if (searchTerm.value.trim()) {
-    filters.push(`Search: ${searchTerm.value.trim()}`)
+    filters.push(t('workspace.roster.searchSummary', { value: searchTerm.value.trim() }))
   }
 
   if (selectedTeamIds.value.length > 0) {
-    filters.push(`${selectedTeamIds.value.length} team filter${selectedTeamIds.value.length > 1 ? 's' : ''}`)
+    filters.push(t('workspace.roster.teamFilterSummary', { count: selectedTeamIds.value.length }))
   }
 
   return filters
@@ -103,7 +108,7 @@ function confirmDiscardPendingChanges() {
     return true
   }
 
-  return window.confirm(`You have ${pendingUpdateCount.value} unsaved roster change(s). Leave without saving?`)
+  return window.confirm(t('workspace.roster.leavePrompt', { count: pendingUpdateCount.value }))
 }
 
 function selectCell(staffId, day) {
@@ -226,27 +231,27 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
   <div class="relative flex h-full flex-col bg-white">
     <div class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 shadow-sm">
       <div class="flex items-center gap-4">
-        <div>
-          <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Monthly Roster</div>
-          <div class="flex items-center gap-2 text-sm font-semibold text-slate-800">
-            <span>{{ monthLabel }}</span>
-            <span v-if="hasUnsavedChanges" class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-amber-700">
-              {{ pendingUpdateCount }} unsaved
-            </span>
+          <div>
+            <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">{{ t('workspace.roster.title') }}</div>
+            <div class="flex items-center gap-2 text-sm font-semibold text-slate-800">
+              <span>{{ monthLabel }}</span>
+              <span v-if="hasUnsavedChanges" class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-amber-700">
+                {{ t('workspace.roster.headerUnsaved', { count: pendingUpdateCount }) }}
+              </span>
+            </div>
           </div>
-        </div>
       </div>
 
       <div class="flex items-center gap-3">
         <div class="relative">
-          <label for="workspace-roster-search" class="sr-only">Filter roster staff</label>
+          <label for="workspace-roster-search" class="sr-only">{{ t('workspace.roster.filterStaff') }}</label>
           <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
           <input
             id="workspace-roster-search"
             name="workspace-roster-search"
             v-model="searchTerm"
             type="text"
-            placeholder="Filter staff..."
+            :placeholder="t('workspace.roster.filterPlaceholder')"
             class="w-48 rounded-md border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
           />
         </div>
@@ -257,20 +262,20 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
             @click="showTeamFilter = !showTeamFilter"
           >
             <Filter class="h-3.5 w-3.5" />
-            Teams {{ selectedTeamIds.length > 0 ? `(${selectedTeamIds.length})` : '(All)' }}
+            {{ selectedTeamIds.length > 0 ? t('workspace.roster.teamButton', { count: selectedTeamIds.length }) : t('workspace.roster.teamButtonAll') }}
           </button>
           <div 
             v-if="showTeamFilter" 
             class="absolute right-0 top-full z-50 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-3 shadow-lg"
           >
             <div class="flex items-center justify-between mb-2">
-              <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">Filter by Team</span>
+              <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ t('workspace.roster.filterByTeam') }}</span>
               <button 
                 v-if="selectedTeamIds.length > 0"
                 class="text-xs text-teal-600 hover:text-teal-700"
                 @click="clearTeamFilter"
               >
-                Clear
+                {{ t('workspace.roster.clear') }}
               </button>
             </div>
             <div class="space-y-1 max-h-64 overflow-auto">
@@ -301,7 +306,7 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
           class="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
         >
           <Upload class="h-3.5 w-3.5" />
-          Import
+          {{ t('workspace.roster.import') }}
         </RouterLink>
         <button 
           class="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -309,7 +314,7 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
           @click="exportRoster"
         >
           <Download class="h-3.5 w-3.5" />
-          {{ importExportLoading ? 'Exporting...' : 'Export' }}
+          {{ importExportLoading ? t('workspace.roster.exporting') : t('workspace.roster.export') }}
         </button>
       </div>
     </div>
@@ -320,7 +325,7 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
           {{ monthLabel }}
         </span>
         <span v-if="hasUnsavedChanges" class="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-800">
-          {{ pendingUpdateCount }} pending edit{{ pendingUpdateCount > 1 ? 's' : '' }}
+          {{ t('workspace.roster.pendingEdits', { count: pendingUpdateCount }) }}
         </span>
         <span
           v-for="item in activeFilterSummary"
@@ -330,7 +335,7 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
           {{ item }}
         </span>
         <span class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600">
-          Arrow keys move, Enter edits
+          {{ t('workspace.roster.keyboardHint') }}
         </span>
         <span
           v-if="hasRangeSelection"
@@ -343,7 +348,7 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
           class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-800"
           @click="clearRangeSelection"
         >
-          Clear range
+          {{ t('workspace.roster.clearRange') }}
         </button>
       </div>
       <div v-if="validationWarning" class="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
@@ -356,7 +361,7 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
       <div class="flex items-center justify-between gap-4">
         <span>{{ errorMessage }}</span>
         <button class="rounded-md border border-rose-200 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 transition-colors hover:bg-rose-100" @click="reloadRoster">
-          Retry
+          {{ t('workspace.roster.retry') }}
         </button>
       </div>
     </WorkspaceSurface>
@@ -373,16 +378,16 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
       <div class="flex items-center justify-between gap-4">
         <span>{{ importExportError }}</span>
         <button class="rounded-md border border-rose-200 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 transition-colors hover:bg-rose-100" @click="importExportError = ''">
-          Dismiss
+          {{ t('workspace.roster.dismiss') }}
         </button>
       </div>
     </div>
 
     <div v-if="loading" class="flex flex-1 items-center justify-center p-8 text-sm text-slate-500">
-      Loading monthly roster for {{ monthLabel }}...
+      {{ t('workspace.roster.loading', { monthLabel }) }}
     </div>
     <div v-else-if="!filteredGroups.length" class="flex flex-1 items-center justify-center p-8 text-sm text-slate-500">
-      No roster data returned for {{ monthLabel }}.
+      {{ t('workspace.roster.empty', { monthLabel }) }}
     </div>
     <RosterGrid
       v-else
@@ -408,15 +413,15 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
       >
         <div class="flex items-center gap-2">
           <div class="h-2 w-2 rounded-full bg-amber-400 animate-pulse"></div>
-          <span class="text-sm font-medium">You have {{ pendingUpdateCount }} unsaved change{{ pendingUpdateCount > 1 ? 's' : '' }}</span>
+          <span class="text-sm font-medium">{{ t('workspace.roster.unsavedChanges', { count: pendingUpdateCount }) }}</span>
         </div>
         <div class="flex items-center gap-2">
           <button class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-slate-700" @click="discardChanges">
-            Discard
+            {{ t('workspace.roster.discard') }}
           </button>
           <button class="flex items-center gap-1.5 rounded-md bg-teal-500 px-4 py-1.5 text-xs font-semibold text-slate-900 shadow-sm transition-colors hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-70" :disabled="saving || authStore.isReadonly" @click="!authStore.isReadonly && saveChanges()">
             <Save class="h-3.5 w-3.5" />
-            {{ authStore.isReadonly ? 'Readonly Mode' : saving ? 'Saving...' : 'Save Changes' }}
+            {{ authStore.isReadonly ? t('common.readonlyMode') : saving ? t('common.saving') : t('workspace.roster.saveChanges') }}
           </button>
         </div>
       </div>

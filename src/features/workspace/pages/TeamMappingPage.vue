@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, reactive, shallowRef } from 'vue'
 import { GripVertical, HelpCircle, Plus, Trash2 } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import { api } from '@/api'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
@@ -28,6 +29,7 @@ const draggingTeamId = shallowRef(null)
 const dragOverTeamId = shallowRef(null)
 const fieldErrors = reactive({})
 const formState = reactive({ ...EMPTY_FORM })
+const { t } = useI18n()
 
 const teamErrorRules = [
   {
@@ -288,8 +290,8 @@ onMounted(() => {
     <div class="flex-1 overflow-auto p-8">
       <div class="mx-auto flex max-w-6xl flex-col gap-8">
         <WorkspacePageHeader
-          title="Team Management"
-          description="Configure team groupings, drag-to-reorder presentation, and downstream dashboard visibility."
+          :title="t('workspace.teams.title')"
+          :description="t('workspace.teams.description')"
         >
           <template #actions>
             <button
@@ -297,7 +299,7 @@ onMounted(() => {
               @click="openCreateDrawer"
             >
               <Plus class="h-4 w-4" />
-              Create Team
+              {{ t('workspace.teams.createAction') }}
             </button>
           </template>
         </WorkspacePageHeader>
@@ -313,7 +315,7 @@ onMounted(() => {
               class="rounded-md border border-rose-200 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 transition-colors hover:bg-rose-100"
               @click="loadTeams"
             >
-              Retry
+              {{ t('common.retry') }}
             </button>
           </div>
         </WorkspaceSurface>
@@ -324,14 +326,12 @@ onMounted(() => {
         >
           <HelpCircle class="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
           <div>
-            <h3 class="text-sm font-semibold">How mapping works</h3>
+            <h3 class="text-sm font-semibold">{{ t('workspace.teams.mappingTitle') }}</h3>
             <p class="mt-1 text-sm leading-relaxed text-blue-800/80">
-              These rules control how staff members are grouped on the public On-Call Dashboard.
-              Teams marked as hidden remain schedulable here but stay out of downstream read-only
-              views.
+              {{ t('workspace.teams.mappingBody') }}
             </p>
             <p class="mt-2 text-xs text-blue-800/70">
-              Drag a row up or down to save the display order.
+              {{ t('workspace.teams.mappingHint') }}
             </p>
           </div>
         </WorkspaceSurface>
@@ -341,27 +341,27 @@ onMounted(() => {
             <div class="grid gap-3 sm:grid-cols-3">
               <WorkspaceSurface class="border-slate-200/80 bg-white/90 p-4">
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  Total Teams
+                  {{ t('workspace.teams.totalTeams') }}
                 </p>
                 <p class="mt-2 text-2xl font-semibold text-slate-900">{{ totalTeamsCount }}</p>
-                <p class="mt-1 text-sm text-slate-500">All managed groups in this workspace.</p>
+                <p class="mt-1 text-sm text-slate-500">{{ t('workspace.teams.totalTeamsBody') }}</p>
               </WorkspaceSurface>
               <WorkspaceSurface class="border-emerald-100 bg-emerald-50/80 p-4">
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600">
-                  Visible
+                  {{ t('common.visible') }}
                 </p>
                 <p class="mt-2 text-2xl font-semibold text-emerald-900">
                   {{ visibleTeams.length }}
                 </p>
-                <p class="mt-1 text-sm text-emerald-800/75">Shown on the downstream dashboard.</p>
+                <p class="mt-1 text-sm text-emerald-800/75">{{ t('workspace.teams.visibleBody') }}</p>
               </WorkspaceSurface>
               <WorkspaceSurface class="border-slate-200 bg-slate-100/80 p-4">
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Hidden
+                  {{ t('common.hidden') }}
                 </p>
                 <p class="mt-2 text-2xl font-semibold text-slate-800">{{ hiddenTeams.length }}</p>
                 <p class="mt-1 text-sm text-slate-600">
-                  Still schedulable, but not publicly shown.
+                  {{ t('workspace.teams.hiddenBody') }}
                 </p>
               </WorkspaceSurface>
             </div>
@@ -369,15 +369,15 @@ onMounted(() => {
             <div class="flex items-end justify-between gap-4 px-2">
               <div>
                 <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-700">
-                  Active Teams
+                  {{ t('workspace.teams.activeTeams') }}
                 </h2>
                 <p class="mt-1 text-sm text-slate-500">
-                  Drag cards to reorder how teams appear in downstream views.
+                  {{ t('workspace.teams.activeTeamsBody') }}
                 </p>
               </div>
             </div>
             <WorkspaceSurface v-if="loading" class="p-6 text-sm text-slate-500"
-              >Loading team mappings...</WorkspaceSurface
+              >{{ t('workspace.teams.loading') }}</WorkspaceSurface
             >
             <WorkspaceSurface
               v-for="team in sortedTeams"
@@ -417,7 +417,7 @@ onMounted(() => {
                         : 'bg-slate-100 text-slate-500'
                     "
                   >
-                    {{ team.visible ? 'Visible' : 'Hidden' }}
+                      {{ team.visible ? t('workspace.teams.visible') : t('workspace.teams.hidden') }}
                   </span>
                 </div>
                 <p
@@ -427,7 +427,7 @@ onMounted(() => {
                   {{ team.description }}
                 </p>
                 <p v-else class="mt-1 text-sm text-slate-400">
-                  Drag to reorder this team in downstream dashboards.
+                  {{ t('workspace.teams.dragFallback') }}
                 </p>
                 <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
                   <span
@@ -438,20 +438,20 @@ onMounted(() => {
                         : 'border-slate-200 bg-slate-50 text-slate-500'
                     "
                   >
-                    {{ team.visible ? 'Shown in public viewer' : 'Kept internal only' }}
-                  </span>
+                     {{ team.visible ? t('workspace.teams.shownPublic') : t('workspace.teams.internalOnly') }}
+                   </span>
                   <span
                     class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-500"
                   >
-                    Click to edit
-                  </span>
-                </div>
-              </div>
-              <div class="hidden text-right md:block">
-                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">Drag</p>
-                <p class="mt-1 text-xs text-slate-400">Move in list</p>
-              </div>
-            </WorkspaceSurface>
+                     {{ t('workspace.teams.clickToEdit') }}
+                   </span>
+                 </div>
+               </div>
+               <div class="hidden text-right md:block">
+                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">{{ t('workspace.teams.drag') }}</p>
+                 <p class="mt-1 text-xs text-slate-400">{{ t('workspace.teams.moveInList') }}</p>
+               </div>
+             </WorkspaceSurface>
             <WorkspaceSurface
               v-if="!loading && !sortedTeams.length"
               class="p-6 text-sm text-slate-500"
@@ -459,17 +459,17 @@ onMounted(() => {
               <div
                 class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center"
               >
-                <p class="text-base font-medium text-slate-700">No teams yet</p>
-                <p class="mt-2 text-sm text-slate-500">
-                  Create your first team to define dashboard grouping and visibility.
-                </p>
+                 <p class="text-base font-medium text-slate-700">{{ t('workspace.teams.emptyTitle') }}</p>
+                 <p class="mt-2 text-sm text-slate-500">
+                   {{ t('workspace.teams.emptyBody') }}
+                 </p>
               </div>
             </WorkspaceSurface>
             <button
               class="w-full rounded-2xl border-2 border-dashed border-slate-200 py-4 text-sm font-medium text-slate-500 transition-colors hover:border-teal-400 hover:bg-teal-50/50 hover:text-teal-600"
               @click="openCreateDrawer"
             >
-              + Create New Team
+              {{ t('workspace.teams.createNew') }}
             </button>
           </div>
 
@@ -479,22 +479,22 @@ onMounted(() => {
                 <div class="flex items-start justify-between gap-4">
                   <div>
                     <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-700">
-                      Dashboard Preview
-                    </h2>
-                    <p class="mt-1 text-sm text-slate-500">
-                      This mirrors the public viewer order for visible teams.
-                    </p>
+                       {{ t('workspace.teams.previewTitle') }}
+                     </h2>
+                     <p class="mt-1 text-sm text-slate-500">
+                       {{ t('workspace.teams.previewBody') }}
+                     </p>
                   </div>
                   <span
                     class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600"
                   >
-                    {{ visibleTeams.length }} visible
-                  </span>
-                </div>
-                <div v-if="hiddenTeams.length" class="mt-4 border-t border-slate-100 pt-4">
-                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    Hidden from dashboard
-                  </p>
+                     {{ t('workspace.teams.visibleCount', { count: visibleTeams.length }) }}
+                   </span>
+                 </div>
+                 <div v-if="hiddenTeams.length" class="mt-4 border-t border-slate-100 pt-4">
+                   <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                     {{ t('workspace.teams.hiddenFromDashboard') }}
+                   </p>
                   <div class="mt-2 flex flex-wrap gap-2">
                     <span
                       v-for="team in hiddenTeams"
@@ -512,7 +512,7 @@ onMounted(() => {
                 class="overflow-hidden border-slate-200/80 shadow-sm"
               >
                 <div class="flex items-center justify-between bg-slate-900 px-4 py-3">
-                  <span class="text-xs font-semibold text-white">Public On-Call Viewer</span>
+                  <span class="text-xs font-semibold text-white">{{ t('workspace.teams.viewerTitle') }}</span>
                   <div class="flex gap-1.5">
                     <div class="h-2 w-2 rounded-full bg-slate-600"></div>
                     <div class="h-2 w-2 rounded-full bg-slate-600"></div>
@@ -537,7 +537,7 @@ onMounted(() => {
                           <span
                             class="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400"
                           >
-                            Live
+                             {{ t('workspace.teams.live') }}
                           </span>
                         </div>
                         <p
@@ -559,7 +559,7 @@ onMounted(() => {
                     </div>
                   </div>
                   <div v-if="!loading && !visibleTeams.length" class="text-xs text-slate-500">
-                    No visible teams available for preview.
+                    {{ t('workspace.teams.previewEmpty') }}
                   </div>
                 </div>
               </WorkspaceSurface>
@@ -571,13 +571,13 @@ onMounted(() => {
 
     <WorkspaceDrawer
       :model-value="drawerOpen"
-      :title="selectedTeam ? 'Edit Team' : 'Create Team'"
+      :title="selectedTeam ? t('workspace.teams.editTitle') : t('workspace.teams.createTitle')"
       width="460px"
       @update:model-value="closeDrawer"
     >
       <template #subtitle>
         <p class="mt-1 text-xs text-slate-500">
-          Team definitions are persisted directly to the workspace team service.
+          {{ t('workspace.teams.subtitle') }}
         </p>
       </template>
 
@@ -595,9 +595,9 @@ onMounted(() => {
           tone="muted"
           class="space-y-3 border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
         >
-          <p>Delete team {{ selectedTeam.name }}?</p>
+          <p>{{ t('workspace.teams.deleteConfirm', { name: selectedTeam.name }) }}</p>
           <p class="text-xs text-amber-800">
-            This affects downstream grouping and dashboard visibility immediately.
+            {{ t('workspace.teams.deleteWarning') }}
           </p>
           <div class="flex items-center justify-end gap-2">
             <button
@@ -605,7 +605,7 @@ onMounted(() => {
               class="rounded-md border border-amber-200 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 transition-colors hover:bg-amber-100"
               @click="cancelDeleteTeam"
             >
-              Keep Team
+              {{ t('workspace.teams.keepTeam') }}
             </button>
             <button
               type="button"
@@ -613,7 +613,7 @@ onMounted(() => {
               :disabled="deletePending"
               @click="confirmDeleteTeam"
             >
-              {{ deletePending ? 'Deleting...' : 'Confirm Delete' }}
+              {{ deletePending ? t('common.deleting') : t('workspace.teams.confirmDelete') }}
             </button>
           </div>
         </WorkspaceSurface>

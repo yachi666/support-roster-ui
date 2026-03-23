@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, reactive, shallowRef } from 'vue'
 import { Clock3, Plus, Search, Trash2 } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import { api } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
@@ -49,6 +50,7 @@ const confirmDeleteVisible = shallowRef(false)
 const fieldErrors = reactive({})
 const formState = reactive({ ...EMPTY_FORM })
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const shiftErrorRules = [
   {
@@ -353,19 +355,19 @@ onMounted(() => {
     <div class="flex-1 overflow-auto p-8">
       <div class="mx-auto flex max-w-7xl flex-col gap-8">
         <WorkspacePageHeader
-          title="Shift Definitions"
-          description="Manage shift codes, timelines, and primary status."
+          :title="t('workspace.shifts.title')"
+          :description="t('workspace.shifts.description')"
         >
           <template #actions>
             <div class="relative">
-              <label for="workspace-shift-search" class="sr-only">Search shift definitions</label>
+              <label for="workspace-shift-search" class="sr-only">{{ t('workspace.shifts.searchLabel') }}</label>
               <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 id="workspace-shift-search"
                 name="workspace-shift-search"
                 v-model="searchTerm"
                 type="text"
-                placeholder="Search codes..."
+                :placeholder="t('workspace.shifts.searchPlaceholder')"
                 class="w-64 rounded-md border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
               />
             </div>
@@ -373,12 +375,12 @@ onMounted(() => {
               v-model="selectedTeamFilter"
               class="w-44 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition-all focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
             >
-              <option value="">All Teams</option>
+                <option value="">{{ t('common.allTeams') }}</option>
               <option v-for="team in teams" :key="team.id" :value="String(team.id)">{{ team.name }}</option>
             </select>
             <button v-if="!authStore.isReadonly" class="flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700" @click="openCreateDrawer">
               <Plus class="h-4 w-4" />
-              New Shift Code
+              {{ t('workspace.shifts.createAction') }}
             </button>
           </template>
         </WorkspacePageHeader>
@@ -387,7 +389,7 @@ onMounted(() => {
           <div class="flex items-center justify-between gap-4">
             <span>{{ errorMessage }}</span>
             <button class="rounded-md border border-rose-200 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 transition-colors hover:bg-rose-100" @click="loadShiftDefinitions">
-              Retry
+              {{ t('common.retry') }}
             </button>
           </div>
         </WorkspaceSurface>
@@ -397,14 +399,14 @@ onMounted(() => {
             <table class="min-w-full text-left text-sm text-slate-600">
               <thead class="border-b border-slate-200 bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
                 <tr>
-                  <th class="w-20 px-6 py-3">Code</th>
-                  <th class="px-6 py-3">Meaning</th>
-                  <th class="px-6 py-3">TEAM</th>
-                  <th class="px-6 py-3">Time (24h)</th>
-                  <th class="w-48 px-6 py-3">Timeline Preview</th>
-                  <th class="px-6 py-3 text-center">Type</th>
-                  <th class="px-6 py-3 text-center">Visible</th>
-                  <th class="px-6 py-3 text-right">Actions</th>
+                  <th class="w-20 px-6 py-3">{{ t('workspace.shifts.columns.code') }}</th>
+                  <th class="px-6 py-3">{{ t('workspace.shifts.columns.meaning') }}</th>
+                  <th class="px-6 py-3">{{ t('workspace.shifts.columns.team') }}</th>
+                  <th class="px-6 py-3">{{ t('workspace.shifts.columns.time') }}</th>
+                  <th class="w-48 px-6 py-3">{{ t('workspace.shifts.columns.preview') }}</th>
+                  <th class="px-6 py-3 text-center">{{ t('workspace.shifts.columns.type') }}</th>
+                  <th class="px-6 py-3 text-center">{{ t('workspace.shifts.columns.visible') }}</th>
+                  <th class="px-6 py-3 text-right">{{ t('workspace.shifts.columns.actions') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100">
@@ -437,7 +439,7 @@ onMounted(() => {
                   </td>
                   <td class="px-6 py-4 text-center">
                     <span :class="['inline-flex rounded border px-2 py-0.5 text-[11px] font-medium', shift.primaryShift ? 'border-indigo-100 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-slate-100 text-slate-600']">
-                      {{ shift.primaryShift ? 'Primary' : 'Secondary' }}
+                      {{ shift.primaryShift ? t('workspace.shifts.primary') : t('workspace.shifts.secondary') }}
                     </span>
                   </td>
                   <td class="px-6 py-4 text-center">
@@ -446,14 +448,14 @@ onMounted(() => {
                     </div>
                   </td>
                   <td class="px-6 py-4 text-right text-xs text-slate-400">
-                    <span class="opacity-0 transition-opacity group-hover:opacity-100">Edit</span>
+                    <span class="opacity-0 transition-opacity group-hover:opacity-100">{{ t('common.edit') }}</span>
                   </td>
                 </tr>
                 <tr v-if="loading">
-                  <td colspan="8" class="px-6 py-10 text-center text-sm text-slate-500">Loading shift definitions...</td>
+                  <td colspan="8" class="px-6 py-10 text-center text-sm text-slate-500">{{ t('workspace.shifts.loading') }}</td>
                 </tr>
                 <tr v-else-if="!visibleShifts.length">
-                  <td colspan="8" class="px-6 py-10 text-center text-sm text-slate-500">No shift definitions matched the current filter.</td>
+                  <td colspan="8" class="px-6 py-10 text-center text-sm text-slate-500">{{ t('workspace.shifts.empty') }}</td>
                 </tr>
               </tbody>
             </table>
@@ -462,9 +464,9 @@ onMounted(() => {
       </div>
     </div>
 
-    <WorkspaceDrawer :model-value="drawerOpen" :title="selectedShift ? 'Edit Shift Definition' : 'Create Shift Definition'" width="460px" @update:model-value="closeDrawer">
+    <WorkspaceDrawer :model-value="drawerOpen" :title="selectedShift ? t('workspace.shifts.editTitle') : t('workspace.shifts.createTitle')" width="460px" @update:model-value="closeDrawer">
       <template #subtitle>
-        <p class="mt-1 text-xs text-slate-500">The drawer saves directly to the workspace shift definition registry.</p>
+        <p class="mt-1 text-xs text-slate-500">{{ t('workspace.shifts.subtitle') }}</p>
       </template>
 
       <form class="space-y-5" @submit.prevent="saveShift">
@@ -473,25 +475,25 @@ onMounted(() => {
         </WorkspaceSurface>
 
         <WorkspaceSurface v-if="confirmDeleteVisible && selectedShift && !authStore.isReadonly" tone="muted" class="space-y-3 border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          <p>Delete shift code {{ selectedShift.code }}?</p>
-          <p class="text-xs text-amber-800">This removes the definition from planners and future roster edits immediately.</p>
+          <p>{{ t('workspace.shifts.deleteConfirm', { code: selectedShift.code }) }}</p>
+          <p class="text-xs text-amber-800">{{ t('workspace.shifts.deleteWarning') }}</p>
           <div class="flex items-center justify-end gap-2">
             <button type="button" class="rounded-md border border-amber-200 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 transition-colors hover:bg-amber-100" @click="cancelDeleteShift">
-              Keep Shift
+              {{ t('workspace.shifts.keepShift') }}
             </button>
             <button type="button" class="rounded-md bg-rose-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60" :disabled="deletePending" @click="confirmDeleteShift">
-              {{ deletePending ? 'Deleting...' : 'Confirm Delete' }}
+              {{ deletePending ? t('common.deleting') : t('workspace.shifts.confirmDelete') }}
             </button>
           </div>
         </WorkspaceSurface>
 
         <div class="grid gap-4 md:grid-cols-2">
           <label class="space-y-2 text-sm text-slate-700 md:col-span-2">
-            <span class="font-medium">TEAMS</span>
+            <span class="font-medium">{{ t('workspace.shifts.teams') }}</span>
             <div :class="['rounded-lg border bg-white p-3', fieldErrors.teamIds ? 'border-rose-300' : 'border-slate-200']">
               <div class="mb-2 flex items-center justify-between text-xs text-slate-500">
-                <span>Choose one or more teams to share this shift definition.</span>
-                <span>{{ formState.teamIds.length }} selected</span>
+                <span>{{ t('workspace.shifts.teamHint') }}</span>
+                <span>{{ t('workspace.shifts.selectedCount', { count: formState.teamIds.length }) }}</span>
               </div>
               <div class="grid gap-2 md:grid-cols-2">
                 <label v-for="team in teams" :key="team.id" class="flex cursor-pointer items-center gap-3 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 transition-colors hover:border-teal-300 hover:bg-teal-50/40">
@@ -504,24 +506,24 @@ onMounted(() => {
             <p v-if="fieldErrors.teamIds" class="text-xs text-rose-600">{{ fieldErrors.teamIds }}</p>
           </label>
           <label class="space-y-2 text-sm text-slate-700">
-            <span class="font-medium">Shift Code</span>
+            <span class="font-medium">{{ t('workspace.shifts.shiftCode') }}</span>
             <input id="shift-code" v-model="formState.code" name="code" type="text" :class="inputClass('code')" />
             <p v-if="fieldErrors.code" class="text-xs text-rose-600">{{ fieldErrors.code }}</p>
           </label>
           <label class="space-y-2 text-sm text-slate-700">
-            <span class="font-medium">Meaning</span>
+            <span class="font-medium">{{ t('workspace.shifts.meaning') }}</span>
             <input id="shift-meaning" v-model="formState.meaning" name="meaning" type="text" :class="inputClass('meaning')" />
             <p v-if="fieldErrors.meaning" class="text-xs text-rose-600">{{ fieldErrors.meaning }}</p>
           </label>
           <label class="space-y-2 text-sm text-slate-700">
-            <span class="font-medium">Start Time</span>
+            <span class="font-medium">{{ t('workspace.shifts.startTime') }}</span>
             <select id="shift-startTime" v-model="formState.startTime" name="startTime" :class="['bg-white', ...inputClass('startTime')]" @change="handleStartTimeChange">
               <option v-for="timeOption in TIME_OPTIONS" :key="timeOption.value" :value="timeOption.value">{{ timeOption.label }}</option>
             </select>
             <p v-if="fieldErrors.startTime" class="text-xs text-rose-600">{{ fieldErrors.startTime }}</p>
           </label>
           <label class="space-y-2 text-sm text-slate-700">
-            <span class="font-medium">Duration (minutes)</span>
+            <span class="font-medium">{{ t('workspace.shifts.durationMinutes') }}</span>
             <input
               id="shift-durationMinutes"
               v-model="formState.durationMinutes"
@@ -536,18 +538,18 @@ onMounted(() => {
             <p v-if="fieldErrors.durationMinutes" class="text-xs text-rose-600">{{ fieldErrors.durationMinutes }}</p>
           </label>
           <div class="space-y-2 text-sm text-slate-700 md:col-span-2">
-            <span class="font-medium">Quick Duration</span>
+            <span class="font-medium">{{ t('workspace.shifts.quickDuration') }}</span>
             <div class="flex flex-wrap gap-2">
               <button type="button" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700" @click="applyDurationPreset(8 * 60)">+8h</button>
               <button type="button" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700" @click="applyDurationPreset(9 * 60)">+9h</button>
               <button type="button" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700" @click="applyDurationPreset(12 * 60)">+12h</button>
               <button type="button" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700" @click="applyDurationPreset(24 * 60)">+24h</button>
             </div>
-            <p class="text-xs text-slate-500">{{ timeSummary || 'Select a start time and duration.' }}</p>
-            <p v-if="endTimePreview" class="text-xs text-slate-400">Ends at {{ endTimePreview }} · {{ durationLabel }}</p>
+            <p class="text-xs text-slate-500">{{ timeSummary || t('workspace.shifts.selectStartAndDuration') }}</p>
+            <p v-if="endTimePreview" class="text-xs text-slate-400">{{ t('workspace.shifts.endsAt', { time: endTimePreview, duration: durationLabel }) }}</p>
           </div>
           <label class="space-y-2 text-sm text-slate-700">
-            <span class="font-medium">Timezone</span>
+            <span class="font-medium">{{ t('workspace.shifts.timezone') }}</span>
             <select id="shift-timezone" v-model="formState.timezone" name="timezone" :class="['bg-white', ...inputClass('timezone')]">
               <option v-for="timezoneOption in WORKSPACE_STAFF_TIMEZONE_OPTIONS" :key="timezoneOption.value" :value="timezoneOption.value">
                 {{ timezoneOption.label }}
@@ -556,20 +558,20 @@ onMounted(() => {
             <p v-if="fieldErrors.timezone" class="text-xs text-rose-600">{{ fieldErrors.timezone }}</p>
           </label>
           <label class="space-y-2 text-sm text-slate-700">
-            <span class="font-medium">Color</span>
+            <span class="font-medium">{{ t('workspace.shifts.color') }}</span>
             <input id="shift-colorHex" v-model="formState.colorHex" name="colorHex" type="color" :class="['h-10 bg-white px-2 py-1', ...inputClass('colorHex')]" />
             <p v-if="fieldErrors.colorHex" class="text-xs text-rose-600">{{ fieldErrors.colorHex }}</p>
           </label>
           <label class="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-700">
             <input id="shift-primaryShift" v-model="formState.primaryShift" name="primaryShift" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
-            <span>Primary shift</span>
+            <span>{{ t('workspace.shifts.primaryShift') }}</span>
           </label>
           <label class="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-700">
             <input id="shift-visible" v-model="formState.visible" name="visible" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
-            <span>Visible in planners</span>
+            <span>{{ t('workspace.shifts.visibleInPlanners') }}</span>
           </label>
           <label class="space-y-2 text-sm text-slate-700 md:col-span-2">
-            <span class="font-medium">Remark</span>
+            <span class="font-medium">{{ t('workspace.shifts.remark') }}</span>
             <textarea id="shift-remark" v-model="formState.remark" name="remark" rows="4" :class="inputClass('remark')"></textarea>
             <p v-if="fieldErrors.remark" class="text-xs text-rose-600">{{ fieldErrors.remark }}</p>
           </label>
@@ -586,14 +588,14 @@ onMounted(() => {
             @click="promptDeleteShift"
           >
             <Trash2 class="h-4 w-4" />
-            Delete
+            {{ t('common.delete') }}
           </button>
           <div v-else></div>
           <div class="flex items-center gap-3">
-            <button type="button" class="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50" @click="closeDrawer">Cancel</button>
+            <button type="button" class="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50" @click="closeDrawer">{{ t('common.cancel') }}</button>
             <button v-if="!authStore.isReadonly" type="button" class="inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60" :disabled="submitPending" @click="saveShift">
               <Pencil class="h-4 w-4" />
-              {{ submitPending ? 'Saving...' : selectedShift ? 'Save Changes' : 'Create Shift' }}
+              {{ submitPending ? t('common.saving') : selectedShift ? t('workspace.shifts.saveAction') : t('workspace.shifts.createShift') }}
             </button>
           </div>
         </div>

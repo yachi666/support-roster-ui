@@ -1,6 +1,7 @@
 <script setup>
 import { computed, shallowRef, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   AlertTriangle,
   CalendarDays,
@@ -19,6 +20,7 @@ import { useWorkspacePeriod } from '../composables/useWorkspacePeriod'
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const { t } = useI18n()
 const validationIssueCount = shallowRef(null)
 const { year, month } = useWorkspacePeriod()
 
@@ -46,17 +48,18 @@ const navigation = computed(() =>
     .filter((item) => !item.roles || authStore.hasAnyRole(item.roles))
     .map((item) => ({
       ...item,
+      label: t(item.labelKey),
       count: item.to === '/workspace/validation' ? validationIssueCount.value : undefined,
       active: item.to === '/workspace' ? route.path === '/workspace' : route.path.startsWith(item.to),
     })),
 )
 
-const currentUserLabel = computed(() => authStore.currentUser?.staffName || 'Workspace User')
+const currentUserLabel = computed(() => authStore.currentUser?.staffName || t('workspace.roles.userFallback'))
 const currentRoleLabel = computed(() => {
-  if (authStore.isAdmin) return 'Admin'
-  if (authStore.isEditor) return 'Editor'
-  if (authStore.isReadonly) return 'Readonly'
-  return 'Workspace'
+  if (authStore.isAdmin) return t('workspace.roles.admin')
+  if (authStore.isEditor) return t('workspace.roles.editor')
+  if (authStore.isReadonly) return t('workspace.roles.readonly')
+  return t('workspace.roles.workspace')
 })
 const currentInitials = computed(() => {
   const source = authStore.currentUser?.staffName || authStore.currentUser?.staffId || 'WU'
@@ -86,14 +89,14 @@ watch([year, month], () => {
           <CalendarDays class="h-4 w-4" />
         </div>
         <div>
-          <div class="text-sm font-semibold tracking-tight">Roster Workspace</div>
-          <div class="text-[11px] text-slate-400">Admin control center</div>
+          <div class="text-sm font-semibold tracking-tight">{{ t('workspace.shell.brand') }}</div>
+          <div class="text-[11px] text-slate-400">{{ t('workspace.shell.subtitle') }}</div>
         </div>
       </div>
     </div>
 
     <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-6">
-      <div class="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Menu</div>
+      <div class="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">{{ t('workspace.shell.menu') }}</div>
       <RouterLink
         v-for="item in navigation"
         :key="item.label"
@@ -136,7 +139,7 @@ watch([year, month], () => {
         </div>
       </div>
       <button class="mt-3 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50" @click="void handleLogout()">
-        Logout
+        {{ t('workspace.shell.logout') }}
       </button>
     </div>
   </aside>

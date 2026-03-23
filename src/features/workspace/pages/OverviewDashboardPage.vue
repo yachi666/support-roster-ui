@@ -14,6 +14,7 @@ import {
   TriangleAlert,
 } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { api } from '@/api'
 import OverviewStatCard from '../components/OverviewStatCard.vue'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
@@ -28,6 +29,7 @@ const loading = shallowRef(false)
 const errorMessage = shallowRef('')
 
 const { year, month, monthLabel, timezone } = useWorkspacePeriod()
+const { t } = useI18n()
 
 const STATUS_WEIGHT = {
   error: 0,
@@ -36,39 +38,39 @@ const STATUS_WEIGHT = {
   good: 3,
 }
 
-const statusCopy = {
+const statusCopy = computed(() => ({
   error: {
-    label: 'Critical',
+    label: t('workspace.overview.status.critical'),
     chip: 'border-rose-200 bg-rose-50 text-rose-700',
     panel: 'border-rose-200 bg-[linear-gradient(135deg,rgba(255,241,242,0.98),rgba(255,255,255,0.96))]',
     accent: 'bg-rose-500',
     icon: TriangleAlert,
   },
   warning: {
-    label: 'Needs review',
+    label: t('workspace.overview.status.needsAttention'),
     chip: 'border-amber-200 bg-amber-50 text-amber-700',
     panel: 'border-amber-200 bg-[linear-gradient(135deg,rgba(255,251,235,0.98),rgba(255,255,255,0.96))]',
     accent: 'bg-amber-500',
     icon: ShieldAlert,
   },
   neutral: {
-    label: 'Tracking',
+    label: t('workspace.overview.status.tracking'),
     chip: 'border-sky-200 bg-sky-50 text-sky-700',
     panel: 'border-sky-200 bg-[linear-gradient(135deg,rgba(240,249,255,0.98),rgba(255,255,255,0.96))]',
     accent: 'bg-sky-500',
     icon: Radar,
   },
   good: {
-    label: 'Healthy',
+    label: t('workspace.overview.status.healthy'),
     chip: 'border-emerald-200 bg-emerald-50 text-emerald-700',
     panel: 'border-emerald-200 bg-[linear-gradient(135deg,rgba(236,253,245,0.98),rgba(255,255,255,0.96))]',
     accent: 'bg-emerald-500',
     icon: CheckCircle2,
   },
-}
+}))
 
 function normalizeStatus(status) {
-  return statusCopy[status] ? status : 'neutral'
+  return statusCopy.value[status] ? status : 'neutral'
 }
 
 function isValidationStat(stat) {
@@ -94,39 +96,39 @@ function getSignalCopy(stat, index) {
 
   if (label.includes('completion')) {
     return {
-      eyebrow: 'Completion pulse',
-      title: 'Month completion',
+      eyebrow: t('workspace.overview.signal.completionEyebrow'),
+      title: t('workspace.overview.signal.completionTitle'),
       detail: stat.trend,
-      cta: 'Open Monthly Roster',
+      cta: t('workspace.overview.signal.completionCta'),
       to: '/workspace/roster',
     }
   }
 
   if (label.includes('assignment') || label.includes('shift')) {
     return {
-      eyebrow: 'Coverage volume',
-      title: 'Scheduled workload',
+      eyebrow: t('workspace.overview.signal.coverageEyebrow'),
+      title: t('workspace.overview.signal.coverageTitle'),
       detail: stat.trend,
-      cta: 'Inspect roster grid',
+      cta: t('workspace.overview.signal.coverageCta'),
       to: '/workspace/roster',
     }
   }
 
   if (label.includes('issue') || label.includes('validation')) {
     return {
-      eyebrow: 'Validation watch',
-      title: 'Open review items',
+      eyebrow: t('workspace.overview.signal.validationEyebrow'),
+      title: t('workspace.overview.signal.validationTitle'),
       detail: stat.trend,
-      cta: 'Open Validation Center',
+      cta: t('workspace.overview.signal.validationCta'),
       to: '/workspace/validation',
     }
   }
 
   return {
-    eyebrow: index === 0 ? 'Primary signal' : 'Operational signal',
+    eyebrow: index === 0 ? t('workspace.overview.signal.primaryEyebrow') : t('workspace.overview.signal.operationalEyebrow'),
     title: stat.label,
     detail: stat.trend,
-    cta: 'Open workspace',
+    cta: t('workspace.overview.signal.defaultCta'),
     to: '/workspace/roster',
   }
 }
@@ -189,10 +191,10 @@ const monthlySignalCards = computed(() => {
     return [
       {
         key: 'empty-month-signal',
-        eyebrow: 'Waiting for data',
-        title: 'No month signals returned',
-        detail: 'Once overview stats are available, this area will summarize completion, coverage, and roster execution for the selected month.',
-        cta: 'Refresh overview',
+        eyebrow: t('workspace.overview.signal.emptyEyebrow'),
+        title: t('workspace.overview.signal.emptyTitle'),
+        detail: t('workspace.overview.signal.emptyDetail'),
+        cta: t('workspace.overview.signal.emptyCta'),
         to: '/workspace',
         status: 'neutral',
         value: '--',
@@ -275,7 +277,7 @@ watch([year, month], () => {
   <div class="mx-auto max-w-[1280px] space-y-6 p-6 xl:p-8">
     <WorkspacePageHeader
       title="Monthly Roster Overview"
-      :description="`Month-first control board for ${monthLabel}, focused on roster readiness, coverage signals, and the smallest set of issues that need escalation.`"
+      :description="t('workspace.overview.description', { monthLabel })"
     >
       <template #actions>
         <button
@@ -283,21 +285,21 @@ watch([year, month], () => {
           @click="loadOverview"
         >
           <RefreshCw class="h-4 w-4" />
-          Refresh
+          {{ t('workspace.overview.refresh') }}
         </button>
         <RouterLink
           to="/workspace/roster"
           class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
         >
           <ClipboardCheck class="h-4 w-4" />
-          Open Monthly Roster
+          {{ t('workspace.overview.openRoster') }}
         </RouterLink>
         <RouterLink
           to="/workspace/import-export"
           class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-slate-800"
         >
           <FileSpreadsheet class="h-4 w-4" />
-          Import or Export
+          {{ t('workspace.overview.importExport') }}
         </RouterLink>
       </template>
     </WorkspacePageHeader>
@@ -306,7 +308,7 @@ watch([year, month], () => {
       <div class="flex items-center justify-between gap-4">
         <span>{{ errorMessage }}</span>
         <button class="rounded-md border border-rose-200 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 transition-colors hover:bg-rose-100" @click="loadOverview">
-          Retry
+          {{ t('common.retry') }}
         </button>
       </div>
     </WorkspaceSurface>
@@ -321,23 +323,23 @@ watch([year, month], () => {
             <div class="space-y-4">
               <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                 <CalendarDays class="h-3.5 w-3.5 text-teal-600" />
-                Monthly operations brief
+                {{ t('workspace.overview.monthOperationsBrief') }}
               </div>
 
               <div>
                 <h2 class="max-w-3xl text-3xl font-semibold tracking-tight text-slate-950 lg:text-[2.7rem]">
-                  {{ monthLabel }} roster overview
+                  {{ t('workspace.overview.rosterOverview', { monthLabel }) }}
                 </h2>
                 <p class="mt-3 max-w-3xl text-sm leading-7 text-slate-600 lg:text-[15px]">
-                  {{ loading ? 'Refreshing month-level roster signals from the workspace API...' : heroNarrative }}
+                  {{ loading ? t('workspace.overview.loadingHero') : heroNarrative }}
                 </p>
               </div>
             </div>
 
             <div class="rounded-[26px] border border-white/80 bg-white/80 px-5 py-4 shadow-[0_20px_40px_rgba(15,23,42,0.06)]">
-              <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Selected month</div>
+              <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.overview.selectedMonth') }}</div>
               <div class="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{{ monthLabel }}</div>
-              <div class="mt-2 text-xs text-slate-500">Aligned with the shared workspace period and used across roster, import, and validation flows.</div>
+              <div class="mt-2 text-xs text-slate-500">{{ t('workspace.overview.monthAligned') }}</div>
             </div>
           </div>
 
@@ -361,19 +363,19 @@ watch([year, month], () => {
               :key="signal.key"
               :class="[
                 'relative overflow-hidden rounded-[24px] border p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]',
-                statusCopy[signal.status].panel,
+                 statusCopy[signal.status].panel,
               ]"
             >
-              <div :class="['absolute inset-x-0 top-0 h-1', statusCopy[signal.status].accent]"></div>
+               <div :class="['absolute inset-x-0 top-0 h-1', statusCopy[signal.status].accent]"></div>
               <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ signal.eyebrow }}</div>
               <div class="mt-3 flex items-end justify-between gap-4">
                 <div>
                   <div class="text-sm font-semibold text-slate-900">{{ signal.title }}</div>
                   <div class="mt-1 text-3xl font-semibold tracking-tight text-slate-950">{{ signal.value }}</div>
                 </div>
-                <span :class="['inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]', statusCopy[signal.status].chip]">
-                  {{ statusCopy[signal.status].label }}
-                </span>
+                 <span :class="['inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]', statusCopy[signal.status].chip]">
+                   {{ statusCopy[signal.status].label }}
+                 </span>
               </div>
               <div class="mt-3 text-sm leading-6 text-slate-600">{{ signal.detail }}</div>
               <RouterLink :to="signal.to" class="mt-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700 transition-colors hover:text-slate-950">
@@ -388,8 +390,8 @@ watch([year, month], () => {
       <div class="space-y-6">
         <WorkspaceSurface :padded="false" class="overflow-hidden">
           <div class="border-b border-slate-100 px-6 py-5">
-            <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Month status</div>
-            <h2 class="mt-2 text-lg font-semibold tracking-tight text-slate-900">Primary roster signal</h2>
+            <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.overview.monthStatus') }}</div>
+            <h2 class="mt-2 text-lg font-semibold tracking-tight text-slate-900">{{ t('workspace.overview.primarySignal') }}</h2>
           </div>
           <div :class="['space-y-4 px-6 py-6', statusCopy[monthStatusCard.status].panel]">
             <div class="flex items-center justify-between gap-4">
@@ -405,7 +407,7 @@ watch([year, month], () => {
             </div>
             <div class="text-sm leading-7 text-slate-600">{{ monthStatusCard.trend }}</div>
             <RouterLink to="/workspace/roster" class="inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:bg-white">
-              Open roster workspace
+              {{ t('workspace.overview.openRosterWorkspace') }}
               <ArrowRight class="h-3.5 w-3.5" />
             </RouterLink>
           </div>
@@ -413,8 +415,8 @@ watch([year, month], () => {
 
         <WorkspaceSurface :padded="false" class="overflow-hidden">
           <div class="border-b border-slate-100 px-6 py-5">
-            <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Validation watch</div>
-            <h2 class="mt-2 text-lg font-semibold tracking-tight text-slate-900">Compact escalation panel</h2>
+            <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.overview.validationWatch') }}</div>
+            <h2 class="mt-2 text-lg font-semibold tracking-tight text-slate-900">{{ t('workspace.overview.escalationPanel') }}</h2>
           </div>
           <div :class="['space-y-4 px-6 py-6', statusCopy[validationSummary.status].panel]">
             <div class="flex items-center justify-between gap-4">
@@ -427,7 +429,7 @@ watch([year, month], () => {
             <div class="text-sm leading-7 text-slate-600">{{ validationSummary.trend }}</div>
             <div>
               <div class="mb-2 flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">
-                <span>Review readiness</span>
+                <span>{{ t('workspace.overview.reviewReadiness') }}</span>
                 <span>{{ validationSummary.progress }}%</span>
               </div>
               <div class="h-2 rounded-full bg-white/80 ring-1 ring-inset ring-slate-200/70">
@@ -435,7 +437,7 @@ watch([year, month], () => {
               </div>
             </div>
             <RouterLink to="/workspace/validation" class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700 transition-colors hover:text-slate-950">
-              Open Validation Center
+              {{ t('workspace.validation.title') }}
               <ArrowRight class="h-3.5 w-3.5" />
             </RouterLink>
           </div>
@@ -451,21 +453,21 @@ watch([year, month], () => {
       />
     </div>
     <WorkspaceSurface v-else class="p-6 text-sm text-slate-500">
-      {{ loading ? 'Loading month summary metrics...' : 'No month summary metrics returned by the server.' }}
+      {{ loading ? t('workspace.overview.loadingMetrics') : t('workspace.overview.emptyMetrics') }}
     </WorkspaceSurface>
 
     <div class="grid gap-6 xl:grid-cols-[1.3fr_1fr]">
       <WorkspaceSurface :padded="false" class="overflow-hidden">
         <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5">
           <div>
-            <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Activity stream</div>
-            <h2 class="mt-2 text-lg font-semibold tracking-tight text-slate-900">Recent month operations</h2>
+            <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.overview.activityStream') }}</div>
+            <h2 class="mt-2 text-lg font-semibold tracking-tight text-slate-900">{{ t('workspace.overview.recentOperations') }}</h2>
           </div>
           <div class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{{ monthLabel }}</div>
         </div>
         <div class="px-6 py-5">
-          <div v-if="loading && !activityPreview.length" class="text-sm text-slate-500">Loading recent activity...</div>
-          <div v-else-if="!activityPreview.length" class="text-sm text-slate-500">No recent activity returned by the server.</div>
+          <div v-if="loading && !activityPreview.length" class="text-sm text-slate-500">{{ t('workspace.overview.loadingActivity') }}</div>
+          <div v-else-if="!activityPreview.length" class="text-sm text-slate-500">{{ t('workspace.overview.emptyActivity') }}</div>
           <div v-else class="space-y-5">
             <div
               v-for="entry in activityPreview"
@@ -480,7 +482,7 @@ watch([year, month], () => {
                   <span class="font-semibold">{{ entry.user }}</span>
                   <span class="text-slate-500"> {{ entry.action }}</span>
                 </div>
-                <div class="mt-1 text-xs text-slate-500">Captured from the latest workspace operation log for month-level roster operations.</div>
+                <div class="mt-1 text-xs text-slate-500">{{ t('workspace.overview.activityHint') }}</div>
               </div>
               <div class="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
                 {{ entry.time }}
@@ -492,12 +494,12 @@ watch([year, month], () => {
 
       <WorkspaceSurface :padded="false" class="overflow-hidden">
         <div class="border-b border-slate-100 px-6 py-5">
-          <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Action deck</div>
-          <h2 class="mt-2 text-lg font-semibold tracking-tight text-slate-900">Next moves for this month</h2>
+            <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.overview.actionDeck') }}</div>
+            <h2 class="mt-2 text-lg font-semibold tracking-tight text-slate-900">{{ t('workspace.overview.nextMoves') }}</h2>
         </div>
         <div class="space-y-3 p-4">
-          <div v-if="loading && !quickActions.length" class="px-2 py-3 text-sm text-slate-500">Loading quick actions...</div>
-          <div v-else-if="!quickActions.length" class="px-2 py-3 text-sm text-slate-500">No quick actions returned by the server.</div>
+          <div v-if="loading && !quickActions.length" class="px-2 py-3 text-sm text-slate-500">{{ t('workspace.overview.loadingActions') }}</div>
+          <div v-else-if="!quickActions.length" class="px-2 py-3 text-sm text-slate-500">{{ t('workspace.overview.emptyActions') }}</div>
           <RouterLink
             v-for="action in quickActions"
             :key="`${action.title}-${action.actionKey}`"

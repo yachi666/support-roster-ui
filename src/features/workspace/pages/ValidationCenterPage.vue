@@ -15,6 +15,7 @@ import {
 } from 'lucide-vue-next'
 import { api } from '@/api'
 import { cn } from '@/lib/utils'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
@@ -34,30 +35,31 @@ const resolvePending = shallowRef(false)
 const resolvingIssueIds = shallowRef([])
 const { year, month, monthLabel } = useWorkspacePeriod()
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const severityMeta = {
   high: {
-    label: 'Critical',
-    eyebrow: 'Immediate attention',
-    description: 'Blocking issues that put roster correctness at risk.',
+    label: t('workspace.validation.severity.critical'),
+    eyebrow: t('workspace.validation.severity.criticalEyebrow'),
+    description: t('workspace.validation.severity.criticalDesc'),
     badge: 'border-rose-200 bg-rose-50 text-rose-700',
     panel: 'border-rose-200 bg-[linear-gradient(135deg,rgba(255,241,242,0.98),rgba(255,255,255,0.96))]',
     mutedPanel: 'border-rose-100 bg-rose-50/70',
     icon: ShieldAlert,
   },
   medium: {
-    label: 'Warning',
-    eyebrow: 'Review soon',
-    description: 'Important data problems that still need admin follow-up.',
+    label: t('workspace.validation.severity.warning'),
+    eyebrow: t('workspace.validation.severity.warningEyebrow'),
+    description: t('workspace.validation.severity.warningDesc'),
     badge: 'border-amber-200 bg-amber-50 text-amber-700',
     panel: 'border-amber-200 bg-[linear-gradient(135deg,rgba(255,251,235,0.98),rgba(255,255,255,0.96))]',
     mutedPanel: 'border-amber-100 bg-amber-50/70',
     icon: AlertTriangle,
   },
   low: {
-    label: 'Notice',
-    eyebrow: 'Monitor',
-    description: 'Lower-risk hygiene signals that should not be forgotten.',
+    label: t('workspace.validation.severity.notice'),
+    eyebrow: t('workspace.validation.severity.noticeEyebrow'),
+    description: t('workspace.validation.severity.noticeDesc'),
     badge: 'border-sky-200 bg-sky-50 text-sky-700',
     panel: 'border-sky-200 bg-[linear-gradient(135deg,rgba(240,249,255,0.98),rgba(255,255,255,0.96))]',
     mutedPanel: 'border-sky-100 bg-sky-50/70',
@@ -67,11 +69,11 @@ const severityMeta = {
 
 const sourceMeta = {
   'import-issue': {
-    label: 'Import pipeline',
+    label: t('workspace.validation.source.importIssue'),
     badge: 'border-violet-200 bg-violet-50 text-violet-700',
   },
   manual: {
-    label: 'Live data',
+    label: t('workspace.validation.source.manual'),
     badge: 'border-slate-200 bg-slate-100 text-slate-700',
   },
 }
@@ -179,23 +181,23 @@ const prioritizedIssue = computed(() => {
 
 const focusHeadline = computed(() => {
   if (!prioritizedIssue.value) {
-    return 'Validation queue is currently clear'
+    return t('workspace.validation.noIssuesHeadline')
   }
 
   if (prioritizedIssue.value.severity === 'high') {
-    return `${prioritizedIssue.value.type} is the top blocker for ${monthLabel.value}`
+    return t('workspace.validation.topBlocker', { type: prioritizedIssue.value.type, monthLabel: monthLabel.value })
   }
 
   if (prioritizedIssue.value.severity === 'medium') {
-    return `${prioritizedIssue.value.type} should be reviewed next`
+    return t('workspace.validation.reviewNext', { type: prioritizedIssue.value.type })
   }
 
-  return `No urgent blockers detected for ${monthLabel.value}`
+  return t('workspace.validation.noUrgentBlockers', { monthLabel: monthLabel.value })
 })
 
 const focusNarrative = computed(() => {
   if (!prioritizedIssue.value) {
-    return 'Use this page to watch for new import problems, roster conflicts, and manual follow-up items.'
+    return t('workspace.validation.noIssuesNarrative')
   }
 
   return prioritizedIssue.value.description
@@ -309,8 +311,8 @@ watch([year, month], () => {
     <div class="flex-1 overflow-auto p-6 xl:p-8">
       <div class="mx-auto flex max-w-[1280px] flex-col gap-6">
         <WorkspacePageHeader
-          title="Validation Center"
-          :description="`Issue workbench for ${monthLabel}: prioritize blockers, resolve what can be automated, and route the rest to the right workspace page.`"
+          :title="t('workspace.validation.title')"
+          :description="t('workspace.validation.description', { monthLabel })"
         >
           <template #actions>
             <button
@@ -318,7 +320,7 @@ watch([year, month], () => {
               @click="loadValidation"
             >
               <RefreshCw class="h-4 w-4" />
-              Refresh
+              {{ t('workspace.validation.refresh') }}
             </button>
             <button
               v-if="!authStore.isReadonly"
@@ -327,7 +329,7 @@ watch([year, month], () => {
               @click="resolveSelectedIssues"
             >
               <CheckSquare class="h-4 w-4" />
-              {{ resolvePending ? 'Resolving...' : `Resolve Selected (${resolvableSelectedIssueIds.length})` }}
+              {{ resolvePending ? t('workspace.validation.resolving') : t('workspace.validation.resolveSelected', { count: resolvableSelectedIssueIds.length }) }}
             </button>
           </template>
         </WorkspacePageHeader>
@@ -336,7 +338,7 @@ watch([year, month], () => {
           <div class="flex items-center justify-between gap-4">
             <span>{{ errorMessage }}</span>
             <button class="rounded-md border border-rose-200 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 transition-colors hover:bg-rose-100" @click="loadValidation">
-              Retry
+              {{ t('common.retry') }}
             </button>
           </div>
         </WorkspaceSurface>
@@ -358,12 +360,12 @@ watch([year, month], () => {
               <div class="space-y-5">
                 <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                   <Sparkles class="h-3.5 w-3.5 text-amber-500" />
-                  Validation workbench
+                  {{ t('workspace.validation.workbench') }}
                 </div>
 
                 <div>
                   <h2 class="max-w-2xl text-3xl font-semibold tracking-tight text-slate-950 lg:text-[2.4rem]">
-                    {{ loading ? 'Refreshing validation signals...' : focusHeadline }}
+                    {{ loading ? t('workspace.validation.refreshingSignals') : focusHeadline }}
                   </h2>
                   <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-600 lg:text-[15px]">
                     {{ focusNarrative }}
@@ -372,19 +374,19 @@ watch([year, month], () => {
 
                 <div class="grid gap-3 sm:grid-cols-3">
                   <div class="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
-                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Total issues</div>
+                     <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.validation.totalIssues') }}</div>
                     <div class="mt-2 text-3xl font-semibold tracking-tight text-slate-950">{{ totalIssueCount }}</div>
-                    <div class="mt-1 text-xs leading-6 text-slate-500">Across all validation sources for {{ monthLabel }}.</div>
+                     <div class="mt-1 text-xs leading-6 text-slate-500">{{ t('workspace.validation.totalIssuesHint', { monthLabel }) }}</div>
                   </div>
                   <div class="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
-                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Auto-fixable</div>
+                     <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.validation.autoFixable') }}</div>
                     <div class="mt-2 text-3xl font-semibold tracking-tight text-slate-950">{{ resolvableIssueCount }}</div>
-                    <div class="mt-1 text-xs leading-6 text-slate-500">Can be resolved directly from this page.</div>
+                     <div class="mt-1 text-xs leading-6 text-slate-500">{{ t('workspace.validation.autoFixableHint') }}</div>
                   </div>
                   <div class="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
-                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Manual follow-up</div>
+                     <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.validation.manualFollowUp') }}</div>
                     <div class="mt-2 text-3xl font-semibold tracking-tight text-slate-950">{{ manualOnlyCount }}</div>
-                    <div class="mt-1 text-xs leading-6 text-slate-500">Need routing to roster, staff, shift, or team maintenance.</div>
+                     <div class="mt-1 text-xs leading-6 text-slate-500">{{ t('workspace.validation.manualFollowUpHint') }}</div>
                   </div>
                 </div>
               </div>
@@ -416,17 +418,17 @@ watch([year, month], () => {
                   </span>
                 </div>
 
-                <div class="mt-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Priority issue</div>
+                <div class="mt-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.validation.priorityIssue') }}</div>
                 <div class="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{{ prioritizedIssue.type }}</div>
                 <div class="mt-2 text-sm leading-7 text-slate-600">{{ prioritizedIssue.description }}</div>
 
                 <div class="mt-5 grid grid-cols-2 gap-3 text-sm">
                   <div class="rounded-2xl bg-white/85 p-3">
-                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Team</div>
+                     <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.validation.team') }}</div>
                     <div class="mt-1 font-semibold text-slate-900">{{ prioritizedIssue.team || '-' }}</div>
                   </div>
                   <div class="rounded-2xl bg-white/85 p-3">
-                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Date</div>
+                     <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.validation.date') }}</div>
                     <div class="mt-1 font-semibold text-slate-900">{{ prioritizedIssue.date || '-' }}</div>
                   </div>
                 </div>
@@ -439,13 +441,13 @@ watch([year, month], () => {
                     @click="resolveSingleIssue(prioritizedIssue.id)"
                   >
                     <Wrench class="h-3.5 w-3.5" />
-                    {{ isResolving(prioritizedIssue.id) ? 'Fixing...' : 'Fix now' }}
+                    {{ isResolving(prioritizedIssue.id) ? t('workspace.validation.fixing') : t('workspace.validation.fixNow') }}
                   </button>
                   <RouterLink
                     :to="getIssueTarget(prioritizedIssue)"
                     class="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:bg-white"
                   >
-                    Open related area
+                    {{ t('workspace.validation.openRelatedArea') }}
                     <ArrowRight class="h-3.5 w-3.5" />
                   </RouterLink>
                 </div>
@@ -455,8 +457,8 @@ watch([year, month], () => {
 
           <WorkspaceSurface :padded="false" class="overflow-hidden">
             <div class="border-b border-slate-100 px-6 py-5">
-              <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Severity queue</div>
-              <h2 class="mt-2 text-lg font-semibold tracking-tight text-slate-900">What needs attention now</h2>
+              <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.validation.severityQueue') }}</div>
+              <h2 class="mt-2 text-lg font-semibold tracking-tight text-slate-900">{{ t('workspace.validation.needsAttentionNow') }}</h2>
             </div>
             <div class="space-y-3 px-4 py-4">
               <div
@@ -480,9 +482,9 @@ watch([year, month], () => {
               </div>
 
               <div class="rounded-2xl border border-violet-100 bg-violet-50/70 p-4">
-                <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-500">Import-linked</div>
-                <div class="mt-1 text-sm font-semibold text-slate-900">{{ importIssueCount }} unresolved import issue(s)</div>
-                <div class="mt-2 text-xs leading-6 text-slate-600">These can usually be reviewed from Import / Export and auto-resolved if the data is no longer blocking.</div>
+                <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-500">{{ t('workspace.validation.importLinked') }}</div>
+                <div class="mt-1 text-sm font-semibold text-slate-900">{{ t('workspace.validation.unresolvedImportIssues', { count: importIssueCount }) }}</div>
+                <div class="mt-2 text-xs leading-6 text-slate-600">{{ t('workspace.validation.importLinkedHint') }}</div>
               </div>
             </div>
           </WorkspaceSurface>
@@ -492,14 +494,14 @@ watch([year, month], () => {
           <div class="border-b border-slate-100 bg-slate-50/50 p-4">
             <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div class="relative max-w-md flex-1">
-                <label for="workspace-validation-search" class="sr-only">Search validation issues</label>
+                 <label for="workspace-validation-search" class="sr-only">{{ t('workspace.validation.searchIssues') }}</label>
                 <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   id="workspace-validation-search"
                   name="workspace-validation-search"
                   v-model="searchTerm"
                   type="text"
-                  placeholder="Search by type, description, team, date, or source..."
+                   :placeholder="t('workspace.validation.searchPlaceholder')"
                   class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-700 shadow-sm outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
                 />
               </div>
@@ -507,10 +509,10 @@ watch([year, month], () => {
               <div class="flex flex-wrap items-center gap-2">
                 <button
                   v-for="option in [
-                    { value: 'all', label: 'All severities' },
-                    { value: 'high', label: 'Critical' },
-                    { value: 'medium', label: 'Warnings' },
-                    { value: 'low', label: 'Notices' },
+                     { value: 'all', label: t('workspace.validation.allSeverities') },
+                     { value: 'high', label: t('workspace.validation.severity.critical') },
+                     { value: 'medium', label: t('workspace.validation.warnings') },
+                     { value: 'low', label: t('workspace.validation.notices') },
                   ]"
                   :key="option.value"
                   :class="[
@@ -528,11 +530,11 @@ watch([year, month], () => {
               <div class="flex flex-wrap items-center gap-2">
                 <button
                   v-for="option in [
-                    { value: 'all', label: 'All sources' },
-                    { value: 'resolvable', label: 'Auto-fixable' },
-                    { value: 'manual-only', label: 'Manual only' },
-                    { value: 'import-issue', label: 'Import pipeline' },
-                    { value: 'live-data', label: 'Live data' },
+                     { value: 'all', label: t('workspace.validation.allSources') },
+                     { value: 'resolvable', label: t('workspace.validation.autoFixable') },
+                     { value: 'manual-only', label: t('workspace.validation.manualOnly') },
+                     { value: 'import-issue', label: t('workspace.validation.importPipeline') },
+                     { value: 'live-data', label: t('workspace.validation.liveData') },
                   ]"
                   :key="option.value"
                   :class="[
@@ -547,16 +549,16 @@ watch([year, month], () => {
 
               <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                 <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">
-                  {{ visibleIssues.length }} visible
+                   {{ t('workspace.validation.visibleCount', { count: visibleIssues.length }) }}
                 </span>
                 <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">
-                  {{ selectedIssueIds.length }} selected
+                   {{ t('workspace.validation.selectedCount', { count: selectedIssueIds.length }) }}
                 </span>
                 <button
                   class="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100"
                   @click="toggleAll"
                 >
-                  {{ allVisibleSelected ? 'Clear visible selection' : 'Select visible' }}
+                   {{ allVisibleSelected ? t('workspace.validation.clearVisibleSelection') : t('workspace.validation.selectVisible') }}
                 </button>
               </div>
             </div>
@@ -564,14 +566,14 @@ watch([year, month], () => {
 
           <div class="space-y-6 p-4">
             <div v-if="loading" class="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">
-              Loading validation results...
+               {{ t('workspace.validation.loadingResults') }}
             </div>
 
             <div
               v-else-if="!visibleIssues.length"
               class="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500"
             >
-              No validation issues matched the current filter.
+               {{ t('workspace.validation.empty') }}
             </div>
 
             <section
@@ -583,7 +585,7 @@ watch([year, month], () => {
                 <div>
                   <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ group.meta.eyebrow }}</div>
                   <h2 class="mt-1 text-lg font-semibold tracking-tight text-slate-900">
-                    {{ group.meta.label }} issues
+                     {{ t('workspace.validation.issuesTitle', { label: group.meta.label }) }}
                     <span class="text-slate-400">({{ group.items.length }})</span>
                   </h2>
                 </div>
@@ -643,7 +645,7 @@ watch([year, month], () => {
                               issue.resolvable ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-100 text-slate-600',
                             )"
                           >
-                            {{ issue.resolvable ? 'Auto-fixable' : 'Manual only' }}
+                             {{ issue.resolvable ? t('workspace.validation.autoFixableBadge') : t('workspace.validation.manualOnlyBadge') }}
                           </span>
                         </div>
 
@@ -651,9 +653,9 @@ watch([year, month], () => {
                         <p class="mt-2 max-w-3xl text-sm leading-7 text-slate-600">{{ issue.description }}</p>
 
                         <div class="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                          <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">Team: {{ issue.team || '-' }}</span>
-                          <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">Date: {{ issue.date || '-' }}</span>
-                          <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">Issue ID: {{ issue.id }}</span>
+                           <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ t('workspace.validation.team') }}: {{ issue.team || '-' }}</span>
+                           <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ t('workspace.validation.date') }}: {{ issue.date || '-' }}</span>
+                           <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ t('workspace.validation.issueId', { id: issue.id }) }}</span>
                         </div>
                       </div>
                     </div>
@@ -666,14 +668,14 @@ watch([year, month], () => {
                         @click="resolveSingleIssue(issue.id)"
                       >
                         <Wrench class="h-3.5 w-3.5" />
-                        {{ isResolving(issue.id) ? 'Fixing...' : 'Fix now' }}
+                        {{ isResolving(issue.id) ? t('workspace.validation.fixing') : t('workspace.validation.fixNow') }}
                       </button>
 
                       <RouterLink
                         :to="getIssueTarget(issue)"
                         class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-100"
                       >
-                        Open related area
+                        {{ t('workspace.validation.openRelatedArea') }}
                         <ArrowRight class="h-3.5 w-3.5" />
                       </RouterLink>
                     </div>

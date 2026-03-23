@@ -5,6 +5,7 @@ import {
   shiftWorkspacePeriod,
 } from '../lib/period'
 import { normalizeWorkspaceTimezone } from '../config/timezones'
+import { currentLocale } from '@/i18n'
 
 const initialDate = new Date()
 const workspacePeriod = shallowRef({
@@ -178,7 +179,10 @@ function goToNextMonth() {
 
 const year = computed(() => workspacePeriod.value.year)
 const month = computed(() => workspacePeriod.value.month)
-const monthLabel = computed(() => formatWorkspaceMonthLabel(year.value, month.value))
+const monthLabel = computed(() => {
+  currentLocale.value
+  return formatWorkspaceMonthLabel(year.value, month.value)
+})
 
 export function useWorkspacePeriod() {
   const route = useRoute()

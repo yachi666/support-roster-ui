@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, reactive, shallowRef, watch } from 'vue'
 import { KeyRound, Plus, RefreshCcw, Search, ShieldAlert, UserCog, UserRoundCheck, UserRoundX } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import { api } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
@@ -9,6 +10,7 @@ import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const EMPTY_FORM = {
   createTeamId: '',
@@ -271,29 +273,29 @@ onMounted(async () => {
     <div class="flex-1 overflow-auto p-8">
       <div class="mx-auto flex max-w-7xl flex-col gap-8">
         <WorkspacePageHeader
-          title="Account Management"
-          description="Provision workspace access, assign roles, and manage editor team scope."
+          :title="t('workspace.accounts.title')"
+          :description="t('workspace.accounts.description')"
         >
           <template #actions>
             <div class="relative">
-              <label for="workspace-account-search" class="sr-only">Search accounts</label>
+              <label for="workspace-account-search" class="sr-only">{{ t('workspace.accounts.searchLabel') }}</label>
               <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 id="workspace-account-search"
                 v-model="searchTerm"
                 type="text"
-                placeholder="Search accounts..."
+                :placeholder="t('workspace.accounts.searchPlaceholder')"
                 class="w-64 rounded-md border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
                 @input="void loadAccounts()"
               />
             </div>
             <button class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50" @click="void loadAccounts()">
               <RefreshCcw class="h-4 w-4" />
-              Refresh
+              {{ t('common.refresh') }}
             </button>
             <button class="inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700" @click="openCreateDrawer">
               <Plus class="h-4 w-4" />
-              Create Account
+              {{ t('workspace.accounts.createAction') }}
             </button>
           </template>
         </WorkspacePageHeader>
@@ -302,7 +304,7 @@ onMounted(async () => {
           <div class="flex items-center justify-between gap-4">
             <span>{{ errorMessage }}</span>
             <button class="rounded-md border border-rose-200 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 transition-colors hover:bg-rose-100" @click="void loadAccounts()">
-              Retry
+              {{ t('common.retry') }}
             </button>
           </div>
         </WorkspaceSurface>
@@ -310,9 +312,9 @@ onMounted(async () => {
         <WorkspaceSurface tone="muted" class="flex gap-4 border-amber-200 bg-amber-50 p-5 text-amber-900">
           <ShieldAlert class="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
           <div>
-            <h3 class="text-sm font-semibold">Activation note</h3>
+            <h3 class="text-sm font-semibold">{{ t('workspace.accounts.activationTitle') }}</h3>
             <p class="mt-1 text-sm leading-relaxed text-amber-800/80">
-              First-time activation currently relies on staff ID only and is intended for intranet/testing rollout. Production release still needs a stronger activation check.
+              {{ t('workspace.accounts.activationBody') }}
             </p>
           </div>
         </WorkspaceSurface>
@@ -322,20 +324,20 @@ onMounted(async () => {
             <table class="min-w-full text-left text-sm text-slate-600">
               <thead class="border-b border-slate-200 bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
                 <tr>
-                  <th class="px-6 py-3">Staff</th>
-                  <th class="px-6 py-3">Role</th>
-                  <th class="px-6 py-3">Status</th>
-                  <th class="px-6 py-3">Editable Teams</th>
-                  <th class="px-6 py-3">Last Login</th>
-                  <th class="px-6 py-3 text-right">Actions</th>
+                  <th class="px-6 py-3">{{ t('workspace.accounts.columns.staff') }}</th>
+                  <th class="px-6 py-3">{{ t('workspace.accounts.columns.role') }}</th>
+                  <th class="px-6 py-3">{{ t('workspace.accounts.columns.status') }}</th>
+                  <th class="px-6 py-3">{{ t('workspace.accounts.columns.editableTeams') }}</th>
+                  <th class="px-6 py-3">{{ t('workspace.accounts.columns.lastLogin') }}</th>
+                  <th class="px-6 py-3 text-right">{{ t('workspace.accounts.columns.actions') }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-if="loading">
-                  <td colspan="6" class="px-6 py-8 text-center text-sm text-slate-500">Loading accounts...</td>
+                  <td colspan="6" class="px-6 py-8 text-center text-sm text-slate-500">{{ t('workspace.accounts.loading') }}</td>
                 </tr>
                 <tr v-else-if="!filteredAccounts.length">
-                  <td colspan="6" class="px-6 py-8 text-center text-sm text-slate-500">No accounts found.</td>
+                  <td colspan="6" class="px-6 py-8 text-center text-sm text-slate-500">{{ t('workspace.accounts.empty') }}</td>
                 </tr>
                 <tr v-for="account in filteredAccounts" :key="account.id" class="border-b border-slate-100 transition hover:bg-slate-50/70">
                   <td class="px-6 py-4">
@@ -348,11 +350,11 @@ onMounted(async () => {
                       {{ account.accountStatus }}
                     </span>
                   </td>
-                  <td class="px-6 py-4 text-xs text-slate-500">{{ (account.editableTeams || []).map((team) => team.name).join(', ') || 'All / N/A' }}</td>
+                   <td class="px-6 py-4 text-xs text-slate-500">{{ (account.editableTeams || []).map((team) => team.name).join(', ') || t('workspace.accounts.allOrNa') }}</td>
                   <td class="px-6 py-4 text-xs text-slate-500">{{ account.lastLoginAt || '-' }}</td>
                   <td class="px-6 py-4 text-right">
                     <button class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50" @click="openEditDrawer(account)">
-                      Manage
+                      {{ t('workspace.accounts.manageAction') }}
                     </button>
                   </td>
                 </tr>
@@ -363,7 +365,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <WorkspaceDrawer v-model="drawerOpen" :title="selectedAccount ? 'Manage Account' : 'Create Account'" width="520px">
+    <WorkspaceDrawer v-model="drawerOpen" :title="selectedAccount ? t('workspace.accounts.manageTitle') : t('workspace.accounts.createTitle')" width="520px">
       <div class="space-y-6">
         <div v-if="formErrorMessage" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
           {{ formErrorMessage }}
@@ -371,35 +373,35 @@ onMounted(async () => {
 
         <div>
           <template v-if="isCreateMode">
-            <label class="mb-2 block text-sm font-medium text-slate-700">Team</label>
+            <label class="mb-2 block text-sm font-medium text-slate-700">{{ t('workspace.accounts.team') }}</label>
             <select v-model="formState.createTeamId" :class="['bg-white', ...inputClass('createTeamId')]" @change="handleCreateTeamChange">
-              <option value="">Select team first</option>
+              <option value="">{{ t('workspace.accounts.selectTeamFirst') }}</option>
               <option v-for="team in teams" :key="team.id" :value="String(team.id)">{{ team.name }}</option>
             </select>
-            <p class="mt-2 text-xs text-slate-500">Choose the team first so the staff list only shows matching members.</p>
+            <p class="mt-2 text-xs text-slate-500">{{ t('workspace.accounts.selectTeamFirstHint') }}</p>
             <p v-if="fieldErrors.createTeamId" class="mt-2 text-xs text-rose-600">{{ fieldErrors.createTeamId }}</p>
           </template>
         </div>
 
         <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700">Staff member</label>
+          <label class="mb-2 block text-sm font-medium text-slate-700">{{ t('workspace.accounts.staffMember') }}</label>
           <select v-model="formState.staffRecordId" :disabled="Boolean(selectedAccount) || (isCreateMode && !formState.createTeamId)" :class="['bg-white', ...inputClass('staffRecordId')]">
-            <option value="">{{ isCreateMode && !formState.createTeamId ? 'Select team first' : 'Select staff' }}</option>
+            <option value="">{{ isCreateMode && !formState.createTeamId ? t('workspace.accounts.selectTeamFirst') : t('workspace.accounts.selectStaff') }}</option>
             <option v-for="staff in availableStaffOptions" :key="staff.id" :value="String(staff.id)">
               {{ staff.staffCode }} · {{ staff.name }}
             </option>
           </select>
           <p v-if="isCreateMode && selectedCreateTeam" class="mt-2 text-xs text-slate-500">
-            Showing available staff from {{ selectedCreateTeam.name }}.
+            {{ t('workspace.accounts.showingTeamStaff', { team: selectedCreateTeam.name }) }}
           </p>
           <p v-else-if="isCreateMode" class="mt-2 text-xs text-slate-500">
-            Team selection is required before staff selection.
+            {{ t('workspace.accounts.staffSelectionHint') }}
           </p>
           <p v-if="fieldErrors.staffRecordId" class="mt-2 text-xs text-rose-600">{{ fieldErrors.staffRecordId }}</p>
         </div>
 
         <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700">Role</label>
+          <label class="mb-2 block text-sm font-medium text-slate-700">{{ t('workspace.accounts.role') }}</label>
           <select v-model="formState.roleCode" :class="inputClass('roleCode')">
             <option v-for="option in roleOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </select>
@@ -408,11 +410,11 @@ onMounted(async () => {
 
         <div>
           <div class="mb-2 flex items-center justify-between gap-2">
-            <label class="text-sm font-medium text-slate-700">Editor team scope</label>
-            <span class="text-xs text-slate-400">Only required for editor accounts</span>
+            <label class="text-sm font-medium text-slate-700">{{ t('workspace.accounts.editorScope') }}</label>
+            <span class="text-xs text-slate-400">{{ t('workspace.accounts.editorScopeHint') }}</span>
           </div>
           <p v-if="isCreateMode && selectedStaffOption?.teamName" class="mb-2 text-xs text-slate-500">
-            Default scope includes the selected staff team: {{ selectedStaffOption.teamName }}.
+            {{ t('workspace.accounts.defaultScopeHint', { team: selectedStaffOption.teamName }) }}
           </p>
           <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
             <div class="grid gap-2 sm:grid-cols-2">
@@ -426,8 +428,8 @@ onMounted(async () => {
         </div>
 
         <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700">Notes</label>
-          <textarea v-model="formState.notes" rows="4" :class="inputClass('notes')" placeholder="Optional notes for provisioning or ownership"></textarea>
+          <label class="mb-2 block text-sm font-medium text-slate-700">{{ t('common.notes') }}</label>
+          <textarea v-model="formState.notes" rows="4" :class="inputClass('notes')" :placeholder="t('workspace.accounts.notesPlaceholder')"></textarea>
           <p v-if="fieldErrors.notes" class="mt-2 text-xs text-rose-600">{{ fieldErrors.notes }}</p>
         </div>
       </div>
@@ -437,7 +439,7 @@ onMounted(async () => {
           <div v-if="selectedAccount" class="flex flex-wrap items-center gap-2">
             <button class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50" :disabled="actionPending" @click="runAccountAction(api.workspace.resetAccountPassword)">
               <KeyRound class="h-4 w-4" />
-              Reset Password
+              {{ t('workspace.accounts.resetPassword') }}
             </button>
             <button
               class="inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium transition-colors"
@@ -446,16 +448,16 @@ onMounted(async () => {
               @click="runAccountAction(selectedAccount.accountStatus === 'DISABLED' ? api.workspace.enableAccount : api.workspace.disableAccount)"
             >
               <component :is="selectedAccount.accountStatus === 'DISABLED' ? UserRoundCheck : UserRoundX" class="h-4 w-4" />
-              {{ selectedAccount.accountStatus === 'DISABLED' ? 'Enable Account' : 'Disable Account' }}
+              {{ selectedAccount.accountStatus === 'DISABLED' ? t('workspace.accounts.enableAccount') : t('workspace.accounts.disableAccount') }}
             </button>
           </div>
           <div class="ml-auto flex items-center gap-3">
             <button class="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50" @click="closeDrawer">
-              Cancel
+              {{ t('common.cancel') }}
             </button>
             <button class="inline-flex items-center gap-2 rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60" :disabled="submitPending" @click="saveAccount">
               <UserCog class="h-4 w-4" />
-              {{ submitPending ? 'Saving...' : selectedAccount ? 'Save Changes' : 'Create Account' }}
+              {{ submitPending ? t('common.saving') : selectedAccount ? t('workspace.accounts.saveAction') : t('workspace.accounts.createAction') }}
             </button>
           </div>
         </div>

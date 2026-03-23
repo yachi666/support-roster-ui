@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, reactive, shallowRef } from 'vue'
 import { CheckCircle2, Clock3, Globe, Mail, Pencil, Plus, Search, Trash2, XCircle } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import { api } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
@@ -41,6 +42,7 @@ const confirmDeleteVisible = shallowRef(false)
 const fieldErrors = reactive({})
 const formState = reactive({ ...EMPTY_FORM })
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const staffErrorRules = [
   {
@@ -116,14 +118,14 @@ const drawerOpen = computed(() => Boolean(selectedStaff.value) || formVisible.va
 
 const drawerTitle = computed(() => {
   if (drawerMode.value === 'create') {
-    return 'Add Staff'
+    return t('workspace.staff.addTitle')
   }
 
   if (drawerMode.value === 'edit') {
-    return 'Edit Staff'
+    return t('workspace.staff.editTitle')
   }
 
-  return 'Staff Profile'
+  return t('workspace.staff.profileTitle')
 })
 
 function isActiveStatus(status) {
@@ -306,37 +308,38 @@ onMounted(() => {
       <div class="mx-auto flex max-w-7xl flex-col gap-8">
         <WorkspacePageHeader
           title="Staff Directory"
-          description="Manage personnel, roles, and regional assignments."
+          :title="t('workspace.staff.title')"
+          :description="t('workspace.staff.description')"
         >
           <template #actions>
             <div class="relative">
-              <label for="workspace-staff-search" class="sr-only">Search staff directory</label>
+              <label for="workspace-staff-search" class="sr-only">{{ t('workspace.staff.searchLabel') }}</label>
               <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 id="workspace-staff-search"
                 name="workspace-staff-search"
                 v-model="searchTerm"
                 type="text"
-                placeholder="Search staff..."
+                :placeholder="t('workspace.staff.searchPlaceholder')"
                 class="w-64 rounded-md border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
               />
             </div>
             <input
               v-model="staffIdFilter"
               type="text"
-              placeholder="Exact Staff ID"
+              :placeholder="t('workspace.staff.exactStaffId')"
               class="w-40 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
             />
             <select
               v-model="selectedTeamFilter"
               class="w-44 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition-all focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
             >
-              <option value="">All Teams</option>
+                <option value="">{{ t('common.allTeams') }}</option>
               <option v-for="team in teamOptions" :key="team.id" :value="String(team.id)">{{ team.name }}</option>
             </select>
             <button v-if="!authStore.isReadonly" class="flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700" @click="openCreateDrawer">
               <Plus class="h-4 w-4" />
-              <span>Add Staff</span>
+              <span>{{ t('workspace.staff.addStaff') }}</span>
             </button>
           </template>
         </WorkspacePageHeader>
@@ -345,7 +348,7 @@ onMounted(() => {
           <div class="flex items-center justify-between gap-4">
             <span>{{ errorMessage }}</span>
             <button class="rounded-md border border-rose-200 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 transition-colors hover:bg-rose-100" @click="loadStaff">
-              Retry
+              {{ t('common.retry') }}
             </button>
           </div>
         </WorkspaceSurface>
@@ -355,13 +358,13 @@ onMounted(() => {
             <table class="min-w-full text-left text-sm text-slate-600">
               <thead class="border-b border-slate-200 bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
                 <tr>
-                  <th class="px-6 py-3">Staff Name</th>
-                  <th class="px-6 py-3">Staff ID</th>
-                  <th class="px-6 py-3">Role Name</th>
-                  <th class="px-6 py-3">Team</th>
-                  <th class="px-6 py-3">Timezone</th>
-                  <th class="px-6 py-3">Status</th>
-                  <th class="px-6 py-3 text-right">Actions</th>
+                  <th class="px-6 py-3">{{ t('workspace.staff.columns.name') }}</th>
+                  <th class="px-6 py-3">{{ t('workspace.staff.columns.staffId') }}</th>
+                  <th class="px-6 py-3">{{ t('workspace.staff.columns.roleName') }}</th>
+                  <th class="px-6 py-3">{{ t('workspace.staff.columns.team') }}</th>
+                  <th class="px-6 py-3">{{ t('workspace.staff.columns.timezone') }}</th>
+                  <th class="px-6 py-3">{{ t('workspace.staff.columns.status') }}</th>
+                  <th class="px-6 py-3 text-right">{{ t('workspace.staff.columns.actions') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100">
@@ -394,23 +397,23 @@ onMounted(() => {
                       class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700"
                     >
                       <CheckCircle2 class="h-3.5 w-3.5" />
-                      Active
+                      {{ t('common.active') }}
                     </span>
                     <span
                       v-else
                       class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600"
                     >
                       <XCircle class="h-3.5 w-3.5" />
-                      Inactive
+                      {{ t('common.inactive') }}
                     </span>
                   </td>
-                  <td class="px-6 py-4 text-right text-xs text-slate-400">Open</td>
+                  <td class="px-6 py-4 text-right text-xs text-slate-400">{{ t('common.open') }}</td>
                 </tr>
                 <tr v-if="loading">
-                  <td colspan="7" class="px-6 py-10 text-center text-sm text-slate-500">Loading staff directory...</td>
+                  <td colspan="7" class="px-6 py-10 text-center text-sm text-slate-500">{{ t('workspace.staff.loading') }}</td>
                 </tr>
                 <tr v-else-if="!filteredStaff.length">
-                  <td colspan="7" class="px-6 py-10 text-center text-sm text-slate-500">No staff records matched the current filter.</td>
+                  <td colspan="7" class="px-6 py-10 text-center text-sm text-slate-500">{{ t('workspace.staff.empty') }}</td>
                 </tr>
               </tbody>
             </table>
@@ -421,7 +424,7 @@ onMounted(() => {
 
     <WorkspaceDrawer :model-value="drawerOpen" :title="drawerTitle" width="460px" @update:model-value="closeDrawer">
       <template #subtitle>
-        <p class="mt-1 text-xs text-slate-500">{{ drawerMode === 'detail' ? 'Inspect and maintain the selected roster participant.' : 'Changes are saved directly to the workspace staff registry.' }}</p>
+        <p class="mt-1 text-xs text-slate-500">{{ drawerMode === 'detail' ? t('workspace.staff.detailSubtitle') : t('workspace.staff.formSubtitle') }}</p>
       </template>
 
       <template v-if="drawerMode === 'detail' && selectedStaff">
@@ -438,7 +441,7 @@ onMounted(() => {
           </div>
 
           <div>
-            <h4 class="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Contact & Location</h4>
+            <h4 class="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-500">{{ t('workspace.staff.contactLocation') }}</h4>
             <div class="space-y-4 text-sm text-slate-700">
               <div class="flex items-center gap-3">
                 <Mail class="h-4 w-4 text-slate-400" />
@@ -446,7 +449,7 @@ onMounted(() => {
               </div>
               <div class="flex items-center gap-3">
                 <Globe class="h-4 w-4 text-slate-400" />
-                <span>Region: {{ selectedStaff.region || '-' }}</span>
+                <span>{{ t('workspace.staff.region', { region: selectedStaff.region || '-' }) }}</span>
               </div>
               <div class="flex items-center gap-3">
                 <Clock3 class="h-4 w-4 text-slate-400" />
@@ -458,23 +461,23 @@ onMounted(() => {
           <div class="h-px bg-slate-100"></div>
 
           <div>
-            <h4 class="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Roster Participation</h4>
+            <h4 class="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-500">{{ t('workspace.staff.participation') }}</h4>
             <div class="space-y-3 rounded-xl border border-slate-100 bg-slate-50 p-4">
               <div class="flex items-center justify-between text-sm">
-                <span class="text-slate-500">Team</span>
+                <span class="text-slate-500">{{ t('workspace.staff.columns.team') }}</span>
                 <span class="font-medium text-slate-800">{{ selectedStaff.teamName || '-' }}</span>
               </div>
               <div class="flex items-center justify-between text-sm">
-                <span class="text-slate-500">Role Name</span>
+                <span class="text-slate-500">{{ t('workspace.staff.columns.roleName') }}</span>
                 <span class="font-medium text-slate-800">{{ selectedStaff.roleName || '-' }}</span>
               </div>
               <div class="flex items-center justify-between text-sm">
-                <span class="text-slate-500">Status</span>
+                <span class="text-slate-500">{{ t('workspace.staff.columns.status') }}</span>
                 <span class="font-medium text-slate-800">{{ selectedStaff.status || '-' }}</span>
               </div>
               <div class="flex items-center justify-between text-sm">
-                <span class="text-slate-500">Roster Tags</span>
-                <span class="font-medium text-slate-800">{{ selectedStaff.rosterTags?.join(', ') || 'None' }}</span>
+                <span class="text-slate-500">{{ t('workspace.staff.rosterTags') }}</span>
+                <span class="font-medium text-slate-800">{{ selectedStaff.rosterTags?.join(', ') || t('workspace.staff.noRosterTags') }}</span>
               </div>
             </div>
           </div>
@@ -484,14 +487,14 @@ onMounted(() => {
           </WorkspaceSurface>
 
           <WorkspaceSurface v-if="confirmDeleteVisible && !authStore.isReadonly" tone="muted" class="space-y-3 border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            <p>Delete {{ selectedStaff.name }} from the workspace staff registry?</p>
-            <p class="text-xs text-amber-800">This removes the staff record immediately. Existing roster assignments may lose their linked profile.</p>
+            <p>{{ t('workspace.staff.deleteConfirm', { name: selectedStaff.name }) }}</p>
+            <p class="text-xs text-amber-800">{{ t('workspace.staff.deleteWarning') }}</p>
             <div class="flex items-center justify-end gap-2">
               <button type="button" class="rounded-md border border-amber-200 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 transition-colors hover:bg-amber-100" @click="cancelDeleteStaff">
-                Keep Record
+                {{ t('workspace.staff.keepRecord') }}
               </button>
               <button type="button" class="rounded-md bg-rose-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60" :disabled="deletePending" @click="confirmDeleteStaff">
-                {{ deletePending ? 'Deleting...' : 'Confirm Delete' }}
+                {{ deletePending ? t('common.deleting') : t('workspace.staff.confirmDelete') }}
               </button>
             </div>
           </WorkspaceSurface>
@@ -506,37 +509,37 @@ onMounted(() => {
 
           <div class="grid gap-4 md:grid-cols-2">
             <label class="space-y-2 text-sm text-slate-700">
-              <span class="font-medium">Staff ID</span>
+              <span class="font-medium">{{ t('workspace.staff.fields.staffId') }}</span>
               <input id="staff-staffCode" v-model="formState.staffCode" name="staffCode" type="text" :class="inputClass('staffCode')" />
               <p v-if="fieldErrors.staffCode" class="text-xs text-rose-600">{{ fieldErrors.staffCode }}</p>
             </label>
             <label class="space-y-2 text-sm text-slate-700">
-              <span class="font-medium">Full Name</span>
+              <span class="font-medium">{{ t('workspace.staff.fields.fullName') }}</span>
               <input id="staff-name" v-model="formState.name" name="name" type="text" :class="inputClass('name')" />
               <p v-if="fieldErrors.name" class="text-xs text-rose-600">{{ fieldErrors.name }}</p>
             </label>
             <label class="space-y-2 text-sm text-slate-700 md:col-span-2">
-              <span class="font-medium">Email</span>
+              <span class="font-medium">{{ t('workspace.staff.fields.email') }}</span>
               <input id="staff-email" v-model="formState.email" name="email" type="email" :class="inputClass('email')" />
               <p v-if="fieldErrors.email" class="text-xs text-rose-600">{{ fieldErrors.email }}</p>
             </label>
             <label class="space-y-2 text-sm text-slate-700">
-              <span class="font-medium">Phone</span>
+              <span class="font-medium">{{ t('workspace.staff.fields.phone') }}</span>
               <input id="staff-phone" v-model="formState.phone" name="phone" type="text" :class="inputClass('phone')" />
               <p v-if="fieldErrors.phone" class="text-xs text-rose-600">{{ fieldErrors.phone }}</p>
             </label>
             <label class="space-y-2 text-sm text-slate-700">
-              <span class="font-medium">Slack</span>
+              <span class="font-medium">{{ t('workspace.staff.fields.slack') }}</span>
               <input id="staff-slack" v-model="formState.slack" name="slack" type="text" :class="inputClass('slack')" />
               <p v-if="fieldErrors.slack" class="text-xs text-rose-600">{{ fieldErrors.slack }}</p>
             </label>
             <label class="space-y-2 text-sm text-slate-700">
-              <span class="font-medium">Region</span>
+              <span class="font-medium">{{ t('workspace.staff.fields.region') }}</span>
               <input id="staff-region" v-model="formState.region" name="region" type="text" :class="inputClass('region')" />
               <p v-if="fieldErrors.region" class="text-xs text-rose-600">{{ fieldErrors.region }}</p>
             </label>
             <label class="space-y-2 text-sm text-slate-700">
-              <span class="font-medium">Timezone</span>
+              <span class="font-medium">{{ t('workspace.staff.fields.timezone') }}</span>
               <select id="staff-timezone" v-model="formState.timezone" name="timezone" :class="['bg-white', ...inputClass('timezone')]">
                 <option v-for="timezoneOption in WORKSPACE_STAFF_TIMEZONE_OPTIONS" :key="timezoneOption.value" :value="timezoneOption.value">
                   {{ timezoneOption.label }}
@@ -545,27 +548,27 @@ onMounted(() => {
               <p v-if="fieldErrors.timezone" class="text-xs text-rose-600">{{ fieldErrors.timezone }}</p>
             </label>
             <label class="space-y-2 text-sm text-slate-700">
-              <span class="font-medium">Role Name</span>
+              <span class="font-medium">{{ t('workspace.staff.fields.roleName') }}</span>
               <input id="staff-roleName" v-model="formState.roleName" name="roleName" type="text" :class="inputClass('roleName')" />
               <p v-if="fieldErrors.roleName" class="text-xs text-rose-600">{{ fieldErrors.roleName }}</p>
             </label>
             <label class="space-y-2 text-sm text-slate-700">
-              <span class="font-medium">Team</span>
+              <span class="font-medium">{{ t('workspace.staff.fields.team') }}</span>
               <select id="staff-teamId" v-model="formState.teamId" name="teamId" :class="['bg-white', ...inputClass('teamId')]">
-                <option value="">Select a team</option>
+                <option value="">{{ t('workspace.staff.selectTeam') }}</option>
                 <option v-for="team in teamOptions" :key="team.id" :value="String(team.id)">{{ team.name }}</option>
               </select>
               <p v-if="fieldErrors.teamId" class="text-xs text-rose-600">{{ fieldErrors.teamId }}</p>
             </label>
             <label class="space-y-2 text-sm text-slate-700">
-              <span class="font-medium">Status</span>
+              <span class="font-medium">{{ t('workspace.staff.fields.status') }}</span>
               <select id="staff-status" v-model="formState.status" name="status" class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20">
-                <option value="ACTIVE">Active</option>
-                <option value="INACTIVE">Inactive</option>
+                <option value="ACTIVE">{{ t('common.active') }}</option>
+                <option value="INACTIVE">{{ t('common.inactive') }}</option>
               </select>
             </label>
             <label class="space-y-2 text-sm text-slate-700 md:col-span-2">
-              <span class="font-medium">Notes</span>
+              <span class="font-medium">{{ t('workspace.staff.fields.notes') }}</span>
               <textarea id="staff-notes" v-model="formState.notes" name="notes" rows="4" :class="inputClass('notes')"></textarea>
               <p v-if="fieldErrors.notes" class="text-xs text-rose-600">{{ fieldErrors.notes }}</p>
             </label>
@@ -583,13 +586,13 @@ onMounted(() => {
             @click="promptDeleteStaff"
           >
             <Trash2 class="h-4 w-4" />
-            Delete
+            {{ t('workspace.staff.deleteAction') }}
           </button>
           <div v-else></div>
 
           <div class="flex items-center gap-3">
             <button type="button" class="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50" @click="closeDrawer">
-              Cancel
+              {{ t('common.cancel') }}
             </button>
             <button
               v-if="drawerMode === 'detail' && selectedStaff && !authStore.isReadonly"
@@ -598,7 +601,7 @@ onMounted(() => {
               @click="openEditDrawer"
             >
               <Pencil class="h-4 w-4" />
-              Edit
+              {{ t('workspace.staff.editAction') }}
             </button>
             <button
               v-else-if="!authStore.isReadonly"
@@ -607,7 +610,7 @@ onMounted(() => {
               :disabled="submitPending"
               @click="submitForm"
             >
-              {{ submitPending ? 'Saving...' : drawerMode === 'create' ? 'Create Staff' : 'Save Changes' }}
+              {{ submitPending ? t('common.saving') : drawerMode === 'create' ? t('workspace.staff.createAction') : t('workspace.staff.saveAction') }}
             </button>
           </div>
         </div>

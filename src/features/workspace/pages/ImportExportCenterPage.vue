@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, shallowRef, watch } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   AlertTriangle,
   ArrowRight,
@@ -31,6 +32,7 @@ const exportPending = shallowRef(false)
 const templatePending = shallowRef(false)
 const { year, month, monthLabel } = useWorkspacePeriod()
 const authStore = useAuthStore()
+const { t } = useI18n()
 let mappingTimer = 0
 
 const templateShiftDefinitions = [
@@ -62,18 +64,18 @@ const stepStates = computed(() => ({
 const templateSheetCards = computed(() => [
   {
     title: 'Shift Definitions',
-    subtitle: 'Define codes, time windows, timezones, and whether a code appears on the roster page.',
-    count: `${templateShiftDefinitions.length} sample rows`,
+    subtitle: t('workspace.importExport.templateGuide'),
+    count: `${templateShiftDefinitions.length}`,
   },
   {
     title: 'Staff Shifts',
-    subtitle: 'Provide staff identity and one code per day across the target month.',
-    count: `${templateStaffShifts.length} sample rows`,
+    subtitle: t('workspace.importExport.sheet2'),
+    count: `${templateStaffShifts.length}`,
   },
   {
     title: 'Color Definitions',
-    subtitle: 'Map shift codes to consistent color tokens used by the viewer and workspace grid.',
-    count: `${templateColorDefinitions.length} sample rows`,
+    subtitle: t('workspace.importExport.sheet3'),
+    count: `${templateColorDefinitions.length}`,
   },
 ])
 
@@ -102,52 +104,52 @@ const previewHealth = computed(() => {
   if (!previewResult.value) {
     return {
       tone: 'neutral',
-      label: 'Waiting for file',
-      description: 'Upload a workbook to generate a preview batch, issue list, and apply decision.',
+        label: t('workspace.importExport.health.waiting'),
+        description: t('workspace.importExport.health.waitingDesc'),
     }
   }
 
   if ((previewResult.value.invalidRecords || 0) > 0 || issueSummary.value.high > 0) {
     return {
       tone: 'warning',
-      label: 'Review before apply',
-      description: 'The preview found invalid rows or blocking issues. Review the issue list before applying.',
+        label: t('workspace.importExport.health.review'),
+        description: t('workspace.importExport.health.reviewDesc'),
     }
   }
 
   if ((previewResult.value.validRecords || 0) > 0) {
     return {
       tone: 'good',
-      label: 'Ready to apply',
-      description: 'The preview returned valid rows and no blocking issues. You can apply this batch when ready.',
+        label: t('workspace.importExport.health.ready'),
+        description: t('workspace.importExport.health.readyDesc'),
     }
   }
 
   return {
     tone: 'neutral',
-    label: 'No importable rows',
-    description: 'The workbook uploaded successfully, but the preview did not yield rows that can be applied.',
+      label: t('workspace.importExport.health.none'),
+      description: t('workspace.importExport.health.noneDesc'),
   }
 })
 
 const previewSummaryCards = computed(() => [
   {
-    label: 'Parsed rows',
+    label: t('workspace.importExport.summary.parsedRows'),
     value: previewResult.value?.totalRecords || 0,
     tone: 'neutral',
-    description: 'All rows the server parsed from the workbook.',
+    description: t('workspace.importExport.summary.parsedRowsDesc'),
   },
   {
-    label: 'Ready to apply',
+    label: t('workspace.importExport.summary.readyRows'),
     value: previewResult.value?.validRecords || 0,
     tone: 'good',
-    description: 'Rows that passed validation and can be applied.',
+    description: t('workspace.importExport.summary.readyRowsDesc'),
   },
   {
-    label: 'Need review',
+    label: t('workspace.importExport.summary.reviewRows'),
     value: previewResult.value?.invalidRecords || 0,
     tone: 'warning',
-    description: 'Rows blocked by validation findings or mapping issues.',
+    description: t('workspace.importExport.summary.reviewRowsDesc'),
   },
 ])
 
@@ -302,8 +304,8 @@ onBeforeUnmount(clearTimer)
     <div class="flex-1 overflow-auto p-6 xl:p-8">
       <div class="mx-auto flex max-w-[1280px] flex-col gap-6">
         <WorkspacePageHeader
-          title="Import / Export Center"
-          :description="`Preflight workbook imports, inspect issues before apply, and export the active roster for ${monthLabel}.`"
+          :title="t('workspace.importExport.title')"
+          :description="t('workspace.importExport.description', { monthLabel })"
         >
           <template #actions>
             <button
@@ -312,7 +314,7 @@ onBeforeUnmount(clearTimer)
               @click="downloadTemplate"
             >
               <Download class="h-4 w-4" />
-              {{ templatePending ? 'Downloading...' : 'Download Template' }}
+              {{ templatePending ? t('workspace.importExport.downloadingTemplate') : t('workspace.importExport.downloadTemplate') }}
             </button>
             <button
               class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
@@ -320,12 +322,12 @@ onBeforeUnmount(clearTimer)
               @click="exportRoster"
             >
               <FileSpreadsheet class="h-4 w-4" />
-              {{ exportPending ? 'Exporting...' : 'Export Excel' }}
+              {{ exportPending ? t('workspace.importExport.exporting') : t('workspace.importExport.exportExcel') }}
             </button>
           </template>
         </WorkspacePageHeader>
 
-        <label for="workspace-import-file" class="sr-only">Upload roster Excel file</label>
+        <label for="workspace-import-file" class="sr-only">{{ t('workspace.importExport.uploadRosterFile') }}</label>
         <input id="workspace-import-file" name="workspace-import-file" type="file" accept=".xlsx,.xls" class="sr-only" @change="handleFileChange" />
 
         <WorkspaceSurface v-if="errorMessage" tone="muted" class="border-rose-200 bg-rose-50 p-5 text-sm text-rose-700">
@@ -345,7 +347,7 @@ onBeforeUnmount(clearTimer)
               <div class="space-y-5">
                 <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                   <Sparkles class="h-3.5 w-3.5 text-teal-500" />
-                  Import preflight desk
+                  {{ t('workspace.importExport.importDesk') }}
                 </div>
 
                 <div>
@@ -359,26 +361,26 @@ onBeforeUnmount(clearTimer)
 
                 <div class="grid gap-3 sm:grid-cols-3">
                   <div class="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
-                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Target month</div>
+                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.importExport.targetMonth') }}</div>
                     <div class="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{{ monthLabel }}</div>
-                    <div class="mt-1 text-xs leading-6 text-slate-500">Uploads and exports stay aligned with the shared workspace period.</div>
+                    <div class="mt-1 text-xs leading-6 text-slate-500">{{ t('workspace.importExport.targetMonthHint') }}</div>
                   </div>
                   <div class="min-w-0 rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
-                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Preview batch</div>
+                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.importExport.previewBatch') }}</div>
                     <div class="mt-2 break-all font-mono text-sm font-semibold leading-6 text-slate-950">{{ currentBatchDisplay }}</div>
-                    <div class="mt-1 text-xs leading-6 text-slate-500">Created after preview and reused by the apply action.</div>
+                    <div class="mt-1 text-xs leading-6 text-slate-500">{{ t('workspace.importExport.previewBatchHint') }}</div>
                   </div>
                   <div class="min-w-0 rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
-                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Latest file</div>
+                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.importExport.latestFile') }}</div>
                     <div class="mt-2 break-words text-base font-semibold leading-6 tracking-tight text-slate-950">{{ latestFileDisplay }}</div>
-                    <div class="mt-1 text-xs leading-6 text-slate-500">The preflight desk always reflects the latest uploaded workbook.</div>
+                    <div class="mt-1 text-xs leading-6 text-slate-500">{{ t('workspace.importExport.latestFileHint') }}</div>
                   </div>
                 </div>
               </div>
 
               <div class="rounded-[28px] border border-slate-200 bg-white/85 p-5 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
                 <div class="flex items-center justify-between gap-3">
-                  <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Workflow</div>
+                  <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.importExport.workflow') }}</div>
                   <span
                     :class="[
                       'inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]',
@@ -416,8 +418,8 @@ onBeforeUnmount(clearTimer)
 
           <WorkspaceSurface :padded="false" class="overflow-hidden">
             <div class="border-b border-slate-100 px-6 py-5">
-              <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Template guide</div>
-              <h2 class="mt-2 text-lg font-semibold tracking-tight text-slate-900">Workbook shape at a glance</h2>
+              <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.importExport.templateGuide') }}</div>
+              <h2 class="mt-2 text-lg font-semibold tracking-tight text-slate-900">{{ t('workspace.importExport.workbookShape') }}</h2>
             </div>
             <div class="space-y-3 p-4">
               <div
@@ -444,15 +446,15 @@ onBeforeUnmount(clearTimer)
             <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div class="flex items-center gap-2">
                 <UploadCloud class="h-5 w-5 text-slate-400" />
-                <h2 class="text-base font-semibold text-slate-800">Import workbook</h2>
+                  <h2 class="text-base font-semibold text-slate-800">{{ t('workspace.importExport.importWorkbook') }}</h2>
               </div>
 
               <div class="flex items-center gap-2 text-xs text-slate-500">
-                <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">Upload</span>
+                <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ t('workspace.importExport.workflowUpload') }}</span>
                 <span class="text-slate-300">→</span>
-                <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">Preview</span>
+                <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ t('workspace.importExport.workflowPreview') }}</span>
                 <span class="text-slate-300">→</span>
-                <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">Apply</span>
+                <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ t('workspace.importExport.workflowApply') }}</span>
               </div>
             </div>
           </div>
@@ -488,18 +490,18 @@ onBeforeUnmount(clearTimer)
               <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-slate-100 bg-white shadow-sm">
                 <FileSpreadsheet class="h-8 w-8 text-emerald-500" />
               </div>
-              <h3 class="mb-1 text-lg font-semibold text-slate-700">Click to upload or drag & drop</h3>
+              <h3 class="mb-1 text-lg font-semibold text-slate-700">{{ t('workspace.importExport.clickOrDrop') }}</h3>
               <p class="mx-auto mb-6 max-w-sm text-sm text-slate-500">
-                Upload a roster workbook for {{ monthLabel }}. The server will preview row counts and validation issues before anything is applied.
+                {{ t('workspace.importExport.uploadHint', { monthLabel }) }}
               </p>
               <label v-if="!authStore.isReadonly" for="workspace-import-file" class="inline-flex cursor-pointer rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50">
-                Browse files
+                {{ t('workspace.importExport.browseFiles') }}
               </label>
             </div>
 
             <div v-else-if="fileStatus === 'uploading'" class="flex flex-col items-center justify-center rounded-[28px] border border-slate-200 bg-slate-50 p-12">
               <RefreshCw class="mb-4 h-8 w-8 animate-spin text-teal-500" />
-              <h3 class="text-base font-semibold text-slate-700">Uploading workbook...</h3>
+              <h3 class="text-base font-semibold text-slate-700">{{ t('workspace.importExport.uploadingWorkbook') }}</h3>
               <p class="mt-2 text-sm text-slate-500">{{ fileName }}</p>
               <div class="mt-4 h-2 w-64 overflow-hidden rounded-full bg-slate-200">
                 <div class="h-full w-1/2 animate-pulse bg-teal-500"></div>
@@ -508,16 +510,16 @@ onBeforeUnmount(clearTimer)
 
             <div v-else-if="fileStatus === 'mapping'" class="flex flex-col items-center justify-center rounded-[28px] border border-slate-200 bg-slate-50 p-12">
               <RefreshCw class="mb-4 h-8 w-8 animate-spin text-teal-500" />
-              <h3 class="text-base font-semibold text-slate-700">Running preflight checks...</h3>
-              <p class="mt-2 text-sm text-slate-500">Parsing workbook structure, validating rows, and preparing the preview batch.</p>
+              <h3 class="text-base font-semibold text-slate-700">{{ t('workspace.importExport.runningChecks') }}</h3>
+              <p class="mt-2 text-sm text-slate-500">{{ t('workspace.importExport.runningChecksHint') }}</p>
             </div>
 
             <div v-else-if="fileStatus === 'error'" class="rounded-[28px] border border-rose-200 bg-rose-50 p-8 text-center">
               <AlertTriangle class="mx-auto mb-3 h-8 w-8 text-rose-500" />
-              <h3 class="text-base font-semibold text-rose-800">Import preview failed</h3>
+              <h3 class="text-base font-semibold text-rose-800">{{ t('workspace.importExport.previewFailed') }}</h3>
               <p class="mt-2 text-sm text-rose-700">{{ errorMessage }}</p>
               <button class="mt-5 rounded-xl border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-rose-700 transition-colors hover:bg-rose-100" @click="resetImport">
-                Reset
+                {{ t('workspace.importExport.reset') }}
               </button>
             </div>
 
@@ -549,15 +551,15 @@ onBeforeUnmount(clearTimer)
                       <FileSpreadsheet v-else class="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 class="text-base font-semibold text-slate-800">{{ fileStatus === 'applied' ? 'Import applied' : previewHealth.label }}</h3>
+                      <h3 class="text-base font-semibold text-slate-800">{{ fileStatus === 'applied' ? t('workspace.importExport.applied') : previewHealth.label }}</h3>
                       <p class="mt-0.5 break-words text-sm leading-6 text-slate-500">{{ latestFileDisplay }} · Batch {{ currentBatchDisplay }}</p>
                     </div>
                   </div>
 
                   <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                    <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ previewResult?.totalRecords || 0 }} parsed</span>
-                    <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ previewResult?.validRecords || 0 }} ready</span>
-                    <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ previewResult?.invalidRecords || 0 }} blocked</span>
+                      <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ t('workspace.importExport.parsed', { count: previewResult?.totalRecords || 0 }) }}</span>
+                      <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ t('workspace.importExport.ready', { count: previewResult?.validRecords || 0 }) }}</span>
+                      <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ t('workspace.importExport.blocked', { count: previewResult?.invalidRecords || 0 }) }}</span>
                   </div>
                 </div>
 
@@ -610,17 +612,17 @@ onBeforeUnmount(clearTimer)
                     <div class="rounded-2xl border border-slate-200 bg-white p-5">
                       <div class="flex items-center justify-between gap-3">
                         <div>
-                          <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Preview issue list</div>
-                          <div class="mt-1 text-sm font-semibold text-slate-900">Findings returned by the preview API</div>
+                          <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.importExport.previewIssueList') }}</div>
+                          <div class="mt-1 text-sm font-semibold text-slate-900">{{ t('workspace.importExport.previewIssueListHint') }}</div>
                         </div>
                         <span class="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                          {{ previewIssues.length }} issue{{ previewIssues.length === 1 ? '' : 's' }}
+                          {{ t('workspace.importExport.issueCount', { count: previewIssues.length }) }}
                         </span>
                       </div>
 
                       <ul class="mt-4 space-y-3">
                         <li v-if="!previewIssues.length" class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm text-slate-500">
-                          No validation issues were returned. This batch is ready for final review and apply.
+                          {{ t('workspace.importExport.noPreviewIssues') }}
                         </li>
                         <li
                           v-for="issue in previewIssues"
@@ -652,31 +654,31 @@ onBeforeUnmount(clearTimer)
 
                   <div class="space-y-4">
                     <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
-                      <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Issue breakdown</div>
+                      <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.importExport.issueBreakdown') }}</div>
                       <div class="mt-4 space-y-3">
                         <div class="flex items-center justify-between rounded-2xl border border-rose-100 bg-rose-50/70 px-4 py-3">
-                          <span class="text-sm font-medium text-slate-700">High severity</span>
+                          <span class="text-sm font-medium text-slate-700">{{ t('workspace.importExport.highSeverity') }}</span>
                           <span class="text-sm font-semibold text-rose-700">{{ issueSummary.high }}</span>
                         </div>
                         <div class="flex items-center justify-between rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3">
-                          <span class="text-sm font-medium text-slate-700">Medium severity</span>
+                          <span class="text-sm font-medium text-slate-700">{{ t('workspace.importExport.mediumSeverity') }}</span>
                           <span class="text-sm font-semibold text-amber-700">{{ issueSummary.medium }}</span>
                         </div>
                         <div class="flex items-center justify-between rounded-2xl border border-sky-100 bg-sky-50/70 px-4 py-3">
-                          <span class="text-sm font-medium text-slate-700">Low severity</span>
+                          <span class="text-sm font-medium text-slate-700">{{ t('workspace.importExport.lowSeverity') }}</span>
                           <span class="text-sm font-semibold text-sky-700">{{ issueSummary.low }}</span>
                         </div>
                       </div>
                     </div>
 
                     <div class="rounded-2xl border border-slate-200 bg-white p-5">
-                      <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Next step</div>
+                      <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.importExport.nextStep') }}</div>
                       <div class="mt-2 text-sm font-semibold text-slate-900">
-                        {{ fileStatus === 'applied' ? 'Batch already applied' : previewHealth.label }}
+                        {{ fileStatus === 'applied' ? t('workspace.importExport.batchApplied') : previewHealth.label }}
                       </div>
                       <div class="mt-2 text-xs leading-6 text-slate-500">
                         {{ fileStatus === 'applied'
-                          ? `${applyResult?.appliedRecords || 0} record(s) were applied for ${monthLabel}. Keep this preview for reference or reset to import another file.`
+                          ? t('workspace.importExport.appliedSummary', { count: applyResult?.appliedRecords || 0, monthLabel })
                           : previewHealth.description }}
                       </div>
 
@@ -686,21 +688,21 @@ onBeforeUnmount(clearTimer)
                           :disabled="!canApplyPreview || fileStatus === 'applying' || fileStatus === 'applied'"
                           @click="applyChanges"
                         >
-                          {{ authStore.isReadonly ? 'Readonly Mode' : fileStatus === 'applying' ? 'Applying...' : fileStatus === 'applied' ? 'Applied' : 'Apply Changes' }}
+                          {{ authStore.isReadonly ? t('common.readonlyMode') : fileStatus === 'applying' ? t('workspace.importExport.applying') : fileStatus === 'applied' ? t('workspace.importExport.applied') : t('workspace.importExport.applyChanges') }}
                           <ChevronRight class="h-4 w-4" />
                         </button>
                         <RouterLink
                           to="/workspace/validation"
                           class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
                         >
-                          Review in Validation Center
+                          {{ t('workspace.importExport.reviewInValidation') }}
                           <ArrowRight class="h-4 w-4" />
                         </RouterLink>
                         <button
                           class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
                           @click="resetImport"
                         >
-                          Reset import
+                          {{ t('workspace.importExport.resetImport') }}
                         </button>
                       </div>
                     </div>
@@ -713,18 +715,17 @@ onBeforeUnmount(clearTimer)
 
         <WorkspaceSurface :padded="false" class="overflow-hidden">
           <div class="border-b border-slate-100 px-6 py-5">
-            <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Template reference</div>
-            <h2 class="mt-2 text-lg font-semibold tracking-tight text-slate-900">Sample rows from the official workbook</h2>
+            <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.importExport.templateReference') }}</div>
+            <h2 class="mt-2 text-lg font-semibold tracking-tight text-slate-900">{{ t('workspace.importExport.sampleRows') }}</h2>
           </div>
 
           <div class="space-y-6 p-6">
             <p class="text-sm leading-7 text-slate-600">
-              The import workbook contains three sheets: <strong>Shift Definitions</strong>, <strong>Staff Shifts</strong>, and <strong>Color Definitions</strong>.
-              In <strong>Shift Definitions</strong>, the <strong>team</strong> column can contain a single team or multiple team names separated by commas.
+              {{ t('workspace.importExport.workbookDescription') }}
             </p>
 
             <div class="space-y-3">
-              <h3 class="text-sm font-semibold text-slate-800">Sheet 1: Shift Definitions</h3>
+               <h3 class="text-sm font-semibold text-slate-800">{{ t('workspace.importExport.sheet1') }}</h3>
               <div class="overflow-x-auto rounded-2xl border border-slate-200">
                 <table class="min-w-full text-left text-sm text-slate-600">
                   <thead class="border-b border-slate-200 bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -754,7 +755,7 @@ onBeforeUnmount(clearTimer)
             </div>
 
             <div class="space-y-3">
-              <h3 class="text-sm font-semibold text-slate-800">Sheet 2: Staff Shifts</h3>
+               <h3 class="text-sm font-semibold text-slate-800">{{ t('workspace.importExport.sheet2') }}</h3>
               <div class="overflow-x-auto rounded-2xl border border-slate-200">
                 <table class="min-w-full text-left text-sm text-slate-600">
                   <thead class="border-b border-slate-200 bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -786,7 +787,7 @@ onBeforeUnmount(clearTimer)
             </div>
 
             <div class="space-y-3">
-              <h3 class="text-sm font-semibold text-slate-800">Sheet 3: Color Definitions</h3>
+               <h3 class="text-sm font-semibold text-slate-800">{{ t('workspace.importExport.sheet3') }}</h3>
               <div class="overflow-x-auto rounded-2xl border border-slate-200">
                 <table class="min-w-full text-left text-sm text-slate-600">
                   <thead class="border-b border-slate-200 bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
