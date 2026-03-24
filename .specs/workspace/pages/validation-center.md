@@ -10,7 +10,7 @@
 |------|------|
 | 页面组件 | `src/features/workspace/pages/ValidationCenterPage.vue` |
 | 共享组件 | `WorkspacePageHeader.vue`、`WorkspaceSurface.vue` |
-| 查询接口 | `GET /api/workspace/validation?year=&month=` |
+| 查询接口 | `GET /api/workspace/validation?year=&month=`（校验中心使用完整模式；其他轻量页面可追加 `summaryOnly=true`） |
 | 处理接口 | `POST /api/workspace/validation/resolve` |
 
 ## 核心交互

@@ -1,10 +1,12 @@
 <script setup>
 import { computed } from 'vue'
 import { AlertTriangle, CheckCircle2, Clock3 } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   stat: { type: Object, required: true },
 })
+const { t } = useI18n()
 
 const iconMap = {
   good: CheckCircle2,
@@ -41,12 +43,12 @@ const cardToneMap = {
   neutral: 'border-sky-100/80 bg-[linear-gradient(180deg,rgba(240,249,255,0.96),rgba(255,255,255,1))]',
 }
 
-const statusLabelMap = {
-  good: 'Healthy',
-  warning: 'Needs attention',
-  error: 'Critical',
-  neutral: 'Tracking',
-}
+const statusLabelMap = computed(() => ({
+  good: t('workspace.overview.status.healthy'),
+  warning: t('workspace.overview.status.needsAttention'),
+  error: t('workspace.overview.status.critical'),
+  neutral: t('workspace.overview.status.tracking'),
+}))
 
 const normalizedStatus = computed(() => {
   return iconMap[props.stat?.status] ? props.stat.status : 'neutral'
@@ -96,7 +98,7 @@ const progressValue = computed(() => {
 
     <div class="mt-5">
       <div class="mb-2 flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">
-        <span>Health index</span>
+        <span>{{ t('workspace.overview.healthIndex') }}</span>
         <span>{{ progressValue }}%</span>
       </div>
       <div class="h-2 rounded-full bg-white/80 ring-1 ring-inset ring-slate-200/70">

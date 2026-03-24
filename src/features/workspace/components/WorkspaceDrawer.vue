@@ -1,5 +1,6 @@
 <script setup>
 import { onBeforeUnmount, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -8,6 +9,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue'])
+const { t } = useI18n()
 
 function closeDrawer() {
   emit('update:modelValue', false)
@@ -49,7 +51,7 @@ onBeforeUnmount(() => {
       :style="{ width: props.width }"
       role="dialog"
       aria-modal="true"
-      :aria-label="title || 'Workspace drawer'"
+      :aria-label="title || t('workspace.shell.drawer.fallbackTitle')"
     >
       <header class="flex items-center justify-between border-b border-slate-100 bg-slate-50/70 px-6 py-4">
         <div>
@@ -61,7 +63,7 @@ onBeforeUnmount(() => {
           class="rounded-md p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
           @click="closeDrawer"
         >
-          <span class="sr-only">Close drawer</span>
+          <span class="sr-only">{{ t('workspace.shell.drawer.close') }}</span>
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18" />
           </svg>

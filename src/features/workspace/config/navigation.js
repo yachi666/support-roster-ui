@@ -1,12 +1,12 @@
 export const workspaceNavigation = [
-  { label: 'Overview', to: '/workspace', icon: 'LayoutDashboard' },
-  { label: 'Monthly Roster', to: '/workspace/roster', icon: 'CalendarDays' },
-  { label: 'Staff Directory', to: '/workspace/staff', icon: 'Users' },
-  { label: 'Shift Definitions', to: '/workspace/shifts', icon: 'Clock3' },
-  { label: 'Teams', to: '/workspace/teams', icon: 'Network', roles: ['admin'] },
-  { label: 'Accounts', to: '/workspace/accounts', icon: 'Users', roles: ['admin'] },
-  { label: 'Import / Export', to: '/workspace/import-export', icon: 'UploadCloud' },
-  { label: 'Validation', to: '/workspace/validation', icon: 'AlertTriangle' },
+  { labelKey: 'workspace.nav.overview', to: '/workspace', icon: 'LayoutDashboard' },
+  { labelKey: 'workspace.nav.roster', to: '/workspace/roster', icon: 'CalendarDays' },
+  { labelKey: 'workspace.nav.staff', to: '/workspace/staff', icon: 'Users' },
+  { labelKey: 'workspace.nav.shifts', to: '/workspace/shifts', icon: 'Clock3' },
+  { labelKey: 'workspace.nav.teams', to: '/workspace/teams', icon: 'Network', roles: ['admin'] },
+  { labelKey: 'workspace.nav.accounts', to: '/workspace/accounts', icon: 'Users', roles: ['admin'] },
+  { labelKey: 'workspace.nav.importExport', to: '/workspace/import-export', icon: 'UploadCloud' },
+  { labelKey: 'workspace.nav.validation', to: '/workspace/validation', icon: 'AlertTriangle' },
 ]
 
 export function getWorkspaceQuickActionTarget(actionKey) {

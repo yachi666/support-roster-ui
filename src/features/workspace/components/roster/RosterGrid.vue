@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Clock3, Globe2, Star } from 'lucide-vue-next'
 import {
   TooltipArrow,
@@ -26,6 +27,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['select-cell', 'select-range', 'navigate-cell', 'open-selected-cell'])
+const { t } = useI18n()
 
 const GROUP_ROW_HEIGHT = 38
 const STAFF_ROW_HEIGHT = 46
@@ -430,7 +432,7 @@ onBeforeUnmount(() => {
         <thead class="sticky top-0 z-20 bg-white shadow-[0_1px_0_0_#e2e8f0]">
           <tr>
             <th class="sticky left-0 z-30 min-w-[256px] w-64 border-b border-r border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500 shadow-[1px_0_0_0_#e2e8f0]">
-              Staff & Team
+              {{ t('workspace.grid.staffAndTeam') }}
             </th>
             <th
               v-for="day in days"
@@ -487,7 +489,7 @@ onBeforeUnmount(() => {
                    isPendingUpdate(row.person.id, index + 1) ? 'bg-amber-50/70 ring-1 ring-inset ring-amber-300' : '',
                  ]"
                  :tabindex="0"
-                 :aria-label="`Roster cell for ${row.person.name} on day ${index + 1}`"
+                  :aria-label="t('workspace.grid.rosterCell', { name: row.person.name, day: index + 1 })"
                  @focus="emit('select-cell', { staffId: row.person.id, day: index + 1 })"
                  @keydown="handleCellKeydown($event, row.person.id, index + 1)"
                  @mousedown.prevent="startPointerSelection(row.person.id, index + 1)"
@@ -532,11 +534,11 @@ onBeforeUnmount(() => {
                                </span>
                                <span v-if="getShiftMeta(row.person.teamId, code)?.primaryShift" class="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-600">
                                  <Star class="h-3 w-3 fill-current" />
-                                 Primary
+                                  {{ t('workspace.grid.primary') }}
                                </span>
                              </div>
                              <p class="text-sm font-semibold leading-5 text-slate-900">
-                               {{ getShiftMeta(row.person.teamId, code)?.meaning || 'Shift definition' }}
+                                {{ getShiftMeta(row.person.teamId, code)?.meaning || t('workspace.grid.shiftDefinition') }}
                              </p>
                            </div>
                         </div>
@@ -545,9 +547,9 @@ onBeforeUnmount(() => {
                           <div class="flex items-start gap-2 text-slate-700">
                             <Clock3 class="mt-0.5 h-3.5 w-3.5 flex-none text-slate-400" />
                             <div>
-                              <div class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Time Window</div>
+                               <div class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{{ t('workspace.grid.timeWindow') }}</div>
                               <div class="mt-1 font-mono text-[12px] leading-5 text-slate-800">
-                                 {{ getShiftWindowLabel(row.person.teamId, code) || 'Time range unavailable' }}
+                                  {{ getShiftWindowLabel(row.person.teamId, code) || t('workspace.grid.timeUnavailable') }}
                               </div>
                             </div>
                           </div>
@@ -556,10 +558,10 @@ onBeforeUnmount(() => {
                         <div class="flex items-center justify-between gap-3 rounded-xl border border-dashed border-slate-200 px-3 py-2 text-[11px] text-slate-600">
                           <div class="flex items-center gap-2">
                             <Globe2 class="h-3.5 w-3.5 text-slate-400" />
-                            <span class="uppercase tracking-[0.14em] text-slate-400">Timezone</span>
+                             <span class="uppercase tracking-[0.14em] text-slate-400">{{ t('workspace.grid.timezone') }}</span>
                           </div>
                           <span class="font-semibold text-slate-800">
-                             {{ getShiftMeta(row.person.teamId, code)?.timezone || 'N/A' }}
+                              {{ getShiftMeta(row.person.teamId, code)?.timezone || t('workspace.grid.notAvailable') }}
                            </span>
                          </div>
                        </div>
@@ -575,8 +577,8 @@ onBeforeUnmount(() => {
                      isPendingUpdate(row.person.id, index + 1) ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-slate-200/80',
                    ]"
                  >
-                   {{ isPendingUpdate(row.person.id, index + 1) ? 'Clear' : '' }}
-                 </div>
+                    {{ isPendingUpdate(row.person.id, index + 1) ? t('workspace.grid.clear') : '' }}
+                  </div>
                </td>
             </tr>
           </template>

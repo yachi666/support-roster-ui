@@ -1,3 +1,6 @@
+import { currentLocale } from '@/i18n'
+import { formatLocalizedDate } from '@/i18n/format'
+
 export function getCurrentWorkspacePeriod() {
   const now = new Date()
 
@@ -17,10 +20,10 @@ export function shiftWorkspacePeriod(period, delta) {
 }
 
 export function formatWorkspaceMonthLabel(year, month) {
-  return new Intl.DateTimeFormat('en-US', {
+  return formatLocalizedDate(new Date(year, month - 1, 1), {
     month: 'long',
     year: 'numeric',
-  }).format(new Date(year, month - 1, 1))
+  }, currentLocale.value)
 }
 
 export function createPlannerDays(year, month) {
@@ -28,7 +31,7 @@ export function createPlannerDays(year, month) {
 
   return Array.from({ length: totalDays }, (_, index) => {
     const date = new Date(year, month - 1, index + 1)
-    const weekday = new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(date)
+    const weekday = formatLocalizedDate(date, { weekday: 'short' }, currentLocale.value)
 
     return {
       value: index + 1,
