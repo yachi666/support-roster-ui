@@ -1,12 +1,12 @@
 export const workspaceNavigation = [
-  { labelKey: 'workspace.nav.overview', to: '/workspace', icon: 'LayoutDashboard' },
-  { labelKey: 'workspace.nav.roster', to: '/workspace/roster', icon: 'CalendarDays' },
-  { labelKey: 'workspace.nav.staff', to: '/workspace/staff', icon: 'Users' },
-  { labelKey: 'workspace.nav.shifts', to: '/workspace/shifts', icon: 'Clock3' },
-  { labelKey: 'workspace.nav.teams', to: '/workspace/teams', icon: 'Network', roles: ['admin'] },
-  { labelKey: 'workspace.nav.accounts', to: '/workspace/accounts', icon: 'Users', roles: ['admin'] },
-  { labelKey: 'workspace.nav.importExport', to: '/workspace/import-export', icon: 'UploadCloud' },
-  { labelKey: 'workspace.nav.validation', to: '/workspace/validation', icon: 'AlertTriangle' },
+  { pageCode: 'overview', labelKey: 'workspace.nav.overview', to: '/workspace', icon: 'LayoutDashboard' },
+  { pageCode: 'roster', labelKey: 'workspace.nav.roster', to: '/workspace/roster', icon: 'CalendarDays' },
+  { pageCode: 'staff', labelKey: 'workspace.nav.staff', to: '/workspace/staff', icon: 'Users' },
+  { pageCode: 'shifts', labelKey: 'workspace.nav.shifts', to: '/workspace/shifts', icon: 'Clock3' },
+  { pageCode: 'teams', labelKey: 'workspace.nav.teams', to: '/workspace/teams', icon: 'Network' },
+  { pageCode: 'accounts', labelKey: 'workspace.nav.accounts', to: '/workspace/accounts', icon: 'Users', roles: ['admin'] },
+  { pageCode: 'import-export', labelKey: 'workspace.nav.importExport', to: '/workspace/import-export', icon: 'UploadCloud' },
+  { pageCode: 'validation', labelKey: 'workspace.nav.validation', to: '/workspace/validation', icon: 'AlertTriangle' },
 ]
 
 export function getWorkspaceQuickActionTarget(actionKey) {

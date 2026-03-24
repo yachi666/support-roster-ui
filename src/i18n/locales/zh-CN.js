@@ -66,6 +66,7 @@ export default {
     roles: {
       admin: '管理员',
       editor: '编辑者',
+      guest: '游客',
       readonly: '只读',
       workspace: '工作台',
       userFallback: '工作台用户',
@@ -353,6 +354,14 @@ export default {
       createAction: '创建账号',
       activationTitle: '激活说明',
       activationBody: '首次激活目前仅依赖员工 ID，适用于内网/测试场景。正式环境仍需更强的激活校验。',
+      accessPolicyTitle: '工作台访问策略',
+      accessPolicyBody: '匿名访客现在可以以只读模式打开 `/workspace`。你可以在这里决定哪些工作台页面仍然必须登录后才能查看。',
+      accessPolicyLoading: '正在加载工作台访问策略...',
+      accessPolicyLocked: '始终受保护',
+      accessPolicyRequireLogin: '需要登录',
+      accessPolicyHint: '关闭后，游客也能打开该页面，但仍然保持只读模式。',
+      accessPolicyPublicReadonly: '匿名用户可以只读查看该页面。',
+      accessPolicyLoginRequired: '必须先登录后才能打开该页面。',
       columns: {
         staff: '员工',
         role: '角色',

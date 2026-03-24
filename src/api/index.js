@@ -156,6 +156,13 @@ export const api = {
   getShiftCodes: () => request('/shift-codes'),
 
   workspace: {
+    getAccessPolicy: () => request('/workspace/access-policy'),
+
+    updateAccessPolicy: (payload) => request('/workspace/access-policy', {
+      method: 'PUT',
+      body: payload,
+    }),
+
     getOverview: (year, month) => {
       const params = new URLSearchParams()
 

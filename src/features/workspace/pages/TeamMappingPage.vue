@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, shallowRef } from 'vue'
 import { GripVertical, HelpCircle, Plus, Trash2 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { api } from '@/api'
+import { useAuthStore } from '@/stores/auth'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
@@ -29,6 +30,7 @@ const draggingTeamId = shallowRef(null)
 const dragOverTeamId = shallowRef(null)
 const fieldErrors = reactive({})
 const formState = reactive({ ...EMPTY_FORM })
+const authStore = useAuthStore()
 const { t } = useI18n()
 
 const teamErrorRules = [
@@ -68,6 +70,10 @@ async function loadTeams() {
 }
 
 async function persistTeamOrder(orderedTeams, fallbackTeams) {
+  if (authStore.isReadonly) {
+    return
+  }
+
   reorderPending.value = true
   errorMessage.value = ''
 
@@ -86,7 +92,7 @@ async function persistTeamOrder(orderedTeams, fallbackTeams) {
 }
 
 function handleDragStart(teamId) {
-  if (reorderPending.value) {
+  if (reorderPending.value || authStore.isReadonly) {
     return
   }
 
@@ -168,13 +174,17 @@ function getNextDisplayOrder() {
 }
 
 function openCreateDrawer() {
+  if (authStore.isReadonly) {
+    return
+  }
+
   selectedTeamId.value = null
   resetForm()
   formVisible.value = true
 }
 
 function openTeamDrawer(team) {
-  if (draggingTeamId.value != null || reorderPending.value) {
+  if (draggingTeamId.value != null || reorderPending.value || authStore.isReadonly) {
     return
   }
 
@@ -196,7 +206,7 @@ function validateForm() {
 }
 
 async function saveTeam() {
-  if (submitPending.value) {
+  if (submitPending.value || authStore.isReadonly) {
     return
   }
 
@@ -238,12 +248,16 @@ async function saveTeam() {
 }
 
 function promptDeleteTeam() {
+  if (authStore.isReadonly) {
+    return
+  }
+
   confirmDeleteVisible.value = true
   formErrorMessage.value = ''
 }
 
 async function confirmDeleteTeam() {
-  if (!selectedTeam.value || deletePending.value) {
+  if (!selectedTeam.value || deletePending.value || authStore.isReadonly) {
     return
   }
 
@@ -295,6 +309,7 @@ onMounted(() => {
         >
           <template #actions>
             <button
+              v-if="!authStore.isReadonly"
               class="inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700"
               @click="openCreateDrawer"
             >
@@ -384,10 +399,10 @@ onMounted(() => {
               :key="team.id"
               :class="[
                 'group flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md',
-                reorderPending ? 'cursor-wait' : 'cursor-pointer',
+                reorderPending ? 'cursor-wait' : authStore.isReadonly ? 'cursor-default' : 'cursor-pointer',
                 dragOverTeamId === team.id ? 'border-teal-300 bg-teal-50/70 shadow-teal-100' : '',
               ]"
-              draggable="true"
+              :draggable="!authStore.isReadonly"
               @dragstart="handleDragStart(team.id)"
               @dragend="handleDragEnd"
               @dragenter.prevent="handleDragEnter(team.id)"
@@ -440,11 +455,11 @@ onMounted(() => {
                   >
                      {{ team.visible ? t('workspace.teams.shownPublic') : t('workspace.teams.internalOnly') }}
                    </span>
-                  <span
-                    class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-500"
-                  >
-                     {{ t('workspace.teams.clickToEdit') }}
-                   </span>
+                    <span
+                      class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-500"
+                    >
+                      {{ authStore.isReadonly ? t('common.readonlyMode') : t('workspace.teams.clickToEdit') }}
+                    </span>
                  </div>
                </div>
                <div class="hidden text-right md:block">
@@ -465,10 +480,11 @@ onMounted(() => {
                  </p>
               </div>
             </WorkspaceSurface>
-            <button
-              class="w-full rounded-2xl border-2 border-dashed border-slate-200 py-4 text-sm font-medium text-slate-500 transition-colors hover:border-teal-400 hover:bg-teal-50/50 hover:text-teal-600"
-              @click="openCreateDrawer"
-            >
+             <button
+               v-if="!authStore.isReadonly"
+               class="w-full rounded-2xl border-2 border-dashed border-slate-200 py-4 text-sm font-medium text-slate-500 transition-colors hover:border-teal-400 hover:bg-teal-50/50 hover:text-teal-600"
+               @click="openCreateDrawer"
+             >
               {{ t('workspace.teams.createNew') }}
             </button>
           </div>
