@@ -1,8 +1,9 @@
 <script setup>
+import { RouterLink } from 'vue-router'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { format } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
-import { Calendar, Clock, Globe } from 'lucide-vue-next'
+import { ArrowRight, Calendar, Clock, Globe } from 'lucide-vue-next'
 import { TIMEZONE_OPTIONS, normalizeTimezoneSelection, toIanaTimezone } from '@/lib/timezones'
 
 const props = defineProps({
@@ -104,6 +105,14 @@ const formattedDate = computed(() => {
           </div>
         </div>
       </div>
+
+      <RouterLink
+        to="/workspace"
+        class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900"
+      >
+        <span>Enter Workspace</span>
+        <ArrowRight class="h-4 w-4" />
+      </RouterLink>
     </div>
   </header>
 </template>
