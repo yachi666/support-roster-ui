@@ -130,6 +130,7 @@ watch([year, month], () => {
         <span class="flex-1">{{ item.label }}</span>
         <span
           v-if="item.count"
+          aria-hidden="true"
           :class="cn(
             'inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold',
             item.active ? 'bg-teal-100 text-teal-700' : 'bg-rose-100 text-rose-600'

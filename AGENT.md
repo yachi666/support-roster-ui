@@ -29,3 +29,12 @@
 - 若变更较小，也不能跳过 spec 同步；至少要确认并更新受影响的对应文档。
 - 如果某项功能已经形成独立模块或页面簇，应优先拆到对应子目录并提供清晰导航，而不是持续堆积到 `spec.md`。
 - 先和我对其需求再修改 有任何想法向我确认
+
+## Browser Automation
+
+- 涉及前端登录流程、工作台核心页面冒烟、权限路由校验或回归验证时，优先使用仓库根目录的 `@automationtest/`
+- 不要在 `support-roster-ui/` 内临时创建一次性浏览器脚本；优先把可复用测试沉淀到 `automationtest/specs`、`pages`、`helpers`、`fixtures`
+- 当前默认执行方式：
+  - `cd automationtest && npm run precheck`
+  - `npm run test:smoke`
+- 若新增测试数据自动化，优先扩展 `automationtest/helpers/seed-contracts.mjs` 和 `automationtest/helpers/cleanup-registry.mjs`，保证测试数据具备明确的创建/清理生命周期
