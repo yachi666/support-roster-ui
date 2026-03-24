@@ -196,6 +196,11 @@ export const api = {
       body: payload,
     }),
 
+    createStaffBatch: (payload) => request('/workspace/staff/batch', {
+      method: 'POST',
+      body: payload,
+    }),
+
     updateStaff: (id, payload) => request(`/workspace/staff/${id}`, {
       method: 'PUT',
       body: payload,
