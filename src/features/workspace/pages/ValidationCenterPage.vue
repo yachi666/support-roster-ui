@@ -152,8 +152,12 @@ const resolvableIssueCount = computed(() => normalizedIssues.value.filter((issue
 const manualOnlyCount = computed(() => normalizedIssues.value.filter((issue) => !issue.resolvable).length)
 const importIssueCount = computed(() => normalizedIssues.value.filter((issue) => issue.resolutionKind === 'import-issue').length)
 
+function canResolveIssue(issue) {
+  return Boolean(issue?.resolvable) && authStore.canEditTeam(issue?.teamId)
+}
+
 const resolvableSelectedIssueIds = computed(() =>
-  selectedIssueIds.value.filter((issueId) => normalizedIssues.value.find((issue) => issue.id === issueId)?.resolvable),
+  selectedIssueIds.value.filter((issueId) => canResolveIssue(normalizedIssues.value.find((issue) => issue.id === issueId))),
 )
 
 const visibleIssueIds = computed(() => visibleIssues.value.map((issue) => issue.id))
@@ -228,20 +232,21 @@ function toggleAll() {
 }
 
 async function resolveIssues(issueIds) {
-  if (!issueIds.length || resolvePending.value || authStore.isReadonly) {
+  const resolvableIssueIds = issueIds.filter((issueId) => canResolveIssue(normalizedIssues.value.find((issue) => issue.id === issueId)))
+  if (!resolvableIssueIds.length || resolvePending.value) {
     return
   }
 
   resolvePending.value = true
   actionErrorMessage.value = ''
   actionMessage.value = ''
-  resolvingIssueIds.value = issueIds
+  resolvingIssueIds.value = resolvableIssueIds
 
   try {
     const response = await api.workspace.resolveValidationIssues({
       year: year.value,
       month: month.value,
-      issueIds,
+      issueIds: resolvableIssueIds,
     })
 
     summary.value = response?.validation?.summary || { high: 0, medium: 0, low: 0 }
@@ -323,7 +328,7 @@ watch([year, month], () => {
               {{ t('workspace.validation.refresh') }}
             </button>
             <button
-              v-if="!authStore.isReadonly"
+              v-if="authStore.canWriteWorkspace"
               class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
               :disabled="resolvableSelectedIssueIds.length === 0 || resolvePending"
               @click="resolveSelectedIssues"
@@ -435,7 +440,7 @@ watch([year, month], () => {
 
                 <div class="mt-5 flex flex-wrap gap-2">
                   <button
-                    v-if="prioritizedIssue.resolvable && !authStore.isReadonly"
+                    v-if="canResolveIssue(prioritizedIssue)"
                     class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-60"
                     :disabled="resolvePending"
                     @click="resolveSingleIssue(prioritizedIssue.id)"
@@ -662,7 +667,7 @@ watch([year, month], () => {
 
                     <div class="flex flex-wrap items-center gap-2 xl:justify-end">
                       <button
-                        v-if="issue.resolvable && !authStore.isReadonly"
+                        v-if="canResolveIssue(issue)"
                         class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-60"
                         :disabled="resolvePending"
                         @click="resolveSingleIssue(issue.id)"

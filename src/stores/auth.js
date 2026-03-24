@@ -14,6 +14,13 @@ const DEFAULT_WORKSPACE_ACCESS_POLICY = Object.freeze([
   { pageCode: 'validation', authRequired: false, configurable: true },
 ])
 
+const SECURE_WORKSPACE_ACCESS_POLICY = Object.freeze(
+  DEFAULT_WORKSPACE_ACCESS_POLICY.map((page) => ({
+    ...page,
+    authRequired: true,
+  })),
+)
+
 const GUEST_WORKSPACE_USER = Object.freeze({
   staffName: 'Guest',
   staffId: 'guest',
@@ -23,13 +30,24 @@ const GUEST_WORKSPACE_USER = Object.freeze({
   editableTeams: [],
 })
 
+function cloneWorkspaceAccessPolicy(pages) {
+  return (pages || []).map((page) => ({ ...page }))
+}
+
+function normalizeTeamIds(teamIds) {
+  return (Array.isArray(teamIds) ? teamIds : [])
+    .filter((teamId) => teamId != null && `${teamId}`.trim())
+    .map((teamId) => String(teamId))
+}
+
 export const useAuthStore = defineStore('auth', () => {
   const currentUser = ref(null)
   const initialized = ref(false)
   const loading = ref(false)
-  const workspaceAccessPolicy = ref(DEFAULT_WORKSPACE_ACCESS_POLICY.map((page) => ({ ...page })))
+  const workspaceAccessPolicy = ref(cloneWorkspaceAccessPolicy(SECURE_WORKSPACE_ACCESS_POLICY))
   const workspaceAccessLoaded = ref(false)
   const workspaceAccessLoading = ref(false)
+  const workspaceAccessErrorMessage = ref('')
 
   const isAuthenticated = computed(() => Boolean(currentUser.value && getAuthToken()))
   const workspaceUser = computed(() => currentUser.value || GUEST_WORKSPACE_USER)
@@ -38,12 +56,26 @@ export const useAuthStore = defineStore('auth', () => {
   const isEditor = computed(() => role.value === 'editor')
   const isReadonly = computed(() => !isAuthenticated.value || role.value === 'readonly')
   const canManageAccounts = computed(() => isAdmin.value)
-  const canWriteWorkspace = computed(() => isAdmin.value || isEditor.value)
+  const editableTeamIds = computed(() => normalizeTeamIds(currentUser.value?.editableTeamIds))
+  const editableTeamIdSet = computed(() => new Set(editableTeamIds.value))
+  const canWriteWorkspace = computed(() => isAdmin.value || (isEditor.value && editableTeamIds.value.length > 0))
+  const canManageTeams = computed(() => isAdmin.value)
 
-  function applySession(token, user) {
-    setAuthToken(token)
+  function applySessionUser(user) {
     currentUser.value = user
     initialized.value = true
+  }
+
+  async function establishSession(token) {
+    setAuthToken(token)
+    try {
+      const user = await api.auth.me()
+      applySessionUser(user)
+      return user
+    } catch (error) {
+      clearSession()
+      throw error
+    }
   }
 
   function clearSession() {
@@ -65,25 +97,22 @@ export const useAuthStore = defineStore('auth', () => {
 
     loading.value = true
     try {
-      currentUser.value = await api.auth.me()
+      applySessionUser(await api.auth.me())
     } catch {
       clearSession()
     } finally {
-      initialized.value = true
       loading.value = false
     }
   }
 
   async function login(payload) {
     const response = await api.auth.login(payload)
-    applySession(response.token, response.currentUser)
-    return response.currentUser
+    return establishSession(response.token)
   }
 
   async function activate(payload) {
     const response = await api.auth.activate(payload)
-    applySession(response.token, response.currentUser)
-    return response.currentUser
+    return establishSession(response.token)
   }
 
   async function logout() {
@@ -134,6 +163,7 @@ export const useAuthStore = defineStore('auth', () => {
   function applyWorkspaceAccessPolicy(response) {
     workspaceAccessPolicy.value = normalizeWorkspaceAccessPolicy(response?.pages)
     workspaceAccessLoaded.value = true
+    workspaceAccessErrorMessage.value = ''
   }
 
   async function ensureWorkspaceAccessPolicy(force = false) {
@@ -141,13 +171,18 @@ export const useAuthStore = defineStore('auth', () => {
       return workspaceAccessPolicy.value
     }
 
+    const previousPolicy = workspaceAccessLoaded.value
+      ? cloneWorkspaceAccessPolicy(workspaceAccessPolicy.value)
+      : null
+
     workspaceAccessLoading.value = true
     try {
       const response = await api.workspace.getAccessPolicy()
       applyWorkspaceAccessPolicy(response)
-    } catch {
-      workspaceAccessPolicy.value = normalizeWorkspaceAccessPolicy()
+    } catch (error) {
+      workspaceAccessPolicy.value = previousPolicy || cloneWorkspaceAccessPolicy(SECURE_WORKSPACE_ACCESS_POLICY)
       workspaceAccessLoaded.value = true
+      workspaceAccessErrorMessage.value = error?.message || 'Failed to load workspace access policy.'
     } finally {
       workspaceAccessLoading.value = false
     }
@@ -197,7 +232,31 @@ export const useAuthStore = defineStore('auth', () => {
     if (!isEditor.value) {
       return false
     }
-    return (currentUser.value?.editableTeamIds || []).includes(String(teamId))
+    if (teamId == null || `${teamId}`.trim() === '') {
+      return false
+    }
+    return editableTeamIdSet.value.has(String(teamId))
+  }
+
+  function canEditAllTeams(teamIds = []) {
+    if (isAdmin.value) {
+      return true
+    }
+    if (!isEditor.value) {
+      return false
+    }
+    const normalizedTeamIds = normalizeTeamIds(teamIds)
+    return normalizedTeamIds.length > 0 && normalizedTeamIds.every((teamId) => editableTeamIdSet.value.has(teamId))
+  }
+
+  function canEditAnyTeam(teamIds = []) {
+    if (isAdmin.value) {
+      return true
+    }
+    if (!isEditor.value) {
+      return false
+    }
+    return normalizeTeamIds(teamIds).some((teamId) => editableTeamIdSet.value.has(teamId))
   }
 
   return {
@@ -212,8 +271,11 @@ export const useAuthStore = defineStore('auth', () => {
     isReadonly,
     canManageAccounts,
     canWriteWorkspace,
+    canManageTeams,
+    editableTeamIds,
     workspaceAccessPolicy,
     workspaceAccessLoaded,
+    workspaceAccessErrorMessage,
     initSession,
     login,
     activate,
@@ -227,5 +289,7 @@ export const useAuthStore = defineStore('auth', () => {
     isWorkspacePageLoginRequired,
     canAccessWorkspacePage,
     canEditTeam,
+    canEditAllTeams,
+    canEditAnyTeam,
   }
 })

@@ -55,6 +55,7 @@ const selectedTeam = computed(
   () => teams.value.find((team) => team.id === selectedTeamId.value) || null,
 )
 const drawerOpen = computed(() => Boolean(selectedTeam.value) || formVisible.value)
+const canManageTeams = computed(() => authStore.canManageTeams)
 
 async function loadTeams() {
   loading.value = true
@@ -70,7 +71,7 @@ async function loadTeams() {
 }
 
 async function persistTeamOrder(orderedTeams, fallbackTeams) {
-  if (authStore.isReadonly) {
+  if (!canManageTeams.value) {
     return
   }
 
@@ -92,7 +93,7 @@ async function persistTeamOrder(orderedTeams, fallbackTeams) {
 }
 
 function handleDragStart(teamId) {
-  if (reorderPending.value || authStore.isReadonly) {
+  if (reorderPending.value || !canManageTeams.value) {
     return
   }
 
@@ -174,7 +175,7 @@ function getNextDisplayOrder() {
 }
 
 function openCreateDrawer() {
-  if (authStore.isReadonly) {
+  if (!canManageTeams.value) {
     return
   }
 
@@ -184,7 +185,7 @@ function openCreateDrawer() {
 }
 
 function openTeamDrawer(team) {
-  if (draggingTeamId.value != null || reorderPending.value || authStore.isReadonly) {
+  if (draggingTeamId.value != null || reorderPending.value || !canManageTeams.value) {
     return
   }
 
@@ -206,7 +207,7 @@ function validateForm() {
 }
 
 async function saveTeam() {
-  if (submitPending.value || authStore.isReadonly) {
+  if (submitPending.value || !canManageTeams.value) {
     return
   }
 
@@ -248,7 +249,7 @@ async function saveTeam() {
 }
 
 function promptDeleteTeam() {
-  if (authStore.isReadonly) {
+  if (!canManageTeams.value) {
     return
   }
 
@@ -257,7 +258,7 @@ function promptDeleteTeam() {
 }
 
 async function confirmDeleteTeam() {
-  if (!selectedTeam.value || deletePending.value || authStore.isReadonly) {
+  if (!selectedTeam.value || deletePending.value || !canManageTeams.value) {
     return
   }
 
@@ -309,7 +310,7 @@ onMounted(() => {
         >
           <template #actions>
             <button
-              v-if="!authStore.isReadonly"
+              v-if="canManageTeams"
               class="inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700"
               @click="openCreateDrawer"
             >
@@ -399,10 +400,10 @@ onMounted(() => {
               :key="team.id"
               :class="[
                 'group flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md',
-                reorderPending ? 'cursor-wait' : authStore.isReadonly ? 'cursor-default' : 'cursor-pointer',
+                reorderPending ? 'cursor-wait' : canManageTeams ? 'cursor-pointer' : 'cursor-default',
                 dragOverTeamId === team.id ? 'border-teal-300 bg-teal-50/70 shadow-teal-100' : '',
               ]"
-              :draggable="!authStore.isReadonly"
+              :draggable="canManageTeams"
               @dragstart="handleDragStart(team.id)"
               @dragend="handleDragEnd"
               @dragenter.prevent="handleDragEnter(team.id)"
@@ -458,7 +459,7 @@ onMounted(() => {
                     <span
                       class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-500"
                     >
-                      {{ authStore.isReadonly ? t('common.readonlyMode') : t('workspace.teams.clickToEdit') }}
+                      {{ canManageTeams ? t('workspace.teams.clickToEdit') : t('common.readonlyMode') }}
                     </span>
                  </div>
                </div>
@@ -481,7 +482,7 @@ onMounted(() => {
               </div>
             </WorkspaceSurface>
              <button
-               v-if="!authStore.isReadonly"
+                v-if="canManageTeams"
                class="w-full rounded-2xl border-2 border-dashed border-slate-200 py-4 text-sm font-medium text-slate-500 transition-colors hover:border-teal-400 hover:bg-teal-50/50 hover:text-teal-600"
                @click="openCreateDrawer"
              >

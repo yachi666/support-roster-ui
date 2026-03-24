@@ -154,7 +154,7 @@ const previewSummaryCards = computed(() => [
 ])
 
 const canApplyPreview = computed(() =>
-  !authStore.isReadonly && Boolean(previewResult.value?.batchId) && ['success', 'applied'].includes(fileStatus.value),
+  authStore.canWriteWorkspace && Boolean(previewResult.value?.batchId) && ['success', 'applied'].includes(fileStatus.value),
 )
 
 const currentBatchDisplay = computed(() => previewResult.value?.batchId || 'Not created yet')
@@ -168,7 +168,7 @@ function clearTimer() {
 }
 
 async function uploadFile(file) {
-  if (authStore.isReadonly) {
+  if (!authStore.canWriteWorkspace) {
     errorMessage.value = 'Readonly users cannot preview imports.'
     return
   }
@@ -221,7 +221,7 @@ function handleDrop(event) {
 }
 
 async function applyChanges() {
-  if (!previewResult.value?.batchId || fileStatus.value === 'applying' || authStore.isReadonly) {
+  if (!previewResult.value?.batchId || fileStatus.value === 'applying' || !authStore.canWriteWorkspace) {
     return
   }
 
@@ -494,7 +494,7 @@ onBeforeUnmount(clearTimer)
               <p class="mx-auto mb-6 max-w-sm text-sm text-slate-500">
                 {{ t('workspace.importExport.uploadHint', { monthLabel }) }}
               </p>
-              <label v-if="!authStore.isReadonly" for="workspace-import-file" class="inline-flex cursor-pointer rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50">
+              <label v-if="authStore.canWriteWorkspace" for="workspace-import-file" class="inline-flex cursor-pointer rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50">
                 {{ t('workspace.importExport.browseFiles') }}
               </label>
             </div>
@@ -688,7 +688,7 @@ onBeforeUnmount(clearTimer)
                           :disabled="!canApplyPreview || fileStatus === 'applying' || fileStatus === 'applied'"
                           @click="applyChanges"
                         >
-                          {{ authStore.isReadonly ? t('common.readonlyMode') : fileStatus === 'applying' ? t('workspace.importExport.applying') : fileStatus === 'applied' ? t('workspace.importExport.applied') : t('workspace.importExport.applyChanges') }}
+                          {{ !authStore.canWriteWorkspace ? t('common.readonlyMode') : fileStatus === 'applying' ? t('workspace.importExport.applying') : fileStatus === 'applied' ? t('workspace.importExport.applied') : t('workspace.importExport.applyChanges') }}
                           <ChevronRight class="h-4 w-4" />
                         </button>
                         <RouterLink

@@ -65,7 +65,7 @@ const router = createRouter({
           path: 'teams',
           name: 'workspace-teams',
           component: TeamMappingPage,
-          meta: { workspacePageCode: 'teams' },
+          meta: { workspacePageCode: 'teams', requiresAuth: true, roles: ['admin'] },
         },
         {
           path: 'import-export',

@@ -113,6 +113,11 @@ const selectedStaff = computed(() => {
 })
 
 const teamOptions = computed(() => teams.value.filter((team) => team.visible !== false))
+const editableTeamOptions = computed(() =>
+  teamOptions.value.filter((team) => authStore.isAdmin || authStore.canEditTeam(team.id)),
+)
+const canCreateStaff = computed(() => authStore.canWriteWorkspace)
+const canEditSelectedStaff = computed(() => Boolean(selectedStaff.value) && authStore.canEditTeam(selectedStaff.value.teamId))
 
 const drawerOpen = computed(() => Boolean(selectedStaff.value) || formVisible.value)
 
@@ -190,7 +195,7 @@ function validateForm() {
 }
 
 function openCreateDrawer() {
-  if (authStore.isReadonly) {
+  if (!canCreateStaff.value) {
     return
   }
   drawerMode.value = 'create'
@@ -207,7 +212,7 @@ function openDetailDrawer(staffId) {
 }
 
 function openEditDrawer() {
-  if (!selectedStaff.value || authStore.isReadonly) {
+  if (!canEditSelectedStaff.value) {
     return
   }
 
@@ -217,7 +222,7 @@ function openEditDrawer() {
 }
 
 async function submitForm() {
-  if (submitPending.value || authStore.isReadonly) {
+  if (submitPending.value || !canCreateStaff.value) {
     return
   }
 
@@ -225,6 +230,11 @@ async function submitForm() {
   confirmDeleteVisible.value = false
 
   if (!validateForm()) {
+    formErrorMessage.value = 'Please correct the highlighted fields before saving.'
+    return
+  }
+  if (!authStore.canEditTeam(formState.teamId)) {
+    fieldErrors.teamId = 'You can only manage staff in your editable teams.'
     formErrorMessage.value = 'Please correct the highlighted fields before saving.'
     return
   }
@@ -260,7 +270,7 @@ function promptDeleteStaff() {
 }
 
 async function confirmDeleteStaff() {
-  if (!selectedStaff.value || deletePending.value || authStore.isReadonly) {
+  if (!canEditSelectedStaff.value || deletePending.value) {
     return
   }
 
@@ -337,7 +347,7 @@ onMounted(() => {
                 <option value="">{{ t('common.allTeams') }}</option>
               <option v-for="team in teamOptions" :key="team.id" :value="String(team.id)">{{ team.name }}</option>
             </select>
-            <button v-if="!authStore.isReadonly" class="flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700" @click="openCreateDrawer">
+             <button v-if="canCreateStaff" class="flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700" @click="openCreateDrawer">
               <Plus class="h-4 w-4" />
               <span>{{ t('workspace.staff.addStaff') }}</span>
             </button>
@@ -486,7 +496,7 @@ onMounted(() => {
             {{ formErrorMessage }}
           </WorkspaceSurface>
 
-          <WorkspaceSurface v-if="confirmDeleteVisible && !authStore.isReadonly" tone="muted" class="space-y-3 border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <WorkspaceSurface v-if="confirmDeleteVisible && canEditSelectedStaff" tone="muted" class="space-y-3 border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
             <p>{{ t('workspace.staff.deleteConfirm', { name: selectedStaff.name }) }}</p>
             <p class="text-xs text-amber-800">{{ t('workspace.staff.deleteWarning') }}</p>
             <div class="flex items-center justify-end gap-2">
@@ -556,7 +566,7 @@ onMounted(() => {
               <span class="font-medium">{{ t('workspace.staff.fields.team') }}</span>
               <select id="staff-teamId" v-model="formState.teamId" name="teamId" :class="['bg-white', ...inputClass('teamId')]">
                 <option value="">{{ t('workspace.staff.selectTeam') }}</option>
-                <option v-for="team in teamOptions" :key="team.id" :value="String(team.id)">{{ team.name }}</option>
+                <option v-for="team in editableTeamOptions" :key="team.id" :value="String(team.id)">{{ team.name }}</option>
               </select>
               <p v-if="fieldErrors.teamId" class="text-xs text-rose-600">{{ fieldErrors.teamId }}</p>
             </label>
@@ -579,7 +589,7 @@ onMounted(() => {
       <template #footer>
         <div class="flex items-center justify-between gap-3">
           <button
-            v-if="drawerMode === 'detail' && selectedStaff && !authStore.isReadonly"
+            v-if="drawerMode === 'detail' && canEditSelectedStaff"
             type="button"
             class="inline-flex items-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="deletePending"
@@ -595,7 +605,7 @@ onMounted(() => {
               {{ t('common.cancel') }}
             </button>
             <button
-              v-if="drawerMode === 'detail' && selectedStaff && !authStore.isReadonly"
+              v-if="drawerMode === 'detail' && canEditSelectedStaff"
               type="button"
               class="inline-flex items-center gap-2 rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-700"
               @click="openEditDrawer"
@@ -604,7 +614,7 @@ onMounted(() => {
               {{ t('workspace.staff.editAction') }}
             </button>
             <button
-              v-else-if="!authStore.isReadonly"
+              v-else-if="canCreateStaff"
               type="button"
               class="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
               :disabled="submitPending"
