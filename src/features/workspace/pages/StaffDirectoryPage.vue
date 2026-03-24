@@ -12,6 +12,7 @@ import WorkspaceSurface from '../components/WorkspaceSurface.vue'
 import { normalizeWorkspaceStaffTimezone, WORKSPACE_STAFF_TIMEZONE_OPTIONS } from '../config/timezones'
 
 const EMPTY_FORM = {
+  staffCodesText: '',
   staffCode: '',
   name: '',
   email: '',
@@ -44,7 +45,23 @@ const formState = reactive({ ...EMPTY_FORM })
 const authStore = useAuthStore()
 const { t } = useI18n()
 
-const staffErrorRules = [
+const createStaffErrorRules = [
+  {
+    match: /staff\s*id|staff\s*code/i,
+    field: 'staffCodesText',
+  },
+  {
+    match: /team/i,
+    field: 'teamId',
+    message: 'Select a valid team.',
+  },
+  {
+    match: ['timezone'],
+    field: 'timezone',
+  },
+]
+
+const updateStaffErrorRules = [
   {
     match: /staff\s*code/i,
     field: 'staffCode',
@@ -118,6 +135,7 @@ const editableTeamOptions = computed(() =>
 )
 const canCreateStaff = computed(() => authStore.canWriteWorkspace)
 const canEditSelectedStaff = computed(() => Boolean(selectedStaff.value) && authStore.canEditTeam(selectedStaff.value.teamId))
+const isCreateDrawer = computed(() => drawerMode.value === 'create')
 
 const drawerOpen = computed(() => Boolean(selectedStaff.value) || formVisible.value)
 
@@ -133,6 +151,18 @@ const drawerTitle = computed(() => {
   return t('workspace.staff.profileTitle')
 })
 
+const drawerSubtitle = computed(() => {
+  if (drawerMode.value === 'create') {
+    return t('workspace.staff.createSubtitle')
+  }
+
+  if (drawerMode.value === 'detail') {
+    return t('workspace.staff.detailSubtitle')
+  }
+
+  return t('workspace.staff.formSubtitle')
+})
+
 function isActiveStatus(status) {
   return (status || '').toUpperCase() === 'ACTIVE'
 }
@@ -146,6 +176,7 @@ function resetForm() {
 
 function fillForm(staff) {
   Object.assign(formState, {
+    staffCodesText: '',
     staffCode: staff?.staffCode || '',
     name: staff?.name || '',
     email: staff?.email || '',
@@ -176,7 +207,56 @@ function buildPayload() {
   }
 }
 
-function validateForm() {
+function buildCreatePayload() {
+  return {
+    staffCodes: parseStaffCodes(),
+    teamId: formState.teamId,
+    timezone: formState.timezone.trim(),
+    status: formState.status,
+    notes: formState.notes.trim(),
+  }
+}
+
+function parseStaffCodes() {
+  return formState.staffCodesText
+    .split(/\r?\n/)
+    .map((value) => value.trim())
+    .filter(Boolean)
+}
+
+function findDuplicateValues(values) {
+  const seen = new Set()
+  const duplicates = new Set()
+
+  values.forEach((value) => {
+    if (seen.has(value)) {
+      duplicates.add(value)
+      return
+    }
+
+    seen.add(value)
+  })
+
+  return [...duplicates]
+}
+
+function validateCreateForm() {
+  clearFieldErrors(fieldErrors)
+
+  const staffCodes = parseStaffCodes()
+  const duplicateStaffCodes = findDuplicateValues(staffCodes)
+
+  if (!staffCodes.length) fieldErrors.staffCodesText = 'Enter at least one Staff ID.'
+  if (duplicateStaffCodes.length) fieldErrors.staffCodesText = `Duplicate Staff ID: ${duplicateStaffCodes.join(', ')}.`
+  if (!formState.teamId) fieldErrors.teamId = 'Team is required.'
+  if (!formState.timezone.trim()) fieldErrors.timezone = 'Timezone is required.'
+  if (formState.timezone.trim().length > 64) fieldErrors.timezone = 'Timezone must be 64 characters or fewer.'
+  if (formState.notes.trim().length > 500) fieldErrors.notes = 'Notes must be 500 characters or fewer.'
+
+  return Object.keys(fieldErrors).length === 0
+}
+
+function validateUpdateForm() {
   clearFieldErrors(fieldErrors)
 
   if (!formState.staffCode.trim()) fieldErrors.staffCode = 'Staff ID is required.'
@@ -229,7 +309,10 @@ async function submitForm() {
   formErrorMessage.value = ''
   confirmDeleteVisible.value = false
 
-  if (!validateForm()) {
+  const errorRules = isCreateDrawer.value ? createStaffErrorRules : updateStaffErrorRules
+  const isValid = isCreateDrawer.value ? validateCreateForm() : validateUpdateForm()
+
+  if (!isValid) {
     formErrorMessage.value = 'Please correct the highlighted fields before saving.'
     return
   }
@@ -242,13 +325,11 @@ async function submitForm() {
   submitPending.value = true
 
   try {
-    const payload = buildPayload()
-
     if (drawerMode.value === 'create') {
-      const created = await api.workspace.createStaff(payload)
-      selectedStaffId.value = created.id
+      const createdStaff = await api.workspace.createStaffBatch(buildCreatePayload())
+      selectedStaffId.value = createdStaff.length === 1 ? createdStaff[0].id : null
     } else if (selectedStaff.value) {
-      const updated = await api.workspace.updateStaff(selectedStaff.value.id, payload)
+      const updated = await api.workspace.updateStaff(selectedStaff.value.id, buildPayload())
       selectedStaffId.value = updated.id
     }
 
@@ -257,7 +338,7 @@ async function submitForm() {
     resetForm()
     await loadStaff()
   } catch (error) {
-    const hasFieldErrors = applyApiFieldErrors(error, fieldErrors, staffErrorRules)
+    const hasFieldErrors = applyApiFieldErrors(error, fieldErrors, errorRules)
     formErrorMessage.value = hasFieldErrors ? 'Please correct the highlighted fields before saving.' : getApiErrorMessage(error, 'Failed to save staff profile.')
   } finally {
     submitPending.value = false
@@ -434,7 +515,7 @@ onMounted(() => {
 
     <WorkspaceDrawer :model-value="drawerOpen" :title="drawerTitle" width="460px" @update:model-value="closeDrawer">
       <template #subtitle>
-        <p class="mt-1 text-xs text-slate-500">{{ drawerMode === 'detail' ? t('workspace.staff.detailSubtitle') : t('workspace.staff.formSubtitle') }}</p>
+        <p class="mt-1 text-xs text-slate-500">{{ drawerSubtitle }}</p>
       </template>
 
       <template v-if="drawerMode === 'detail' && selectedStaff">
@@ -517,7 +598,52 @@ onMounted(() => {
             {{ formErrorMessage }}
           </WorkspaceSurface>
 
-          <div class="grid gap-4 md:grid-cols-2">
+          <div v-if="isCreateDrawer" class="space-y-5">
+            <label class="space-y-2 text-sm text-slate-700">
+              <span class="font-medium">{{ t('workspace.staff.fields.staffIds') }}</span>
+              <textarea id="staff-staffCodesText" v-model="formState.staffCodesText" name="staffCodesText" rows="8" :class="inputClass('staffCodesText')"></textarea>
+              <p class="text-xs text-slate-500">{{ t('workspace.staff.batchStaffHint') }}</p>
+              <p v-if="fieldErrors.staffCodesText" class="text-xs text-rose-600">{{ fieldErrors.staffCodesText }}</p>
+            </label>
+
+            <WorkspaceSurface tone="muted" class="border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+              {{ t('workspace.staff.autoFillHint') }}
+            </WorkspaceSurface>
+
+            <div class="grid gap-4 md:grid-cols-2">
+              <label class="space-y-2 text-sm text-slate-700">
+                <span class="font-medium">{{ t('workspace.staff.fields.team') }}</span>
+                <select id="staff-teamId" v-model="formState.teamId" name="teamId" :class="['bg-white', ...inputClass('teamId')]">
+                  <option value="">{{ t('workspace.staff.selectTeam') }}</option>
+                  <option v-for="team in editableTeamOptions" :key="team.id" :value="String(team.id)">{{ team.name }}</option>
+                </select>
+                <p v-if="fieldErrors.teamId" class="text-xs text-rose-600">{{ fieldErrors.teamId }}</p>
+              </label>
+              <label class="space-y-2 text-sm text-slate-700">
+                <span class="font-medium">{{ t('workspace.staff.fields.timezone') }}</span>
+                <select id="staff-timezone" v-model="formState.timezone" name="timezone" :class="['bg-white', ...inputClass('timezone')]">
+                  <option v-for="timezoneOption in WORKSPACE_STAFF_TIMEZONE_OPTIONS" :key="timezoneOption.value" :value="timezoneOption.value">
+                    {{ timezoneOption.label }}
+                  </option>
+                </select>
+                <p v-if="fieldErrors.timezone" class="text-xs text-rose-600">{{ fieldErrors.timezone }}</p>
+              </label>
+              <label class="space-y-2 text-sm text-slate-700">
+                <span class="font-medium">{{ t('workspace.staff.fields.status') }}</span>
+                <select id="staff-status" v-model="formState.status" name="status" class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20">
+                  <option value="ACTIVE">{{ t('common.active') }}</option>
+                  <option value="INACTIVE">{{ t('common.inactive') }}</option>
+                </select>
+              </label>
+              <label class="space-y-2 text-sm text-slate-700 md:col-span-2">
+                <span class="font-medium">{{ t('workspace.staff.fields.notes') }}</span>
+                <textarea id="staff-notes" v-model="formState.notes" name="notes" rows="4" :class="inputClass('notes')"></textarea>
+                <p v-if="fieldErrors.notes" class="text-xs text-rose-600">{{ fieldErrors.notes }}</p>
+              </label>
+            </div>
+          </div>
+
+          <div v-else class="grid gap-4 md:grid-cols-2">
             <label class="space-y-2 text-sm text-slate-700">
               <span class="font-medium">{{ t('workspace.staff.fields.staffId') }}</span>
               <input id="staff-staffCode" v-model="formState.staffCode" name="staffCode" type="text" :class="inputClass('staffCode')" />
