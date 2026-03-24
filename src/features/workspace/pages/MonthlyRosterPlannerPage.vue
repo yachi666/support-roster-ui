@@ -93,6 +93,10 @@ const activeFilterSummary = computed(() => {
 
   return filters
 })
+const selectedAssignmentEditable = computed(() => {
+  const teamId = selectedAssignment.value?.group?.teamId || selectedAssignment.value?.staff?.teamId
+  return authStore.canEditTeam(teamId)
+})
 
 const visibleStaffRows = computed(() =>
   filteredGroups.value.flatMap((group) =>
@@ -164,7 +168,7 @@ function openSelectedCell(payload) {
 }
 
 function applyAndAdvanceDay() {
-  if (authStore.isReadonly || !selectedCell.value) {
+  if (!selectedAssignmentEditable.value || !selectedCell.value) {
     return
   }
 
@@ -180,7 +184,7 @@ function applyAndAdvanceDay() {
 }
 
 function copyWeekForward() {
-  if (authStore.isReadonly) {
+  if (!selectedAssignmentEditable.value) {
     return
   }
   const result = copySelectedWeekToNextWeek()
@@ -192,7 +196,7 @@ function copyWeekForward() {
 }
 
 function applyRangeForward(endDay) {
-  if (authStore.isReadonly) {
+  if (!selectedAssignmentEditable.value) {
     return
   }
   const result = applySelectedRange(endDay)
@@ -301,7 +305,7 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
         </div>
         <div class="h-4 w-px bg-slate-200"></div>
         <RouterLink
-          v-if="!authStore.isReadonly"
+          v-if="authStore.canWriteWorkspace"
           to="/workspace/import-export"
           class="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
         >
@@ -408,7 +412,7 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
 
     <Transition name="status-bar">
       <div
-        v-if="hasUnsavedChanges && !authStore.isReadonly"
+        v-if="hasUnsavedChanges && authStore.canWriteWorkspace"
         class="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-6 rounded-xl border border-slate-700 bg-slate-800 px-5 py-3 text-white shadow-lg shadow-slate-900/20"
       >
         <div class="flex items-center gap-2">
@@ -419,9 +423,9 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
           <button class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-slate-700" @click="discardChanges">
             {{ t('workspace.roster.discard') }}
           </button>
-          <button class="flex items-center gap-1.5 rounded-md bg-teal-500 px-4 py-1.5 text-xs font-semibold text-slate-900 shadow-sm transition-colors hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-70" :disabled="saving || authStore.isReadonly" @click="!authStore.isReadonly && saveChanges()">
+          <button class="flex items-center gap-1.5 rounded-md bg-teal-500 px-4 py-1.5 text-xs font-semibold text-slate-900 shadow-sm transition-colors hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-70" :disabled="saving || !authStore.canWriteWorkspace" @click="authStore.canWriteWorkspace && saveChanges()">
             <Save class="h-3.5 w-3.5" />
-            {{ authStore.isReadonly ? t('common.readonlyMode') : saving ? t('common.saving') : t('workspace.roster.saveChanges') }}
+            {{ !authStore.canWriteWorkspace ? t('common.readonlyMode') : saving ? t('common.saving') : t('workspace.roster.saveChanges') }}
           </button>
         </div>
       </div>
@@ -430,19 +434,19 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
     <AssignmentDrawer
       v-model="drawerOpen"
       :assignment="selectedAssignment"
-      :readonly="authStore.isReadonly"
+      :readonly="!selectedAssignmentEditable"
       :selected-range="selectedRange"
       :selected-shift-code="selectedShiftCode"
       :shift-code-options="shiftCodeOptions"
       :validation-warning="validationWarning"
       :year="year"
       :month="month"
-      @select-code="!authStore.isReadonly && setShiftCode($event)"
-      @apply="!authStore.isReadonly && applySelectedShift()"
+      @select-code="selectedAssignmentEditable && setShiftCode($event)"
+      @apply="selectedAssignmentEditable && applySelectedShift()"
       @apply-and-next="applyAndAdvanceDay"
       @copy-week="copyWeekForward"
       @apply-range="applyRangeForward"
-      @clear-range="!authStore.isReadonly && clearRangeSelection()"
+      @clear-range="selectedAssignmentEditable && clearRangeSelection()"
     />
   </div>
 </template>

@@ -120,6 +120,16 @@ const visibleShifts = computed(() => {
 
 const selectedShift = computed(() => shiftDefinitions.value.find((shift) => shift.id === selectedShiftId.value) || null)
 const drawerOpen = computed(() => Boolean(selectedShift.value) || formVisible.value)
+const editableTeamOptions = computed(() =>
+  teams.value.filter((team) => authStore.isAdmin || authStore.canEditTeam(team.id)),
+)
+const canCreateShift = computed(() => authStore.canWriteWorkspace)
+const selectedShiftTeamIds = computed(() =>
+  getShiftTeams(selectedShift.value)
+    .map((team) => String(team.id || ''))
+    .filter(Boolean),
+)
+const canEditSelectedShift = computed(() => Boolean(selectedShift.value) && authStore.canEditAllTeams(selectedShiftTeamIds.value))
 
 function previewStyle(shift) {
   const start = (toMinutes(shift.startTime) / 1440) * 100
@@ -222,7 +232,7 @@ function fillForm(shift) {
 }
 
 function openCreateDrawer() {
-  if (authStore.isReadonly) {
+  if (!canCreateShift.value) {
     return
   }
   selectedShiftId.value = null
@@ -231,7 +241,7 @@ function openCreateDrawer() {
 }
 
 function openShiftDrawer(shift) {
-  if (authStore.isReadonly) {
+  if (!authStore.canEditAllTeams(getShiftTeams(shift).map((team) => team.id))) {
     return
   }
   selectedShiftId.value = shift.id
@@ -259,7 +269,7 @@ function validateForm() {
 }
 
 async function saveShift() {
-  if (submitPending.value || authStore.isReadonly) {
+  if (submitPending.value || !canCreateShift.value) {
     return
   }
 
@@ -267,6 +277,11 @@ async function saveShift() {
   confirmDeleteVisible.value = false
 
   if (!validateForm()) {
+    formErrorMessage.value = 'Please correct the highlighted fields before saving.'
+    return
+  }
+  if (!authStore.canEditAllTeams(formState.teamIds)) {
+    fieldErrors.teamIds = 'You can only manage shifts for your editable teams.'
     formErrorMessage.value = 'Please correct the highlighted fields before saving.'
     return
   }
@@ -309,7 +324,7 @@ function promptDeleteShift() {
 }
 
 async function confirmDeleteShift() {
-  if (!selectedShift.value || deletePending.value || authStore.isReadonly) {
+  if (!canEditSelectedShift.value || deletePending.value) {
     return
   }
 
@@ -378,7 +393,7 @@ onMounted(() => {
                 <option value="">{{ t('common.allTeams') }}</option>
               <option v-for="team in teams" :key="team.id" :value="String(team.id)">{{ team.name }}</option>
             </select>
-            <button v-if="!authStore.isReadonly" class="flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700" @click="openCreateDrawer">
+            <button v-if="canCreateShift" class="flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700" @click="openCreateDrawer">
               <Plus class="h-4 w-4" />
               {{ t('workspace.shifts.createAction') }}
             </button>
@@ -474,7 +489,7 @@ onMounted(() => {
           {{ formErrorMessage }}
         </WorkspaceSurface>
 
-        <WorkspaceSurface v-if="confirmDeleteVisible && selectedShift && !authStore.isReadonly" tone="muted" class="space-y-3 border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <WorkspaceSurface v-if="confirmDeleteVisible && canEditSelectedShift" tone="muted" class="space-y-3 border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           <p>{{ t('workspace.shifts.deleteConfirm', { code: selectedShift.code }) }}</p>
           <p class="text-xs text-amber-800">{{ t('workspace.shifts.deleteWarning') }}</p>
           <div class="flex items-center justify-end gap-2">
@@ -496,7 +511,7 @@ onMounted(() => {
                 <span>{{ t('workspace.shifts.selectedCount', { count: formState.teamIds.length }) }}</span>
               </div>
               <div class="grid gap-2 md:grid-cols-2">
-                <label v-for="team in teams" :key="team.id" class="flex cursor-pointer items-center gap-3 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 transition-colors hover:border-teal-300 hover:bg-teal-50/40">
+                <label v-for="team in editableTeamOptions" :key="team.id" class="flex cursor-pointer items-center gap-3 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 transition-colors hover:border-teal-300 hover:bg-teal-50/40">
                   <input :checked="formState.teamIds.includes(String(team.id))" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" @change="toggleFormTeam(team.id)" />
                   <span class="h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: team.color || '#94a3b8' }"></span>
                   <span>{{ team.name }}</span>
@@ -581,7 +596,7 @@ onMounted(() => {
       <template #footer>
         <div class="flex items-center justify-between gap-3">
           <button
-            v-if="selectedShift && !authStore.isReadonly"
+            v-if="canEditSelectedShift"
             type="button"
             class="inline-flex items-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="deletePending"
@@ -593,7 +608,7 @@ onMounted(() => {
           <div v-else></div>
           <div class="flex items-center gap-3">
             <button type="button" class="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50" @click="closeDrawer">{{ t('common.cancel') }}</button>
-            <button v-if="!authStore.isReadonly" type="button" class="inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60" :disabled="submitPending" @click="saveShift">
+            <button v-if="canCreateShift" type="button" class="inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60" :disabled="submitPending" @click="saveShift">
               <Pencil class="h-4 w-4" />
               {{ submitPending ? t('common.saving') : selectedShift ? t('workspace.shifts.saveAction') : t('workspace.shifts.createShift') }}
             </button>

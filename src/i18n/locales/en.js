@@ -66,6 +66,7 @@ export default {
     roles: {
       admin: 'Admin',
       editor: 'Editor',
+      guest: 'Guest',
       readonly: 'Readonly',
       workspace: 'Workspace',
       userFallback: 'Workspace User',
@@ -353,6 +354,14 @@ export default {
       createAction: 'Create Account',
       activationTitle: 'Activation note',
       activationBody: 'First-time activation currently relies on staff ID only and is intended for intranet/testing rollout. Production release still needs a stronger activation check.',
+      accessPolicyTitle: 'Workspace access policy',
+      accessPolicyBody: 'Anonymous visitors can open `/workspace` in readonly mode. Use these switches to decide which workspace pages still require login.',
+      accessPolicyLoading: 'Loading workspace access policy...',
+      accessPolicyLocked: 'Always protected',
+      accessPolicyRequireLogin: 'Require login',
+      accessPolicyHint: 'When disabled, guests can open the page but stay in readonly mode.',
+      accessPolicyPublicReadonly: 'Anonymous users can read this page.',
+      accessPolicyLoginRequired: 'Login is required before this page can be opened.',
       columns: {
         staff: 'Staff',
         role: 'Role',

@@ -36,49 +36,54 @@ const router = createRouter({
     {
       path: '/workspace',
       component: WorkspaceLayout,
-      meta: { requiresAuth: true },
       children: [
         {
           path: '',
           name: 'workspace-overview',
           component: OverviewDashboardPage,
+          meta: { workspacePageCode: 'overview' },
         },
         {
           path: 'roster',
           name: 'workspace-roster',
           component: MonthlyRosterPlannerPage,
+          meta: { workspacePageCode: 'roster' },
         },
         {
           path: 'staff',
           name: 'workspace-staff',
           component: StaffDirectoryPage,
+          meta: { workspacePageCode: 'staff' },
         },
         {
           path: 'shifts',
           name: 'workspace-shifts',
           component: ShiftDefinitionsPage,
+          meta: { workspacePageCode: 'shifts' },
         },
         {
           path: 'teams',
           name: 'workspace-teams',
           component: TeamMappingPage,
-          meta: { roles: ['admin'] },
+          meta: { workspacePageCode: 'teams', requiresAuth: true, roles: ['admin'] },
         },
         {
           path: 'import-export',
           name: 'workspace-import-export',
           component: ImportExportCenterPage,
+          meta: { workspacePageCode: 'import-export' },
         },
         {
           path: 'validation',
           name: 'workspace-validation',
           component: ValidationCenterPage,
+          meta: { workspacePageCode: 'validation' },
         },
         {
           path: 'accounts',
           name: 'workspace-accounts',
           component: AccountManagementPage,
-          meta: { roles: ['admin'] },
+          meta: { workspacePageCode: 'accounts', requiresAuth: true, roles: ['admin'] },
         },
       ],
     },
@@ -92,11 +97,21 @@ router.beforeEach(async (to) => {
     await authStore.initSession()
   }
 
+  if (!authStore.workspaceAccessLoaded) {
+    await authStore.ensureWorkspaceAccessPolicy()
+  }
+
   if (to.meta.guestOnly && authStore.isAuthenticated) {
     return typeof to.query.redirect === 'string' ? to.query.redirect : '/workspace'
   }
 
+  const workspacePageCode = [...to.matched]
+    .reverse()
+    .map((record) => record.meta?.workspacePageCode)
+    .find((pageCode) => typeof pageCode === 'string')
+
   const requiresAuth = to.matched.some((record) => record.meta?.requiresAuth)
+    || (workspacePageCode ? authStore.isWorkspacePageLoginRequired(workspacePageCode) : false)
   if (!requiresAuth) {
     return true
   }

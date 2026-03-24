@@ -35,6 +35,11 @@ const iconMap = {
 }
 
 async function loadValidationIssueCount() {
+  if (!authStore.canAccessWorkspacePage('validation')) {
+    validationIssueCount.value = null
+    return
+  }
+
   try {
     const response = await api.workspace.getValidation(year.value, month.value, { summaryOnly: true })
     validationIssueCount.value = (response?.summary?.high ?? 0) + (response?.summary?.medium ?? 0) + (response?.summary?.low ?? 0)
@@ -45,6 +50,7 @@ async function loadValidationIssueCount() {
 
 const navigation = computed(() =>
   workspaceNavigation
+    .filter((item) => authStore.canAccessWorkspacePage(item.pageCode))
     .filter((item) => !item.roles || authStore.hasAnyRole(item.roles))
     .map((item) => ({
       ...item,
@@ -54,15 +60,16 @@ const navigation = computed(() =>
     })),
 )
 
-const currentUserLabel = computed(() => authStore.currentUser?.staffName || t('workspace.roles.userFallback'))
+const currentUserLabel = computed(() => authStore.workspaceUser?.staffName || t('workspace.roles.userFallback'))
 const currentRoleLabel = computed(() => {
+  if (!authStore.isAuthenticated) return t('workspace.roles.guest')
   if (authStore.isAdmin) return t('workspace.roles.admin')
   if (authStore.isEditor) return t('workspace.roles.editor')
   if (authStore.isReadonly) return t('workspace.roles.readonly')
   return t('workspace.roles.workspace')
 })
 const currentInitials = computed(() => {
-  const source = authStore.currentUser?.staffName || authStore.currentUser?.staffId || 'WU'
+  const source = authStore.workspaceUser?.staffName || authStore.workspaceUser?.staffId || 'WU'
   return source
     .split(/\s+/)
     .filter(Boolean)
@@ -72,6 +79,11 @@ const currentInitials = computed(() => {
 })
 
 async function handleLogout() {
+  if (!authStore.isAuthenticated) {
+    await router.push({ path: '/login', query: { redirect: route.fullPath } })
+    return
+  }
+
   await authStore.logout()
   await router.push('/login')
 }
@@ -139,7 +151,7 @@ watch([year, month], () => {
         </div>
       </div>
       <button class="mt-3 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50" @click="void handleLogout()">
-        {{ t('workspace.shell.logout') }}
+        {{ authStore.isAuthenticated ? t('workspace.shell.logout') : t('auth.submitSignIn') }}
       </button>
     </div>
   </aside>

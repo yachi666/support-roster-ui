@@ -4,6 +4,7 @@ import { KeyRound, Plus, RefreshCcw, Search, ShieldAlert, UserCog, UserRoundChec
 import { useI18n } from 'vue-i18n'
 import { api } from '@/api'
 import { useAuthStore } from '@/stores/auth'
+import { workspaceNavigation } from '../config/navigation'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
@@ -37,6 +38,10 @@ const selectedAccountId = shallowRef(null)
 const submitPending = shallowRef(false)
 const actionPending = shallowRef(false)
 const formErrorMessage = shallowRef('')
+const accessPolicy = shallowRef([])
+const accessPolicyLoading = shallowRef(false)
+const accessPolicyPending = shallowRef(false)
+const accessPolicyErrorMessage = shallowRef('')
 const fieldErrors = reactive({})
 const formState = reactive({ ...EMPTY_FORM })
 
@@ -72,6 +77,35 @@ const filteredAccounts = computed(() => {
     .includes(query))
 })
 const isEditorRole = computed(() => formState.roleCode === 'editor')
+const workspacePageOptions = computed(() => {
+  const policyByCode = new Map((accessPolicy.value || []).map((page) => [page.pageCode, page]))
+
+  return workspaceNavigation
+    .filter((item) => item.pageCode)
+    .map((item) => {
+      const policy = policyByCode.get(item.pageCode)
+      return policy
+        ? {
+            ...policy,
+            label: t(item.labelKey),
+          }
+        : null
+    })
+    .filter(Boolean)
+})
+const accessPolicySignature = computed(() => JSON.stringify(
+  workspacePageOptions.value.map((page) => ({
+    pageCode: page.pageCode,
+    authRequired: Boolean(page.authRequired),
+  })),
+))
+const storeAccessPolicySignature = computed(() => JSON.stringify(
+  (authStore.workspaceAccessPolicy || []).map((page) => ({
+    pageCode: page.pageCode,
+    authRequired: Boolean(page.authRequired),
+  })),
+))
+const hasAccessPolicyChanges = computed(() => accessPolicySignature.value !== storeAccessPolicySignature.value)
 
 function resetForm() {
   Object.assign(formState, { ...EMPTY_FORM })
@@ -161,6 +195,18 @@ function buildPayload() {
   }
 }
 
+function syncAccessPolicyFromStore() {
+  accessPolicy.value = (authStore.workspaceAccessPolicy || []).map((page) => ({ ...page }))
+}
+
+function setPageAuthRequired(pageCode, authRequired) {
+  accessPolicy.value = (accessPolicy.value || []).map((page) => (
+    page.pageCode === pageCode
+      ? { ...page, authRequired }
+      : page
+  ))
+}
+
 async function loadAccounts() {
   loading.value = true
   errorMessage.value = ''
@@ -186,6 +232,43 @@ async function loadTeams() {
     teams.value = await api.workspace.getTeams()
   } catch {
     teams.value = []
+  }
+}
+
+async function loadAccessPolicy(force = false) {
+  accessPolicyLoading.value = true
+  accessPolicyErrorMessage.value = ''
+  try {
+    await authStore.ensureWorkspaceAccessPolicy(force)
+    syncAccessPolicyFromStore()
+  } catch (error) {
+    accessPolicyErrorMessage.value = getApiErrorMessage(error, 'Failed to load workspace access policy.')
+  } finally {
+    accessPolicyLoading.value = false
+  }
+}
+
+async function saveAccessPolicy() {
+  if (accessPolicyPending.value || !hasAccessPolicyChanges.value) {
+    return
+  }
+
+  accessPolicyPending.value = true
+  accessPolicyErrorMessage.value = ''
+  try {
+    await authStore.updateWorkspaceAccessPolicy({
+      pages: (accessPolicy.value || [])
+        .filter((page) => page.configurable)
+        .map((page) => ({
+          pageCode: page.pageCode,
+          authRequired: Boolean(page.authRequired),
+        })),
+    })
+    syncAccessPolicyFromStore()
+  } catch (error) {
+    accessPolicyErrorMessage.value = getApiErrorMessage(error, 'Failed to save workspace access policy.')
+  } finally {
+    accessPolicyPending.value = false
   }
 }
 
@@ -264,7 +347,7 @@ watch(() => formState.roleCode, (roleCode) => {
 })
 
 onMounted(async () => {
-  await Promise.all([loadAccounts(), loadStaff(), loadTeams()])
+  await Promise.all([loadAccounts(), loadStaff(), loadTeams(), loadAccessPolicy()])
 })
 </script>
 
@@ -316,6 +399,66 @@ onMounted(async () => {
             <p class="mt-1 text-sm leading-relaxed text-amber-800/80">
               {{ t('workspace.accounts.activationBody') }}
             </p>
+          </div>
+        </WorkspaceSurface>
+
+        <WorkspaceSurface class="space-y-4 p-5">
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h3 class="text-sm font-semibold text-slate-900">{{ t('workspace.accounts.accessPolicyTitle') }}</h3>
+              <p class="mt-1 max-w-3xl text-sm text-slate-600">{{ t('workspace.accounts.accessPolicyBody') }}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50" :disabled="accessPolicyLoading || accessPolicyPending" @click="void loadAccessPolicy(true)">
+                <RefreshCcw class="h-4 w-4" />
+                {{ t('common.refresh') }}
+              </button>
+              <button class="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60" :disabled="accessPolicyLoading || accessPolicyPending || !hasAccessPolicyChanges" @click="void saveAccessPolicy()">
+                {{ accessPolicyPending ? t('common.saving') : t('common.save') }}
+              </button>
+            </div>
+          </div>
+
+          <WorkspaceSurface v-if="accessPolicyErrorMessage" tone="muted" class="border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+            <div class="flex items-center justify-between gap-4">
+              <span>{{ accessPolicyErrorMessage }}</span>
+              <button class="rounded-md border border-rose-200 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 transition-colors hover:bg-rose-100" @click="void loadAccessPolicy(true)">
+                {{ t('common.retry') }}
+              </button>
+            </div>
+          </WorkspaceSurface>
+
+          <div v-if="accessPolicyLoading" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+            {{ t('workspace.accounts.accessPolicyLoading') }}
+          </div>
+
+          <div v-else class="grid gap-3 md:grid-cols-2">
+            <div v-for="page in workspacePageOptions" :key="page.pageCode" class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <div class="text-sm font-semibold text-slate-900">{{ page.label }}</div>
+                  <p class="mt-1 text-xs text-slate-500">
+                    {{ page.authRequired ? t('workspace.accounts.accessPolicyLoginRequired') : t('workspace.accounts.accessPolicyPublicReadonly') }}
+                  </p>
+                </div>
+                <span v-if="!page.configurable" class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-500">
+                  {{ t('workspace.accounts.accessPolicyLocked') }}
+                </span>
+              </div>
+
+              <label class="mt-4 flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700" :class="page.configurable ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'">
+                <div>
+                  <div class="font-medium">{{ t('workspace.accounts.accessPolicyRequireLogin') }}</div>
+                  <div class="text-xs text-slate-500">{{ t('workspace.accounts.accessPolicyHint') }}</div>
+                </div>
+                <input
+                  type="checkbox"
+                  :checked="Boolean(page.authRequired)"
+                  :disabled="!page.configurable || accessPolicyPending"
+                  @change="setPageAuthRequired(page.pageCode, $event.target.checked)"
+                />
+              </label>
+            </div>
           </div>
         </WorkspaceSurface>
 
