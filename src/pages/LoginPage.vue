@@ -51,12 +51,12 @@ async function submit() {
     return
   }
 
-  if (mode.value === 'login' && !formState.password.trim()) {
+  if (mode.value === 'login' && !formState.password.length) {
     errorMessage.value = t('auth.errors.passwordRequired')
     return
   }
 
-  if (mode.value === 'activate' && formState.newPassword.trim().length < 8) {
+  if (mode.value === 'activate' && formState.newPassword.length < 8) {
     errorMessage.value = t('auth.errors.newPasswordMin')
     return
   }
@@ -66,12 +66,12 @@ async function submit() {
     if (mode.value === 'activate') {
       await authStore.activate({
         staffId: formState.staffId.trim(),
-        newPassword: formState.newPassword.trim(),
+        newPassword: formState.newPassword,
       })
     } else {
       await authStore.login({
         staffId: formState.staffId.trim(),
-        password: formState.password.trim(),
+        password: formState.password,
       })
     }
     await router.replace(redirectTarget.value)
