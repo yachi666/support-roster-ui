@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, shallowRef } from 'vue'
-import { CheckCircle2, Clock3, Globe, Mail, Pencil, Plus, Search, Trash2, XCircle } from 'lucide-vue-next'
+import { CheckCircle2, Clock3, Globe, Mail, Pencil, Phone, Plus, Search, Trash2, XCircle } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { api } from '@/api'
 import { useAuthStore } from '@/stores/auth'
@@ -537,6 +537,10 @@ onMounted(() => {
               <div class="flex items-center gap-3">
                 <Mail class="h-4 w-4 text-slate-400" />
                 <span>{{ selectedStaff.email || '-' }}</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <Phone class="h-4 w-4 text-slate-400" />
+                <span>{{ selectedStaff.phone || '-' }}</span>
               </div>
               <div class="flex items-center gap-3">
                 <Globe class="h-4 w-4 text-slate-400" />

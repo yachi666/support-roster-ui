@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, reactive, shallowRef } from 'vue'
+import { computed, onMounted, reactive, shallowRef, watch } from 'vue'
 import { GripVertical, HelpCircle, Plus, Trash2 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { api } from '@/api'
@@ -35,12 +35,16 @@ const { t } = useI18n()
 
 const teamErrorRules = [
   {
-    match: /team\s*name|\bname\b/i,
+    match: /team\s+name/i,
     field: 'name',
   },
   {
-    match: /color/i,
+    match: /hex color|team color|color/i,
     field: 'color',
+  },
+  {
+    match: /description/i,
+    field: 'description',
   },
 ]
 
@@ -206,6 +210,19 @@ function validateForm() {
   return Object.keys(fieldErrors).length === 0
 }
 
+function clearFormFeedback(fieldName = null) {
+  formErrorMessage.value = ''
+
+  if (!fieldName) {
+    clearFieldErrors(fieldErrors)
+    return
+  }
+
+  if (fieldErrors[fieldName]) {
+    delete fieldErrors[fieldName]
+  }
+}
+
 async function saveTeam() {
   if (submitPending.value || !canManageTeams.value) {
     return
@@ -239,6 +256,7 @@ async function saveTeam() {
     await loadTeams()
     closeDrawer()
   } catch (error) {
+    clearFieldErrors(fieldErrors)
     const hasFieldErrors = applyApiFieldErrors(error, fieldErrors, teamErrorRules)
     formErrorMessage.value = hasFieldErrors
       ? 'Please correct the highlighted fields before saving.'
@@ -298,6 +316,28 @@ function inputClass(fieldName) {
 onMounted(() => {
   void loadTeams()
 })
+
+watch(
+  () => formState.name,
+  () => clearFormFeedback('name'),
+)
+
+watch(
+  () => formState.color,
+  () => clearFormFeedback('color'),
+)
+
+watch(
+  () => formState.description,
+  () => clearFormFeedback('description'),
+)
+
+watch(
+  () => formState.visible,
+  () => {
+    formErrorMessage.value = ''
+  },
+)
 </script>
 
 <template>
@@ -399,7 +439,7 @@ onMounted(() => {
               v-for="team in sortedTeams"
               :key="team.id"
               :class="[
-                'group flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md',
+                'group flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md',
                 reorderPending ? 'cursor-wait' : canManageTeams ? 'cursor-pointer' : 'cursor-default',
                 dragOverTeamId === team.id ? 'border-teal-300 bg-teal-50/70 shadow-teal-100' : '',
               ]"
@@ -412,12 +452,7 @@ onMounted(() => {
               @click="openTeamDrawer(team)"
             >
               <div
-                class="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-300 transition-colors group-hover:text-slate-500"
-              >
-                <GripVertical class="h-5 w-5" />
-              </div>
-              <div
-                class="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-2xl border border-white/70 shadow-sm"
+                class="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-2xl border border-white/70 shadow-sm"
                 :style="teamColorStyle(team)"
               >
                 <div class="absolute inset-0 bg-white/15"></div>
@@ -445,29 +480,13 @@ onMounted(() => {
                 <p v-else class="mt-1 text-sm text-slate-400">
                   {{ t('workspace.teams.dragFallback') }}
                 </p>
-                <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                  <span
-                    class="rounded-full border px-2.5 py-1 font-medium"
-                    :class="
-                      team.visible
-                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                        : 'border-slate-200 bg-slate-50 text-slate-500'
-                    "
-                  >
-                     {{ team.visible ? t('workspace.teams.shownPublic') : t('workspace.teams.internalOnly') }}
-                   </span>
-                    <span
-                      class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-500"
-                    >
-                      {{ canManageTeams ? t('workspace.teams.clickToEdit') : t('common.readonlyMode') }}
-                    </span>
-                 </div>
-               </div>
-               <div class="hidden text-right md:block">
-                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">{{ t('workspace.teams.drag') }}</p>
-                 <p class="mt-1 text-xs text-slate-400">{{ t('workspace.teams.moveInList') }}</p>
-               </div>
-             </WorkspaceSurface>
+              </div>
+              <div
+                class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-300 transition-colors group-hover:text-slate-500"
+              >
+                <GripVertical class="h-4 w-4" />
+              </div>
+            </WorkspaceSurface>
             <WorkspaceSurface
               v-if="!loading && !sortedTeams.length"
               class="p-6 text-sm text-slate-500"
@@ -528,7 +547,7 @@ onMounted(() => {
                 :padded="false"
                 class="overflow-hidden border-slate-200/80 shadow-sm"
               >
-                <div class="flex items-center justify-between bg-slate-900 px-4 py-3">
+                <div class="flex items-center justify-between bg-slate-900 px-3.5 py-2">
                   <span class="text-xs font-semibold text-white">{{ t('workspace.teams.viewerTitle') }}</span>
                   <div class="flex gap-1.5">
                     <div class="h-2 w-2 rounded-full bg-slate-600"></div>
@@ -536,18 +555,18 @@ onMounted(() => {
                     <div class="h-2 w-2 rounded-full bg-slate-600"></div>
                   </div>
                 </div>
-                <div class="space-y-4 bg-gradient-to-b from-slate-50 to-white p-4">
+                <div class="space-y-2.5 bg-gradient-to-b from-slate-50 to-white p-2.5">
                   <div
                     v-for="team in visibleTeams"
                     :key="team.id"
-                    class="rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm"
+                    class="rounded-xl border border-slate-200/80 bg-white px-2.5 py-2 shadow-sm"
                   >
-                    <div class="flex items-start gap-3">
-                      <div class="mt-0.5 h-3 w-3 rounded-full" :style="teamColorStyle(team)"></div>
+                    <div class="flex items-start gap-2">
+                      <div class="mt-0.5 h-2 w-2 rounded-full" :style="teamColorStyle(team)"></div>
                       <div class="min-w-0 flex-1">
-                        <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center justify-between gap-2">
                           <span
-                            class="truncate text-xs font-semibold uppercase tracking-wide text-slate-700"
+                            class="truncate text-[11px] font-semibold uppercase tracking-wide text-slate-700"
                           >
                             {{ team.name }}
                           </span>
@@ -559,17 +578,17 @@ onMounted(() => {
                         </div>
                         <p
                           v-if="team.description"
-                          class="mt-1 line-clamp-2 text-xs leading-5 text-slate-500"
+                          class="mt-0.5 line-clamp-2 text-[10px] leading-4 text-slate-500"
                         >
                           {{ team.description }}
                         </p>
                         <div
-                          class="mt-3 flex gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-[11px] text-slate-500"
+                          class="mt-1.5 flex gap-1.5 rounded-lg border border-slate-100 bg-slate-50 px-2 py-1.5 text-[10px] text-slate-500"
                         >
-                          <div class="h-7 w-7 flex-shrink-0 rounded-full bg-white shadow-sm"></div>
+                          <div class="h-5 w-5 flex-shrink-0 rounded-full bg-white shadow-sm"></div>
                           <div class="flex-1">
-                            <div class="mb-1 h-2 w-20 rounded bg-slate-200"></div>
-                            <div class="h-1.5 w-14 rounded bg-slate-100"></div>
+                            <div class="mb-1 h-1.5 w-12 rounded bg-slate-200"></div>
+                            <div class="h-1 w-10 rounded bg-slate-100"></div>
                           </div>
                         </div>
                       </div>
