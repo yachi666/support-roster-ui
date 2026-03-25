@@ -1,12 +1,13 @@
 <script setup>
 import { computed, onMounted, reactive, shallowRef, watch } from 'vue'
-import { KeyRound, Plus, RefreshCcw, Search, ShieldAlert, UserCog, UserRoundCheck, UserRoundX } from 'lucide-vue-next'
+import { KeyRound, Plus, RefreshCcw, Search, ShieldAlert, Trash2, UserCog, UserRoundCheck, UserRoundX } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { api } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { workspaceNavigation } from '../config/navigation'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
+import WorkspaceModal from '../components/WorkspaceModal.vue'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
 
@@ -34,10 +35,12 @@ const teams = shallowRef([])
 const loading = shallowRef(false)
 const errorMessage = shallowRef('')
 const drawerOpen = shallowRef(false)
+const accessPolicyModalOpen = shallowRef(false)
 const selectedAccountId = shallowRef(null)
 const submitPending = shallowRef(false)
 const actionPending = shallowRef(false)
 const formErrorMessage = shallowRef('')
+const confirmDeleteVisible = shallowRef(false)
 const accessPolicy = shallowRef([])
 const accessPolicyLoading = shallowRef(false)
 const accessPolicyPending = shallowRef(false)
@@ -53,6 +56,7 @@ const accountErrorRules = [
 
 const selectedAccount = computed(() => accounts.value.find((account) => account.id === selectedAccountId.value) || null)
 const isCreateMode = computed(() => !selectedAccount.value)
+const isManagingCurrentAccount = computed(() => selectedAccount.value?.id === authStore.currentUser?.accountId)
 const selectedCreateTeam = computed(() => teams.value.find((team) => String(team.id) === String(formState.createTeamId)) || null)
 const selectedStaffOption = computed(() => staffOptions.value.find((staff) => String(staff.id) === String(formState.staffRecordId)) || null)
 const availableStaffOptions = computed(() => {
@@ -111,6 +115,7 @@ function resetForm() {
   Object.assign(formState, { ...EMPTY_FORM })
   clearFieldErrors(fieldErrors)
   formErrorMessage.value = ''
+  confirmDeleteVisible.value = false
 }
 
 function fillForm(account) {
@@ -172,6 +177,10 @@ function closeDrawer() {
   drawerOpen.value = false
   selectedAccountId.value = null
   resetForm()
+}
+
+function closeAccessPolicyModal() {
+  accessPolicyModalOpen.value = false
 }
 
 function validateForm() {
@@ -245,6 +254,15 @@ async function loadAccessPolicy(force = false) {
     accessPolicyErrorMessage.value = getApiErrorMessage(error, 'Failed to load workspace access policy.')
   } finally {
     accessPolicyLoading.value = false
+  }
+}
+
+async function openAccessPolicyModal() {
+  accessPolicyModalOpen.value = true
+  if (!authStore.workspaceAccessLoaded || !accessPolicy.value.length) {
+    await loadAccessPolicy()
+  } else {
+    syncAccessPolicyFromStore()
   }
 }
 
@@ -326,6 +344,35 @@ async function runAccountAction(action) {
   }
 }
 
+function promptDeleteAccount() {
+  if (!selectedAccount.value || isManagingCurrentAccount.value) {
+    return
+  }
+  confirmDeleteVisible.value = true
+  formErrorMessage.value = ''
+}
+
+function cancelDeleteAccount() {
+  confirmDeleteVisible.value = false
+}
+
+async function deleteSelectedAccount() {
+  if (!selectedAccount.value || isManagingCurrentAccount.value || actionPending.value) {
+    return
+  }
+  actionPending.value = true
+  formErrorMessage.value = ''
+  try {
+    await api.workspace.deleteAccount(selectedAccount.value.id)
+    await loadAccounts()
+    closeDrawer()
+  } catch (error) {
+    formErrorMessage.value = getApiErrorMessage(error, 'Failed to delete account.')
+  } finally {
+    actionPending.value = false
+  }
+}
+
 function inputClass(fieldName) {
   return [
     'w-full rounded-md border px-3 py-2 outline-none transition focus:ring-2 focus:ring-teal-500/20',
@@ -347,7 +394,7 @@ watch(() => formState.roleCode, (roleCode) => {
 })
 
 onMounted(async () => {
-  await Promise.all([loadAccounts(), loadStaff(), loadTeams(), loadAccessPolicy()])
+  await Promise.all([loadAccounts(), loadStaff(), loadTeams()])
 })
 </script>
 
@@ -376,6 +423,10 @@ onMounted(async () => {
               <RefreshCcw class="h-4 w-4" />
               {{ t('common.refresh') }}
             </button>
+            <button class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50" @click="void openAccessPolicyModal()">
+              <ShieldAlert class="h-4 w-4" />
+              {{ t('workspace.accounts.accessPolicyEntry') }}
+            </button>
             <button class="inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700" @click="openCreateDrawer">
               <Plus class="h-4 w-4" />
               {{ t('workspace.accounts.createAction') }}
@@ -399,66 +450,6 @@ onMounted(async () => {
             <p class="mt-1 text-sm leading-relaxed text-amber-800/80">
               {{ t('workspace.accounts.activationBody') }}
             </p>
-          </div>
-        </WorkspaceSurface>
-
-        <WorkspaceSurface class="space-y-4 p-5">
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h3 class="text-sm font-semibold text-slate-900">{{ t('workspace.accounts.accessPolicyTitle') }}</h3>
-              <p class="mt-1 max-w-3xl text-sm text-slate-600">{{ t('workspace.accounts.accessPolicyBody') }}</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <button class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50" :disabled="accessPolicyLoading || accessPolicyPending" @click="void loadAccessPolicy(true)">
-                <RefreshCcw class="h-4 w-4" />
-                {{ t('common.refresh') }}
-              </button>
-              <button class="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60" :disabled="accessPolicyLoading || accessPolicyPending || !hasAccessPolicyChanges" @click="void saveAccessPolicy()">
-                {{ accessPolicyPending ? t('common.saving') : t('common.save') }}
-              </button>
-            </div>
-          </div>
-
-          <WorkspaceSurface v-if="accessPolicyErrorMessage" tone="muted" class="border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-            <div class="flex items-center justify-between gap-4">
-              <span>{{ accessPolicyErrorMessage }}</span>
-              <button class="rounded-md border border-rose-200 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 transition-colors hover:bg-rose-100" @click="void loadAccessPolicy(true)">
-                {{ t('common.retry') }}
-              </button>
-            </div>
-          </WorkspaceSurface>
-
-          <div v-if="accessPolicyLoading" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
-            {{ t('workspace.accounts.accessPolicyLoading') }}
-          </div>
-
-          <div v-else class="grid gap-3 md:grid-cols-2">
-            <div v-for="page in workspacePageOptions" :key="page.pageCode" class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div class="flex items-start justify-between gap-3">
-                <div>
-                  <div class="text-sm font-semibold text-slate-900">{{ page.label }}</div>
-                  <p class="mt-1 text-xs text-slate-500">
-                    {{ page.authRequired ? t('workspace.accounts.accessPolicyLoginRequired') : t('workspace.accounts.accessPolicyPublicReadonly') }}
-                  </p>
-                </div>
-                <span v-if="!page.configurable" class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-500">
-                  {{ t('workspace.accounts.accessPolicyLocked') }}
-                </span>
-              </div>
-
-              <label class="mt-4 flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700" :class="page.configurable ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'">
-                <div>
-                  <div class="font-medium">{{ t('workspace.accounts.accessPolicyRequireLogin') }}</div>
-                  <div class="text-xs text-slate-500">{{ t('workspace.accounts.accessPolicyHint') }}</div>
-                </div>
-                <input
-                  type="checkbox"
-                  :checked="Boolean(page.authRequired)"
-                  :disabled="!page.configurable || accessPolicyPending"
-                  @change="setPageAuthRequired(page.pageCode, $event.target.checked)"
-                />
-              </label>
-            </div>
           </div>
         </WorkspaceSurface>
 
@@ -512,6 +503,11 @@ onMounted(async () => {
       <div class="space-y-6">
         <div v-if="formErrorMessage" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
           {{ formErrorMessage }}
+        </div>
+
+        <div v-if="confirmDeleteVisible && selectedAccount" class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <p>{{ t('workspace.accounts.deleteConfirm', { name: selectedAccount.staffName }) }}</p>
+          <p class="mt-1 text-xs text-amber-800">{{ t('workspace.accounts.deleteWarning') }}</p>
         </div>
 
         <div>
@@ -580,6 +576,14 @@ onMounted(async () => {
       <template #footer>
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div v-if="selectedAccount" class="flex flex-wrap items-center gap-2">
+            <button
+              class="inline-flex items-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+              :disabled="actionPending || isManagingCurrentAccount"
+              @click="confirmDeleteVisible ? deleteSelectedAccount() : promptDeleteAccount()"
+            >
+              <Trash2 class="h-4 w-4" />
+              {{ confirmDeleteVisible ? t('workspace.accounts.confirmDeleteAction') : t('workspace.accounts.deleteAction') }}
+            </button>
             <button class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50" :disabled="actionPending" @click="runAccountAction(api.workspace.resetAccountPassword)">
               <KeyRound class="h-4 w-4" />
               {{ t('workspace.accounts.resetPassword') }}
@@ -592,6 +596,14 @@ onMounted(async () => {
             >
               <component :is="selectedAccount.accountStatus === 'DISABLED' ? UserRoundCheck : UserRoundX" class="h-4 w-4" />
               {{ selectedAccount.accountStatus === 'DISABLED' ? t('workspace.accounts.enableAccount') : t('workspace.accounts.disableAccount') }}
+            </button>
+            <button
+              v-if="confirmDeleteVisible"
+              class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50"
+              :disabled="actionPending"
+              @click="cancelDeleteAccount"
+            >
+              {{ t('workspace.accounts.keepAccount') }}
             </button>
           </div>
           <div class="ml-auto flex items-center gap-3">
@@ -606,5 +618,72 @@ onMounted(async () => {
         </div>
       </template>
     </WorkspaceDrawer>
+
+    <WorkspaceModal v-model="accessPolicyModalOpen" :title="t('workspace.accounts.accessPolicyTitle')" width="880px">
+      <template #subtitle>
+        <p class="mt-1 text-xs text-slate-500">{{ t('workspace.accounts.accessPolicyBody') }}</p>
+      </template>
+
+      <div class="space-y-4">
+        <WorkspaceSurface v-if="accessPolicyErrorMessage" tone="muted" class="border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          <div class="flex items-center justify-between gap-4">
+            <span>{{ accessPolicyErrorMessage }}</span>
+            <button class="rounded-md border border-rose-200 bg-white px-3 py-1.5 text-xs font-medium text-rose-700 transition-colors hover:bg-rose-100" @click="void loadAccessPolicy(true)">
+              {{ t('common.retry') }}
+            </button>
+          </div>
+        </WorkspaceSurface>
+
+        <div v-if="accessPolicyLoading" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+          {{ t('workspace.accounts.accessPolicyLoading') }}
+        </div>
+
+        <div v-else class="grid gap-3 md:grid-cols-2">
+          <div v-for="page in workspacePageOptions" :key="page.pageCode" class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="text-sm font-semibold text-slate-900">{{ page.label }}</div>
+                <p class="mt-1 text-xs text-slate-500">
+                  {{ page.authRequired ? t('workspace.accounts.accessPolicyLoginRequired') : t('workspace.accounts.accessPolicyPublicReadonly') }}
+                </p>
+              </div>
+              <span v-if="!page.configurable" class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-500">
+                {{ t('workspace.accounts.accessPolicyLocked') }}
+              </span>
+            </div>
+
+            <label class="mt-4 flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700" :class="page.configurable ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'">
+              <div>
+                <div class="font-medium">{{ t('workspace.accounts.accessPolicyRequireLogin') }}</div>
+                <div class="text-xs text-slate-500">{{ t('workspace.accounts.accessPolicyHint') }}</div>
+              </div>
+              <input
+                type="checkbox"
+                :checked="Boolean(page.authRequired)"
+                :disabled="!page.configurable || accessPolicyPending"
+                @change="setPageAuthRequired(page.pageCode, $event.target.checked)"
+              />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex items-center justify-between gap-3">
+          <button class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50" :disabled="accessPolicyLoading || accessPolicyPending" @click="void loadAccessPolicy(true)">
+            <RefreshCcw class="h-4 w-4" />
+            {{ t('common.refresh') }}
+          </button>
+          <div class="flex items-center gap-3">
+            <button class="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50" @click="closeAccessPolicyModal">
+              {{ t('common.cancel') }}
+            </button>
+            <button class="inline-flex items-center gap-2 rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60" :disabled="accessPolicyLoading || accessPolicyPending || !hasAccessPolicyChanges" @click="void saveAccessPolicy()">
+              {{ accessPolicyPending ? t('common.saving') : t('common.save') }}
+            </button>
+          </div>
+        </div>
+      </template>
+    </WorkspaceModal>
   </div>
 </template>

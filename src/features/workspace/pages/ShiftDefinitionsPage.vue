@@ -143,11 +143,11 @@ function previewStyle(shift) {
     }
   }
 
-  const end = Math.min(1440, toMinutes(shift.startTime) + durationMinutes)
+  const endPercentage = (Math.min(1440, toMinutes(shift.startTime) + durationMinutes) / 1440) * 100
 
   return {
     left: `${start}%`,
-    right: `${Math.max(0, 100 - end)}%`,
+    right: `${Math.max(0, 100 - endPercentage)}%`,
     backgroundColor: shift.colorHex || '#94a3b8',
   }
 }

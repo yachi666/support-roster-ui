@@ -291,6 +291,10 @@ export const api = {
       method: 'POST',
     }),
 
+    deleteAccount: (id) => request(`/workspace/accounts/${id}`, {
+      method: 'DELETE',
+    }),
+
     getRoster: (year, month) => request(`/workspace/roster?year=${year}&month=${month}`),
 
     saveRoster: (payload) => request('/workspace/roster/save', {
@@ -323,18 +327,10 @@ export const api = {
       body: formData,
     }),
 
-    applyImport: (batchId, operator = '') => {
-      const params = new URLSearchParams()
-
-      if (operator.trim()) {
-        params.set('operator', operator.trim())
-      }
-
-      const query = params.toString()
-      return request(`/workspace/import-export/${batchId}/apply${query ? `?${query}` : ''}`, {
+    saveImportPreview: (payload) => request('/workspace/import-export/save', {
         method: 'POST',
-      })
-    },
+        body: payload,
+      }),
 
     exportRoster: (year, month) => request(`/workspace/import-export/export?year=${year}&month=${month}`, {
       responseType: 'blob',

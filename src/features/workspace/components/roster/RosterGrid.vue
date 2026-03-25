@@ -32,6 +32,7 @@ const { t } = useI18n()
 const GROUP_ROW_HEIGHT = 38
 const STAFF_ROW_HEIGHT = 46
 const OVERSCAN_HEIGHT = 240
+const FROZEN_COLUMN_WIDTH = 256
 
 const colorMap = {
   OC: 'border-amber-200 bg-amber-100 text-amber-800',
@@ -428,10 +429,13 @@ onBeforeUnmount(() => {
 <template>
   <TooltipProvider :delay-duration="120">
     <div ref="scrollContainer" class="relative flex-1 overflow-auto bg-[#fcfcfd]" @scroll="handleScroll">
-      <table class="min-w-full w-max border-collapse text-left font-sans text-sm text-slate-700">
+      <table class="min-w-full w-max border-separate border-spacing-0 text-left font-sans text-sm text-slate-700">
         <thead class="sticky top-0 z-20 bg-white shadow-[0_1px_0_0_#e2e8f0]">
           <tr>
-            <th class="sticky left-0 z-30 min-w-[256px] w-64 border-b border-r border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500 shadow-[1px_0_0_0_#e2e8f0]">
+            <th
+              class="sticky left-0 z-30 min-w-[256px] w-64 border-b border-r border-slate-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500 shadow-[1px_0_0_0_#e2e8f0]"
+              :style="{ minWidth: `${FROZEN_COLUMN_WIDTH}px` }"
+            >
               {{ t('workspace.grid.staffAndTeam') }}
             </th>
             <th
@@ -456,17 +460,26 @@ onBeforeUnmount(() => {
           </tr>
           <template v-for="row in visibleWindow.rows" :key="row.key">
             <tr v-if="row.type === 'group'">
-              <td :colspan="colspanCount" class="sticky left-0 z-20 border-y border-slate-200 bg-slate-50/90 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-800 shadow-[0_1px_0_rgba(0,0,0,0.02)]">
+              <td
+                class="sticky left-0 z-20 min-w-[256px] w-64 border-y border-r border-slate-200 bg-slate-50/95 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-800 shadow-[1px_0_0_0_#e2e8f0]"
+                :style="{ minWidth: `${FROZEN_COLUMN_WIDTH}px` }"
+              >
                 {{ row.group.team }}
               </td>
+              <td
+                :colspan="days.length"
+                class="border-y border-slate-200 bg-slate-50/70 px-0 py-0"
+              ></td>
             </tr>
             <tr v-else class="group transition-colors hover:bg-slate-50/60">
               <td :class="[
-                 'sticky left-0 z-20 border-b border-r border-slate-200 bg-white px-4 py-2.5 shadow-[1px_0_0_0_#e2e8f0] group-hover:bg-slate-50',
-                 isSelectedStaff(row.person.id) ? 'bg-teal-50/40 group-hover:bg-teal-50/60' : '',
-               ]">
+                 'sticky left-0 z-20 min-w-[256px] w-64 border-b border-r border-slate-200 bg-white px-4 py-2.5 shadow-[1px_0_0_0_#e2e8f0] group-hover:bg-slate-50',
+                  isSelectedStaff(row.person.id) ? 'bg-teal-50/40 group-hover:bg-teal-50/60' : '',
+                ]"
+                :style="{ minWidth: `${FROZEN_COLUMN_WIDTH}px` }"
+              >
                  <div class="flex items-center gap-3">
-                   <AvatarImage
+                    <AvatarImage
                      :name="row.person.name"
                      :src="row.person.avatar"
                      size-class="h-6 w-6"
