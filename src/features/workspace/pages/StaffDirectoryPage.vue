@@ -68,11 +68,6 @@ const updateStaffErrorRules = [
     message: 'Staff ID is required.',
   },
   {
-    match: /full\s*name|\bname\b/i,
-    field: 'name',
-    message: 'Full name is required.',
-  },
-  {
     match: /team/i,
     field: 'teamId',
     message: 'Select a valid team.',
@@ -260,7 +255,6 @@ function validateUpdateForm() {
   clearFieldErrors(fieldErrors)
 
   if (!formState.staffCode.trim()) fieldErrors.staffCode = 'Staff ID is required.'
-  if (!formState.name.trim()) fieldErrors.name = 'Full name is required.'
   if (!formState.teamId) fieldErrors.teamId = 'Team is required.'
   if (formState.phone.trim() && formState.phone.trim().length > 32) fieldErrors.phone = 'Phone must be 32 characters or fewer.'
   if (formState.slack.trim() && formState.slack.trim().length > 64) fieldErrors.slack = 'Slack handle must be 64 characters or fewer.'
