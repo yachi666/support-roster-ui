@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { AlertTriangle, CheckCircle2, Clock3 } from 'lucide-vue-next'
+import { AlertTriangle, CheckCircle2, Clock3, TrendingUp } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
@@ -23,24 +23,31 @@ const toneMap = {
 }
 
 const progressToneMap = {
-  good: 'bg-emerald-400',
-  warning: 'bg-amber-400',
-  error: 'bg-rose-400',
-  neutral: 'bg-sky-400',
+  good: 'bg-gradient-to-r from-emerald-400 to-emerald-500',
+  warning: 'bg-gradient-to-r from-amber-400 to-amber-500',
+  error: 'bg-gradient-to-r from-rose-400 to-rose-500',
+  neutral: 'bg-gradient-to-r from-sky-400 to-sky-500',
 }
 
 const badgeToneMap = {
-  good: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-  warning: 'border-amber-200 bg-amber-50 text-amber-700',
-  error: 'border-rose-200 bg-rose-50 text-rose-700',
-  neutral: 'border-sky-200 bg-sky-50 text-sky-700',
+  good: 'border-emerald-200/60 bg-emerald-50/80 text-emerald-700',
+  warning: 'border-amber-200/60 bg-amber-50/80 text-amber-700',
+  error: 'border-rose-200/60 bg-rose-50/80 text-rose-700',
+  neutral: 'border-sky-200/60 bg-sky-50/80 text-sky-700',
 }
 
 const cardToneMap = {
-  good: 'border-emerald-100/80 bg-[linear-gradient(180deg,rgba(236,253,245,0.95),rgba(255,255,255,1))]',
-  warning: 'border-amber-100/80 bg-[linear-gradient(180deg,rgba(255,251,235,0.96),rgba(255,255,255,1))]',
-  error: 'border-rose-100/80 bg-[linear-gradient(180deg,rgba(255,241,242,0.96),rgba(255,255,255,1))]',
-  neutral: 'border-sky-100/80 bg-[linear-gradient(180deg,rgba(240,249,255,0.96),rgba(255,255,255,1))]',
+  good: 'border-emerald-100/50 bg-gradient-to-br from-emerald-50/30 via-white to-emerald-50/10',
+  warning: 'border-amber-100/50 bg-gradient-to-br from-amber-50/30 via-white to-amber-50/10',
+  error: 'border-rose-100/50 bg-gradient-to-br from-rose-50/30 via-white to-rose-50/10',
+  neutral: 'border-sky-100/50 bg-gradient-to-br from-sky-50/30 via-white to-sky-50/10',
+}
+
+const accentMap = {
+  good: 'bg-gradient-to-r from-emerald-400 to-emerald-500',
+  warning: 'bg-gradient-to-r from-amber-400 to-amber-500',
+  error: 'bg-gradient-to-r from-rose-400 to-rose-500',
+  neutral: 'bg-gradient-to-r from-sky-400 to-sky-500',
 }
 
 const statusLabelMap = computed(() => ({
@@ -63,50 +70,57 @@ const progressValue = computed(() => {
 <template>
   <div
     :class="[
-      'group relative overflow-hidden rounded-[28px] border p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)] transition-transform duration-200 hover:-translate-y-0.5',
+      'group relative overflow-hidden rounded-3xl border p-6 shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl animate-fade-in-up',
       cardToneMap[normalizedStatus],
     ]"
   >
-    <div class="absolute inset-x-6 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(148,163,184,0.45),transparent)]"></div>
+    <div :class="['absolute inset-x-0 top-0 h-1.5', accentMap[normalizedStatus]]"></div>
+    
+    <div class="absolute inset-x-0 top-6 h-px bg-gradient-to-r from-transparent via-slate-200/30 to-transparent"></div>
 
     <div class="flex items-start justify-between gap-4">
-      <div>
-        <div class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+      <div class="flex-1">
+        <div class="text-xs font-semibold uppercase tracking-widest text-slate-500">
           {{ stat.label }}
         </div>
-        <div class="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
+        <div class="mt-4 text-4xl font-bold tracking-tight text-slate-900">
           {{ stat.value }}
         </div>
       </div>
       <div class="flex flex-col items-end gap-2">
         <span
           :class="[
-            'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]',
+            'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wider',
             badgeToneMap[normalizedStatus],
           ]"
         >
           <component :is="iconMap[normalizedStatus]" class="h-3.5 w-3.5" />
           {{ statusLabelMap[normalizedStatus] }}
         </span>
-        <component :is="iconMap[normalizedStatus]" :class="['h-5 w-5', toneMap[normalizedStatus]]" />
+        <component 
+          :is="iconMap[normalizedStatus]" 
+          :class="['h-6 w-6 transition-transform group-hover:scale-110', toneMap[normalizedStatus]]" 
+        />
       </div>
     </div>
 
-    <div class="mt-4 text-sm leading-6 text-slate-600">
+    <div class="mt-5 text-sm leading-relaxed text-slate-600">
       {{ stat.trend }}
     </div>
 
-    <div class="mt-5">
-      <div class="mb-2 flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">
+    <div class="mt-6">
+      <div class="mb-3 flex items-center justify-between text-xs font-medium uppercase tracking-wider text-slate-500">
         <span>{{ t('workspace.overview.healthIndex') }}</span>
-        <span>{{ progressValue }}%</span>
+        <span class="font-semibold">{{ progressValue }}%</span>
       </div>
-      <div class="h-2 rounded-full bg-white/80 ring-1 ring-inset ring-slate-200/70">
+      <div class="h-2.5 overflow-hidden rounded-full bg-white/80 ring-1 ring-inset ring-slate-200/70">
         <div
-          :class="['h-full rounded-full transition-all', progressToneMap[normalizedStatus]]"
+          :class="['h-full rounded-full transition-all duration-500', progressToneMap[normalizedStatus]]"
           :style="{ width: `${progressValue}%` }"
         ></div>
       </div>
     </div>
+
+    <div class="absolute -bottom-10 -right-10 h-32 w-32 rounded-full bg-gradient-to-br from-white/20 to-transparent opacity-0 blur-2xl transition-opacity group-hover:opacity-100"></div>
   </div>
 </template>
