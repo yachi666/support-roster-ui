@@ -14,27 +14,39 @@ import ValidationCenterPage from '@/features/workspace/pages/ValidationCenterPag
 import AccountManagementPage from '@/features/workspace/pages/AccountManagementPage.vue'
 import {
   WORKSPACE_ENTRY_PATH,
+  getWorkspacePathname,
   isWorkspacePath,
   resolveDefaultWorkspacePath,
 } from '@/features/workspace/config/navigation'
 
-function resolveWorkspaceEntryLocation(authStore) {
+function resolveWorkspaceRouteLocation(targetPath, requestedRoute) {
+  return {
+    path: targetPath,
+    query: requestedRoute?.query || {},
+    hash: requestedRoute?.hash || '',
+  }
+}
+
+function resolveWorkspaceEntryLocation(authStore, requestedRoute) {
   const targetPath = resolveDefaultWorkspacePath(authStore)
   if (targetPath) {
-    return targetPath
+    return resolveWorkspaceRouteLocation(targetPath, requestedRoute)
   }
 
   return authStore.isAuthenticated
     ? '/viewer'
     : {
         path: '/login',
-        query: { redirect: WORKSPACE_ENTRY_PATH },
+        query: { redirect: requestedRoute?.fullPath || WORKSPACE_ENTRY_PATH },
       }
 }
 
 function resolveWorkspaceRedirectTarget(authStore, requestedPath) {
-  if (typeof requestedPath === 'string' && isWorkspacePath(requestedPath) && requestedPath !== WORKSPACE_ENTRY_PATH) {
-    return requestedPath
+  if (typeof requestedPath === 'string' && isWorkspacePath(requestedPath)) {
+    const pathname = getWorkspacePathname(requestedPath)
+    if (pathname !== WORKSPACE_ENTRY_PATH || requestedPath !== WORKSPACE_ENTRY_PATH) {
+      return requestedPath
+    }
   }
 
   return resolveDefaultWorkspacePath(authStore) || '/viewer'
@@ -68,7 +80,7 @@ const router = createRouter({
           path: '',
           name: 'workspace-entry',
           component: { render: () => h('div') },
-          beforeEnter: () => resolveWorkspaceEntryLocation(useAuthStore()),
+          beforeEnter: (to) => resolveWorkspaceEntryLocation(useAuthStore(), to),
         },
         {
           path: 'overview',
@@ -158,7 +170,7 @@ router.beforeEach(async (to) => {
 
   const requiredRoles = to.matched.flatMap((record) => record.meta?.roles || [])
   if (requiredRoles.length && !authStore.hasAnyRole(requiredRoles)) {
-    return resolveWorkspaceEntryLocation(authStore)
+    return resolveWorkspaceEntryLocation(authStore, to)
   }
 
   return true

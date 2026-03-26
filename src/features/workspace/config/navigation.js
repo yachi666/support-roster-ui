@@ -12,9 +12,17 @@ export const workspaceNavigation = [
   { pageCode: 'validation', labelKey: 'workspace.nav.validation', to: '/workspace/validation', icon: 'AlertTriangle' },
 ]
 
+export function getWorkspacePathname(path) {
+  if (typeof path !== 'string') {
+    return ''
+  }
+
+  return path.split(/[?#]/, 1)[0] || ''
+}
+
 export function isWorkspacePath(path) {
-  return typeof path === 'string'
-    && (path === WORKSPACE_ENTRY_PATH || path.startsWith(`${WORKSPACE_ENTRY_PATH}/`))
+  const pathname = getWorkspacePathname(path)
+  return pathname === WORKSPACE_ENTRY_PATH || pathname.startsWith(`${WORKSPACE_ENTRY_PATH}/`)
 }
 
 export function resolveDefaultWorkspacePath(authStore) {
