@@ -42,7 +42,7 @@ async function loadValidationIssueCount() {
 
   try {
     const response = await api.workspace.getValidation(year.value, month.value, { summaryOnly: true })
-    validationIssueCount.value = (response?.summary?.high ?? 0) + (response?.summary?.medium ?? 0) + (response?.summary?.low ?? 0)
+    validationIssueCount.value = response?.summary?.blocking ?? 0
   } catch {
     validationIssueCount.value = null
   }

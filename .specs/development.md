@@ -189,6 +189,7 @@ playwright-cli close-all
 
 - Public Viewer：`http://127.0.0.1:5173/viewer`
 - Monthly Roster：`http://127.0.0.1:5173/workspace/roster`
+- Validation Center：`http://127.0.0.1:5173/workspace/validation`
 
 ### 推荐验证要点
 
@@ -234,6 +235,28 @@ cd /Users/lzn/Documents/trae_projects/support
 1. `/viewer`
 2. `/workspace/roster`
 3. 本次改动直接涉及的交互链路
+
+### Workspace Validation 自动回归
+
+若本次改动涉及 workspace validation 语义、banner、sidebar badge 或 validation center，优先执行：
+
+```bash
+cd /Users/lzn/Documents/trae_projects/support/automationtest
+npm run test:validation
+```
+
+该脚本当前会自动制造一组高价值 blocker 数据：
+
+- 创建独立 team / staff / primary shift / non-primary shift
+- 在独立 future month 仅排 non-primary shift
+- 触发 `Missing Primary Coverage`
+- 回归验证 API、sidebar badge、validation center、roster warning
+- 用例结束后自动清理测试数据
+
+策略要求：
+
+1. 优先用公开 API 造“合法但会触发 blocker”的数据，先验证真实业务链路
+2. 只有当 UI/API 无法稳定制造目标问题时，再补直连数据库的 corruption 回归
 
 ## 维护要求
 
