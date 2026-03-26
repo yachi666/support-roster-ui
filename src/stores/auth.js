@@ -41,7 +41,6 @@ function createDefaultWorkspaceAccessPolicy() {
 function createSecureWorkspaceAccessPolicy() {
   return cloneWorkspaceAccessPolicy(SECURE_WORKSPACE_ACCESS_POLICY)
 }
-
 function normalizeTeamIds(teamIds) {
   return (Array.isArray(teamIds) ? teamIds : [])
     .filter((teamId) => teamId != null && `${teamId}`.trim())
