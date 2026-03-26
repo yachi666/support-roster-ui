@@ -21,7 +21,7 @@ import OverviewStatCard from '../components/OverviewStatCard.vue'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
 import { useWorkspacePeriod } from '../composables/useWorkspacePeriod'
-import { getWorkspaceQuickActionTarget } from '../config/navigation'
+import { WORKSPACE_OVERVIEW_PATH, getWorkspaceQuickActionTarget } from '../config/navigation'
 
 const overviewStats = shallowRef([])
 const activityEntries = shallowRef([])
@@ -197,7 +197,7 @@ const monthlySignalCards = computed(() => {
         title: t('workspace.overview.signal.emptyTitle'),
         detail: t('workspace.overview.signal.emptyDetail'),
         cta: t('workspace.overview.signal.emptyCta'),
-        to: '/workspace',
+        to: WORKSPACE_OVERVIEW_PATH,
         status: 'neutral',
         value: '--',
       },

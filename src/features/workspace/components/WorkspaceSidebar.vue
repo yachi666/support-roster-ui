@@ -56,7 +56,7 @@ const navigation = computed(() =>
       ...item,
       label: t(item.labelKey),
       count: item.to === '/workspace/validation' ? validationIssueCount.value : undefined,
-      active: item.to === '/workspace' ? route.path === '/workspace' : route.path.startsWith(item.to),
+      active: route.path === item.to || route.path.startsWith(`${item.to}/`),
     })),
 )
 
