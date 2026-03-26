@@ -5,6 +5,7 @@ import { LockKeyhole, ShieldCheck } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { SUPPORTED_LOCALES, currentLocale, setLocale } from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
+import { WORKSPACE_ENTRY_PATH, isWorkspacePath } from '@/features/workspace/config/navigation'
 
 const route = useRoute()
 const router = useRouter()
@@ -28,8 +29,8 @@ const localeOptions = computed(() =>
   })),
 )
 const redirectTarget = computed(() => {
-  const candidate = typeof route.query.redirect === 'string' ? route.query.redirect : '/workspace'
-  return candidate.startsWith('/workspace') ? candidate : '/workspace'
+  const candidate = typeof route.query.redirect === 'string' ? route.query.redirect : WORKSPACE_ENTRY_PATH
+  return isWorkspacePath(candidate) ? candidate : WORKSPACE_ENTRY_PATH
 })
 
 function switchMode(nextMode) {

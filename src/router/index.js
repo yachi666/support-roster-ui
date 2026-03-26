@@ -12,6 +12,33 @@ import TeamMappingPage from '@/features/workspace/pages/TeamMappingPage.vue'
 import ImportExportCenterPage from '@/features/workspace/pages/ImportExportCenterPage.vue'
 import ValidationCenterPage from '@/features/workspace/pages/ValidationCenterPage.vue'
 import AccountManagementPage from '@/features/workspace/pages/AccountManagementPage.vue'
+import {
+  WORKSPACE_ENTRY_PATH,
+  isWorkspacePath,
+  resolveDefaultWorkspacePath,
+} from '@/features/workspace/config/navigation'
+
+function resolveWorkspaceEntryLocation(authStore) {
+  const targetPath = resolveDefaultWorkspacePath(authStore)
+  if (targetPath) {
+    return targetPath
+  }
+
+  return authStore.isAuthenticated
+    ? '/viewer'
+    : {
+        path: '/login',
+        query: { redirect: WORKSPACE_ENTRY_PATH },
+      }
+}
+
+function resolveWorkspaceRedirectTarget(authStore, requestedPath) {
+  if (typeof requestedPath === 'string' && isWorkspacePath(requestedPath) && requestedPath !== WORKSPACE_ENTRY_PATH) {
+    return requestedPath
+  }
+
+  return resolveDefaultWorkspacePath(authStore) || '/viewer'
+}
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -34,11 +61,17 @@ const router = createRouter({
       meta: { guestOnly: true },
     },
     {
-      path: '/workspace',
+      path: WORKSPACE_ENTRY_PATH,
       component: WorkspaceLayout,
       children: [
         {
           path: '',
+          name: 'workspace-entry',
+          component: { render: () => h('div') },
+          beforeEnter: () => resolveWorkspaceEntryLocation(useAuthStore()),
+        },
+        {
+          path: 'overview',
           name: 'workspace-overview',
           component: OverviewDashboardPage,
           meta: { workspacePageCode: 'overview' },
@@ -102,7 +135,7 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.guestOnly && authStore.isAuthenticated) {
-    return typeof to.query.redirect === 'string' ? to.query.redirect : '/workspace'
+    return resolveWorkspaceRedirectTarget(authStore, to.query.redirect)
   }
 
   const workspacePageCode = [...to.matched]
@@ -125,7 +158,7 @@ router.beforeEach(async (to) => {
 
   const requiredRoles = to.matched.flatMap((record) => record.meta?.roles || [])
   if (requiredRoles.length && !authStore.hasAnyRole(requiredRoles)) {
-    return '/workspace'
+    return resolveWorkspaceEntryLocation(authStore)
   }
 
   return true
