@@ -5,7 +5,6 @@ import {
   AlertCircle,
   AlertTriangle,
   ArrowRight,
-  CheckCircle2,
   CheckSquare,
   RefreshCw,
   Search,
@@ -26,7 +25,8 @@ const selectedSeverity = shallowRef('all')
 const selectedSource = shallowRef('all')
 const selectedIssueIds = shallowRef([])
 const issues = shallowRef([])
-const summary = shallowRef({ high: 0, medium: 0, low: 0 })
+const summary = shallowRef({ high: 0, medium: 0, low: 0, total: 0, blocking: 0 })
+const topIssue = shallowRef(null)
 const loading = shallowRef(false)
 const errorMessage = shallowRef('')
 const actionMessage = shallowRef('')
@@ -85,7 +85,8 @@ async function loadValidation() {
   try {
     const response = await api.workspace.getValidation(year.value, month.value)
     issues.value = response?.issues || []
-    summary.value = response?.summary || { high: 0, medium: 0, low: 0 }
+    summary.value = response?.summary || { high: 0, medium: 0, low: 0, total: 0, blocking: 0 }
+    topIssue.value = response?.topIssue || null
     selectedIssueIds.value = []
     actionMessage.value = ''
     actionErrorMessage.value = ''
@@ -96,18 +97,30 @@ async function loadValidation() {
   }
 }
 
+function normalizeIssue(issue) {
+  if (!issue) {
+    return null
+  }
+
+  const severity = severityMeta[issue.severity] ? issue.severity : 'low'
+  const resolutionKind = issue.resolutionKind === 'import-issue' ? 'import-issue' : 'manual'
+
+  return {
+    ...issue,
+    severity,
+    blocking: Boolean(issue.blocking),
+    domain: issue.domain || 'configuration',
+    targetPage: issue.targetPage || '',
+    resolutionKind,
+    sourceLabel: sourceMeta[resolutionKind].label,
+  }
+}
+
 const normalizedIssues = computed(() =>
-  issues.value.map((issue) => {
-    const severity = severityMeta[issue.severity] ? issue.severity : 'low'
-    const resolutionKind = issue.resolutionKind === 'import-issue' ? 'import-issue' : 'manual'
-    return {
-      ...issue,
-      severity,
-      resolutionKind,
-      sourceLabel: sourceMeta[resolutionKind].label,
-    }
-  }),
+  issues.value.map((issue) => normalizeIssue(issue)),
 )
+
+const normalizedTopIssue = computed(() => normalizeIssue(topIssue.value))
 
 const visibleIssues = computed(() => {
   const query = searchTerm.value.trim().toLowerCase()
@@ -146,11 +159,11 @@ const visibleIssues = computed(() => {
   })
 })
 
-const severityCounts = computed(() => summary.value)
-const totalIssueCount = computed(() => normalizedIssues.value.length)
-const resolvableIssueCount = computed(() => normalizedIssues.value.filter((issue) => issue.resolvable).length)
-const manualOnlyCount = computed(() => normalizedIssues.value.filter((issue) => !issue.resolvable).length)
-const importIssueCount = computed(() => normalizedIssues.value.filter((issue) => issue.resolutionKind === 'import-issue').length)
+const totalIssueCount = computed(() => summary.value.total ?? normalizedIssues.value.length)
+const blockingIssueCount = computed(() => summary.value.blocking ?? normalizedIssues.value.filter((issue) => issue.blocking).length)
+const hasIssues = computed(() => totalIssueCount.value > 0)
+const expandedIssueMode = computed(() => totalIssueCount.value >= 4)
+const followUpIssueCount = computed(() => Math.max(0, totalIssueCount.value - blockingIssueCount.value))
 
 function canResolveIssue(issue) {
   return Boolean(issue?.resolvable) && authStore.canEditTeam(issue?.teamId)
@@ -165,20 +178,39 @@ const allVisibleSelected = computed(() =>
   visibleIssueIds.value.length > 0 && visibleIssueIds.value.every((id) => selectedIssueIds.value.includes(id)),
 )
 
+function issueSeverityWeight(issue) {
+  if (issue.severity === 'high') {
+    return 0
+  }
+  if (issue.severity === 'medium') {
+    return 1
+  }
+  return 2
+}
+
+function compareIssues(left, right) {
+  if (left.blocking !== right.blocking) {
+    return left.blocking ? -1 : 1
+  }
+
+  const severityGap = issueSeverityWeight(left) - issueSeverityWeight(right)
+  if (severityGap !== 0) {
+    return severityGap
+  }
+
+  if (left.resolvable !== right.resolvable) {
+    return left.resolvable ? -1 : 1
+  }
+
+  return String(left.id).localeCompare(String(right.id))
+}
+
 const prioritizedIssue = computed(() => {
-  const ordered = [...normalizedIssues.value].sort((left, right) => {
-    const leftWeight = left.severity === 'high' ? 0 : left.severity === 'medium' ? 1 : 2
-    const rightWeight = right.severity === 'high' ? 0 : right.severity === 'medium' ? 1 : 2
-    if (leftWeight !== rightWeight) {
-      return leftWeight - rightWeight
-    }
+  if (normalizedTopIssue.value) {
+    return normalizedTopIssue.value
+  }
 
-    if (left.resolvable !== right.resolvable) {
-      return left.resolvable ? -1 : 1
-    }
-
-    return String(left.id).localeCompare(String(right.id))
-  })
+  const ordered = [...normalizedIssues.value].sort(compareIssues)
 
   return ordered[0] ?? null
 })
@@ -207,14 +239,8 @@ const focusNarrative = computed(() => {
   return prioritizedIssue.value.description
 })
 
-const issueGroups = computed(() =>
-  ['high', 'medium', 'low']
-    .map((severity) => ({
-      severity,
-      meta: severityMeta[severity],
-      items: visibleIssues.value.filter((issue) => issue.severity === severity),
-    }))
-    .filter((group) => group.items.length > 0),
+const orderedVisibleIssues = computed(() =>
+  [...visibleIssues.value].sort(compareIssues),
 )
 
 function toggleIssue(issueId) {
@@ -249,8 +275,9 @@ async function resolveIssues(issueIds) {
       issueIds: resolvableIssueIds,
     })
 
-    summary.value = response?.validation?.summary || { high: 0, medium: 0, low: 0 }
+    summary.value = response?.validation?.summary || { high: 0, medium: 0, low: 0, total: 0, blocking: 0 }
     issues.value = response?.validation?.issues || []
+    topIssue.value = response?.validation?.topIssue || null
     selectedIssueIds.value = selectedIssueIds.value.filter((id) => !response?.resolvedIssueIds?.includes(id))
 
     const resolvedCount = response?.resolvedCount || 0
@@ -285,6 +312,10 @@ function isResolving(issueId) {
 }
 
 function getIssueTarget(issue) {
+  if (issue?.targetPage) {
+    return issue.targetPage
+  }
+
   if (issue.resolutionKind === 'import-issue') {
     return '/workspace/import-export'
   }
@@ -328,7 +359,7 @@ watch([year, month], () => {
               {{ t('workspace.validation.refresh') }}
             </button>
             <button
-              v-if="authStore.canWriteWorkspace"
+              v-if="authStore.canWriteWorkspace && expandedIssueMode"
               class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
               :disabled="resolvableSelectedIssueIds.length === 0 || resolvePending"
               @click="resolveSelectedIssues"
@@ -356,16 +387,21 @@ watch([year, month], () => {
           {{ actionMessage }}
         </WorkspaceSurface>
 
-        <div class="grid gap-6 xl:grid-cols-[1.65fr_1fr]">
+        <div class="grid gap-6">
           <WorkspaceSurface
             :padded="false"
             class="overflow-hidden border-slate-200 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_34%),radial-gradient(circle_at_top_right,rgba(248,113,113,0.14),transparent_32%),linear-gradient(180deg,#ffffff,rgba(248,250,252,0.98))]"
           >
-            <div class="grid gap-8 px-6 py-6 lg:grid-cols-[1.2fr_0.8fr] lg:px-8 lg:py-8">
+            <div
+              :class="[
+                'grid gap-8 px-6 py-6 lg:px-8 lg:py-8',
+                prioritizedIssue ? 'lg:grid-cols-[1.2fr_0.8fr]' : '',
+              ]"
+            >
               <div class="space-y-5">
                 <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                   <Sparkles class="h-3.5 w-3.5 text-amber-500" />
-                  {{ t('workspace.validation.workbench') }}
+                  {{ t('workspace.validation.issueInbox') }}
                 </div>
 
                 <div>
@@ -377,21 +413,16 @@ watch([year, month], () => {
                   </p>
                 </div>
 
-                <div class="grid gap-3 sm:grid-cols-3">
+                <div class="grid gap-3 sm:grid-cols-2">
                   <div class="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
                      <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.validation.totalIssues') }}</div>
                     <div class="mt-2 text-3xl font-semibold tracking-tight text-slate-950">{{ totalIssueCount }}</div>
                      <div class="mt-1 text-xs leading-6 text-slate-500">{{ t('workspace.validation.totalIssuesHint', { monthLabel }) }}</div>
                   </div>
                   <div class="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
-                     <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.validation.autoFixable') }}</div>
-                    <div class="mt-2 text-3xl font-semibold tracking-tight text-slate-950">{{ resolvableIssueCount }}</div>
-                     <div class="mt-1 text-xs leading-6 text-slate-500">{{ t('workspace.validation.autoFixableHint') }}</div>
-                  </div>
-                  <div class="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
-                     <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.validation.manualFollowUp') }}</div>
-                    <div class="mt-2 text-3xl font-semibold tracking-tight text-slate-950">{{ manualOnlyCount }}</div>
-                     <div class="mt-1 text-xs leading-6 text-slate-500">{{ t('workspace.validation.manualFollowUpHint') }}</div>
+                     <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.validation.blockingRisks') }}</div>
+                    <div class="mt-2 text-3xl font-semibold tracking-tight text-slate-950">{{ blockingIssueCount }}</div>
+                     <div class="mt-1 text-xs leading-6 text-slate-500">{{ t('workspace.validation.blockingRisksHint') }}</div>
                   </div>
                 </div>
               </div>
@@ -420,6 +451,14 @@ watch([year, month], () => {
                     ]"
                   >
                     {{ prioritizedIssue.sourceLabel }}
+                  </span>
+                  <span
+                    :class="cn(
+                      'inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]',
+                      prioritizedIssue.blocking ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-slate-200 bg-slate-100 text-slate-600',
+                    )"
+                  >
+                    {{ prioritizedIssue.blocking ? t('workspace.validation.blockingBadge') : t('workspace.validation.followUpBadge') }}
                   </span>
                 </div>
 
@@ -459,87 +498,82 @@ watch([year, month], () => {
               </div>
             </div>
           </WorkspaceSurface>
-
-          <WorkspaceSurface :padded="false" class="overflow-hidden">
-            <div class="border-b border-slate-100 px-6 py-5">
-              <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.validation.severityQueue') }}</div>
-              <h2 class="mt-2 text-lg font-semibold tracking-tight text-slate-900">{{ t('workspace.validation.needsAttentionNow') }}</h2>
-            </div>
-            <div class="space-y-3 px-4 py-4">
-              <div
-                v-for="severity in ['high', 'medium', 'low']"
-                :key="severity"
-                :class="[
-                  'rounded-2xl border p-4',
-                  severityMeta[severity].mutedPanel,
-                ]"
-              >
-                <div class="flex items-center justify-between gap-3">
-                  <div>
-                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ severityMeta[severity].eyebrow }}</div>
-                    <div class="mt-1 text-sm font-semibold text-slate-900">{{ severityMeta[severity].label }}</div>
-                  </div>
-                  <div class="text-2xl font-semibold tracking-tight text-slate-950">
-                    {{ severityCounts[severity] || 0 }}
-                  </div>
-                </div>
-                <div class="mt-2 text-xs leading-6 text-slate-600">{{ severityMeta[severity].description }}</div>
-              </div>
-
-              <div class="rounded-2xl border border-violet-100 bg-violet-50/70 p-4">
-                <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-500">{{ t('workspace.validation.importLinked') }}</div>
-                <div class="mt-1 text-sm font-semibold text-slate-900">{{ t('workspace.validation.unresolvedImportIssues', { count: importIssueCount }) }}</div>
-                <div class="mt-2 text-xs leading-6 text-slate-600">{{ t('workspace.validation.importLinkedHint') }}</div>
-              </div>
-            </div>
-          </WorkspaceSurface>
         </div>
 
         <WorkspaceSurface :padded="false" class="overflow-hidden">
           <div class="border-b border-slate-100 bg-slate-50/50 p-4">
-            <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div class="relative max-w-md flex-1">
-                 <label for="workspace-validation-search" class="sr-only">{{ t('workspace.validation.searchIssues') }}</label>
-                <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  id="workspace-validation-search"
-                  name="workspace-validation-search"
-                  v-model="searchTerm"
-                  type="text"
-                   :placeholder="t('workspace.validation.searchPlaceholder')"
-                  class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-700 shadow-sm outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
-                />
+            <div class="flex flex-col gap-4">
+              <div class="flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
+                <div>
+                  <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.validation.issueList') }}</div>
+                  <h2 class="mt-1 text-lg font-semibold tracking-tight text-slate-900">{{ t('workspace.validation.openIssues') }}</h2>
+                  <p class="mt-1 text-sm text-slate-500">
+                    {{
+                      hasIssues
+                        ? t('workspace.validation.issueListHint', { blocking: blockingIssueCount, followUp: followUpIssueCount })
+                        : t('workspace.validation.emptyListHint')
+                    }}
+                  </p>
+                </div>
+
+                <div v-if="expandedIssueMode" class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                  <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">
+                    {{ t('workspace.validation.visibleCount', { count: visibleIssues.length }) }}
+                  </span>
+                  <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">
+                    {{ t('workspace.validation.selectedCount', { count: selectedIssueIds.length }) }}
+                  </span>
+                  <button
+                    class="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100"
+                    @click="toggleAll"
+                  >
+                    {{ allVisibleSelected ? t('workspace.validation.clearVisibleSelection') : t('workspace.validation.selectVisible') }}
+                  </button>
+                </div>
               </div>
 
-              <div class="flex flex-wrap items-center gap-2">
-                <button
-                  v-for="option in [
-                     { value: 'all', label: t('workspace.validation.allSeverities') },
-                     { value: 'high', label: t('workspace.validation.severity.critical') },
-                     { value: 'medium', label: t('workspace.validation.warnings') },
-                     { value: 'low', label: t('workspace.validation.notices') },
-                  ]"
-                  :key="option.value"
-                  :class="[
-                    'rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] transition-colors',
-                    selectedSeverity === option.value ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-100',
-                  ]"
-                  @click="selectedSeverity = option.value"
-                >
-                  {{ option.label }}
-                </button>
-              </div>
-            </div>
+              <div v-if="expandedIssueMode" class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                <div class="relative max-w-md flex-1">
+                  <label for="workspace-validation-search" class="sr-only">{{ t('workspace.validation.searchIssues') }}</label>
+                  <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    id="workspace-validation-search"
+                    name="workspace-validation-search"
+                    v-model="searchTerm"
+                    type="text"
+                    :placeholder="t('workspace.validation.searchPlaceholder')"
+                    class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-700 shadow-sm outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+                  />
+                </div>
 
-            <div class="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-              <div class="flex flex-wrap items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                  <button
+                    v-for="option in [
+                      { value: 'all', label: t('workspace.validation.allSeverities') },
+                      { value: 'high', label: t('workspace.validation.severity.critical') },
+                      { value: 'medium', label: t('workspace.validation.warnings') },
+                      { value: 'low', label: t('workspace.validation.notices') },
+                    ]"
+                    :key="option.value"
+                    :class="[
+                      'rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] transition-colors',
+                      selectedSeverity === option.value ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-100',
+                    ]"
+                    @click="selectedSeverity = option.value"
+                  >
+                    {{ option.label }}
+                  </button>
+                </div>
+              </div>
+
+              <div v-if="expandedIssueMode" class="flex flex-wrap items-center gap-2">
                 <button
                   v-for="option in [
-                     { value: 'all', label: t('workspace.validation.allSources') },
-                     { value: 'resolvable', label: t('workspace.validation.autoFixable') },
-                     { value: 'manual-only', label: t('workspace.validation.manualOnly') },
-                     { value: 'import-issue', label: t('workspace.validation.importPipeline') },
-                     { value: 'live-data', label: t('workspace.validation.liveData') },
+                    { value: 'all', label: t('workspace.validation.allSources') },
+                    { value: 'resolvable', label: t('workspace.validation.autoFixable') },
+                    { value: 'manual-only', label: t('workspace.validation.manualOnly') },
+                    { value: 'import-issue', label: t('workspace.validation.importPipeline') },
+                    { value: 'live-data', label: t('workspace.validation.liveData') },
                   ]"
                   :key="option.value"
                   :class="[
@@ -549,21 +583,6 @@ watch([year, month], () => {
                   @click="selectedSource = option.value"
                 >
                   {{ option.label }}
-                </button>
-              </div>
-
-              <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">
-                   {{ t('workspace.validation.visibleCount', { count: visibleIssues.length }) }}
-                </span>
-                <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">
-                   {{ t('workspace.validation.selectedCount', { count: selectedIssueIds.length }) }}
-                </span>
-                <button
-                  class="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100"
-                  @click="toggleAll"
-                >
-                   {{ allVisibleSelected ? t('workspace.validation.clearVisibleSelection') : t('workspace.validation.selectVisible') }}
                 </button>
               </div>
             </div>
@@ -581,113 +600,98 @@ watch([year, month], () => {
                {{ t('workspace.validation.empty') }}
             </div>
 
-            <section
-              v-for="group in issueGroups"
-              :key="group.severity"
-              class="space-y-4"
-            >
-              <div class="flex items-center justify-between gap-4">
-                <div>
-                  <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ group.meta.eyebrow }}</div>
-                  <h2 class="mt-1 text-lg font-semibold tracking-tight text-slate-900">
-                     {{ t('workspace.validation.issuesTitle', { label: group.meta.label }) }}
-                    <span class="text-slate-400">({{ group.items.length }})</span>
-                  </h2>
-                </div>
-                <span
-                  :class="[
-                    'inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]',
-                    group.meta.badge,
-                  ]"
-                >
-                  {{ group.meta.description }}
-                </span>
-              </div>
+            <div v-else class="grid gap-4">
+              <article
+                v-for="issue in orderedVisibleIssues"
+                :key="issue.id"
+                :class="[
+                  'rounded-[26px] border bg-white p-5 shadow-sm transition-all',
+                  severityMeta[issue.severity].mutedPanel,
+                  selectedIssueIds.includes(issue.id) ? 'ring-2 ring-teal-500/30' : 'hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.06)]',
+                ]"
+              >
+                <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                  <div class="flex items-start gap-4">
+                    <input
+                      v-if="expandedIssueMode"
+                      :id="`workspace-validation-issue-${issue.id}`"
+                      :name="`workspace-validation-issue-${issue.id}`"
+                      type="checkbox"
+                      :aria-label="`Select validation issue ${issue.type}`"
+                      class="mt-1 h-4 w-4 cursor-pointer rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                      :checked="selectedIssueIds.includes(issue.id)"
+                      @change="toggleIssue(issue.id)"
+                    />
 
-              <div class="grid gap-4">
-                <article
-                  v-for="issue in group.items"
-                  :key="issue.id"
-                  :class="[
-                    'rounded-[26px] border bg-white p-5 shadow-sm transition-all',
-                    group.meta.mutedPanel,
-                    selectedIssueIds.includes(issue.id) ? 'ring-2 ring-teal-500/30' : 'hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.06)]',
-                  ]"
-                >
-                  <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                    <div class="flex items-start gap-4">
-                      <input
-                        :id="`workspace-validation-issue-${issue.id}`"
-                        :name="`workspace-validation-issue-${issue.id}`"
-                        type="checkbox"
-                        :aria-label="`Select validation issue ${issue.type}`"
-                        class="mt-1 h-4 w-4 cursor-pointer rounded border-slate-300 text-teal-600 focus:ring-teal-500"
-                        :checked="selectedIssueIds.includes(issue.id)"
-                        @change="toggleIssue(issue.id)"
-                      />
+                    <div class="min-w-0">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <span
+                          :class="cn(
+                            'inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]',
+                            issue.blocking ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-slate-200 bg-slate-100 text-slate-600',
+                          )"
+                        >
+                          {{ issue.blocking ? t('workspace.validation.blockingBadge') : t('workspace.validation.followUpBadge') }}
+                        </span>
+                        <span
+                          :class="[
+                            'inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]',
+                            severityMeta[issue.severity].badge,
+                          ]"
+                        >
+                          {{ severityMeta[issue.severity].label }}
+                        </span>
+                        <span
+                          :class="[
+                            'inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]',
+                            sourceMeta[issue.resolutionKind].badge,
+                          ]"
+                        >
+                          {{ issue.sourceLabel }}
+                        </span>
+                        <span
+                          :class="cn(
+                            'inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]',
+                            issue.resolvable ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-100 text-slate-600',
+                          )"
+                        >
+                          {{ issue.resolvable ? t('workspace.validation.autoFixableBadge') : t('workspace.validation.manualOnlyBadge') }}
+                        </span>
+                      </div>
 
-                      <div class="min-w-0">
-                        <div class="flex flex-wrap items-center gap-2">
-                          <span
-                            :class="[
-                              'inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]',
-                              severityMeta[issue.severity].badge,
-                            ]"
-                          >
-                            {{ severityMeta[issue.severity].label }}
-                          </span>
-                          <span
-                            :class="[
-                              'inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]',
-                              sourceMeta[issue.resolutionKind].badge,
-                            ]"
-                          >
-                            {{ issue.sourceLabel }}
-                          </span>
-                          <span
-                            :class="cn(
-                              'inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]',
-                              issue.resolvable ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-100 text-slate-600',
-                            )"
-                          >
-                             {{ issue.resolvable ? t('workspace.validation.autoFixableBadge') : t('workspace.validation.manualOnlyBadge') }}
-                          </span>
-                        </div>
+                      <h3 class="mt-3 text-base font-semibold tracking-tight text-slate-950">{{ issue.type }}</h3>
+                      <p class="mt-2 max-w-3xl text-sm leading-7 text-slate-600">{{ issue.description }}</p>
 
-                        <h3 class="mt-3 text-base font-semibold tracking-tight text-slate-950">{{ issue.type }}</h3>
-                        <p class="mt-2 max-w-3xl text-sm leading-7 text-slate-600">{{ issue.description }}</p>
-
-                        <div class="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                           <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ t('workspace.validation.team') }}: {{ issue.team || '-' }}</span>
-                           <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ t('workspace.validation.date') }}: {{ issue.date || '-' }}</span>
-                           <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ t('workspace.validation.issueId', { id: issue.id }) }}</span>
-                        </div>
+                      <div class="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                        <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ t('workspace.validation.team') }}: {{ issue.team || '-' }}</span>
+                        <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ t('workspace.validation.date') }}: {{ issue.date || '-' }}</span>
+                        <span v-if="expandedIssueMode" class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ t('workspace.validation.issueId', { id: issue.id }) }}</span>
                       </div>
                     </div>
-
-                    <div class="flex flex-wrap items-center gap-2 xl:justify-end">
-                      <button
-                        v-if="canResolveIssue(issue)"
-                        class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-60"
-                        :disabled="resolvePending"
-                        @click="resolveSingleIssue(issue.id)"
-                      >
-                        <Wrench class="h-3.5 w-3.5" />
-                        {{ isResolving(issue.id) ? t('workspace.validation.fixing') : t('workspace.validation.fixNow') }}
-                      </button>
-
-                      <RouterLink
-                        :to="getIssueTarget(issue)"
-                        class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-100"
-                      >
-                        {{ t('workspace.validation.openRelatedArea') }}
-                        <ArrowRight class="h-3.5 w-3.5" />
-                      </RouterLink>
-                    </div>
                   </div>
-                </article>
-              </div>
-            </section>
+
+                  <div class="flex flex-wrap items-center gap-2 xl:justify-end">
+                    <button
+                      v-if="canResolveIssue(issue)"
+                      class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-60"
+                      :disabled="resolvePending"
+                      @click="resolveSingleIssue(issue.id)"
+                    >
+                      <Wrench class="h-3.5 w-3.5" />
+                      {{ isResolving(issue.id) ? t('workspace.validation.fixing') : t('workspace.validation.fixNow') }}
+                    </button>
+
+                    <RouterLink
+                      :to="getIssueTarget(issue)"
+                      class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-100"
+                    >
+                      {{ t('workspace.validation.openRelatedArea') }}
+                      <ArrowRight class="h-3.5 w-3.5" />
+                    </RouterLink>
+                  </div>
+                </div>
+              </article>
+            </div>
           </div>
         </WorkspaceSurface>
       </div>

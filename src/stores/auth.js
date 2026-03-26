@@ -14,6 +14,13 @@ const DEFAULT_WORKSPACE_ACCESS_POLICY = Object.freeze([
   { pageCode: 'validation', authRequired: false, configurable: true },
 ])
 
+const SECURE_WORKSPACE_ACCESS_POLICY = Object.freeze(
+  DEFAULT_WORKSPACE_ACCESS_POLICY.map((page) => ({
+    ...page,
+    authRequired: true,
+  })),
+)
+
 const GUEST_WORKSPACE_USER = Object.freeze({
   staffName: 'Guest',
   staffId: 'guest',
@@ -31,6 +38,9 @@ function createDefaultWorkspaceAccessPolicy() {
   return cloneWorkspaceAccessPolicy(DEFAULT_WORKSPACE_ACCESS_POLICY)
 }
 
+function createSecureWorkspaceAccessPolicy() {
+  return cloneWorkspaceAccessPolicy(SECURE_WORKSPACE_ACCESS_POLICY)
+}
 function normalizeTeamIds(teamIds) {
   return (Array.isArray(teamIds) ? teamIds : [])
     .filter((teamId) => teamId != null && `${teamId}`.trim())
@@ -41,7 +51,7 @@ export const useAuthStore = defineStore('auth', () => {
   const currentUser = ref(null)
   const initialized = ref(false)
   const loading = ref(false)
-  const workspaceAccessPolicy = ref(createDefaultWorkspaceAccessPolicy())
+  const workspaceAccessPolicy = ref(createSecureWorkspaceAccessPolicy())
   const workspaceAccessLoaded = ref(false)
   const workspaceAccessLoading = ref(false)
   const workspaceAccessErrorMessage = ref('')
@@ -177,7 +187,7 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await api.workspace.getAccessPolicy()
       applyWorkspaceAccessPolicy(response)
     } catch (error) {
-      workspaceAccessPolicy.value = previousPolicy || createDefaultWorkspaceAccessPolicy()
+      workspaceAccessPolicy.value = previousPolicy || createSecureWorkspaceAccessPolicy()
       workspaceAccessLoaded.value = true
       workspaceAccessErrorMessage.value = error?.message || 'Failed to load workspace access policy.'
     } finally {

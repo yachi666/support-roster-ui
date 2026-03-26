@@ -57,7 +57,7 @@ async function submit() {
     return
   }
 
-  if (mode.value === 'activate' && formState.newPassword.length < 8) {
+  if (mode.value === 'activate' && formState.newPassword.length < 4) {
     errorMessage.value = t('auth.errors.newPasswordMin')
     return
   }
