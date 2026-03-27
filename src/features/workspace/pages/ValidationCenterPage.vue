@@ -16,6 +16,7 @@ import { api } from '@/api'
 import { cn } from '@/lib/utils'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
+import WorkspaceModal from '../components/WorkspaceModal.vue'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
 import { useWorkspacePeriod } from '../composables/useWorkspacePeriod'
@@ -33,6 +34,12 @@ const actionMessage = shallowRef('')
 const actionErrorMessage = shallowRef('')
 const resolvePending = shallowRef(false)
 const resolvingIssueIds = shallowRef([])
+const remediationModalOpen = shallowRef(false)
+const remediationPreviewLoading = shallowRef(false)
+const remediationPreviewError = shallowRef('')
+const remediationApplyPending = shallowRef(false)
+const remediationPreview = shallowRef(null)
+const remediationIssue = shallowRef(null)
 const { year, month, monthLabel } = useWorkspacePeriod()
 const authStore = useAuthStore()
 const { t } = useI18n()
@@ -76,6 +83,10 @@ const sourceMeta = {
     label: t('workspace.validation.source.manual'),
     badge: 'border-slate-200 bg-slate-100 text-slate-700',
   },
+  'system-cleanup': {
+    label: t('workspace.validation.source.systemCleanup'),
+    badge: 'border-rose-200 bg-rose-50 text-rose-700',
+  },
 }
 
 async function loadValidation() {
@@ -103,7 +114,8 @@ function normalizeIssue(issue) {
   }
 
   const severity = severityMeta[issue.severity] ? issue.severity : 'low'
-  const resolutionKind = issue.resolutionKind === 'import-issue' ? 'import-issue' : 'manual'
+  const resolutionKind = ['import-issue', 'system-cleanup'].includes(issue.resolutionKind) ? issue.resolutionKind : 'manual'
+  const remediation = issue.remediation || null
 
   return {
     ...issue,
@@ -112,6 +124,8 @@ function normalizeIssue(issue) {
     domain: issue.domain || 'configuration',
     targetPage: issue.targetPage || '',
     resolutionKind,
+    remediation,
+    autoFixable: Boolean(issue.resolvable || remediation?.previewable),
     sourceLabel: sourceMeta[resolutionKind].label,
   }
 }
@@ -131,11 +145,11 @@ const visibleIssues = computed(() => {
     }
 
     if (selectedSource.value !== 'all') {
-      if (selectedSource.value === 'resolvable' && !issue.resolvable) {
+      if (selectedSource.value === 'resolvable' && !issue.autoFixable) {
         return false
       }
 
-      if (selectedSource.value === 'manual-only' && issue.resolvable) {
+      if (selectedSource.value === 'manual-only' && issue.autoFixable) {
         return false
       }
 
@@ -143,7 +157,11 @@ const visibleIssues = computed(() => {
         return false
       }
 
-      if (selectedSource.value === 'live-data' && issue.resolutionKind !== 'manual') {
+      if (selectedSource.value === 'live-data' && issue.resolutionKind === 'import-issue') {
+        return false
+      }
+
+      if (selectedSource.value === 'system-cleanup' && issue.resolutionKind !== 'system-cleanup') {
         return false
       }
     }
@@ -165,12 +183,24 @@ const hasIssues = computed(() => totalIssueCount.value > 0)
 const expandedIssueMode = computed(() => totalIssueCount.value >= 4)
 const followUpIssueCount = computed(() => Math.max(0, totalIssueCount.value - blockingIssueCount.value))
 
-function canResolveIssue(issue) {
-  return Boolean(issue?.resolvable) && authStore.canEditTeam(issue?.teamId)
+function canResolveImportIssue(issue) {
+  return issue?.resolutionKind === 'import-issue'
+    && Boolean(issue?.resolvable)
+    && authStore.canEditTeam(issue?.teamId)
+}
+
+function canPreviewRemediation(issue) {
+  return Boolean(issue?.remediation?.previewable)
+    && issue?.remediation?.requiresRole === 'admin'
+    && authStore.isAdmin
+}
+
+function canFixIssue(issue) {
+  return canResolveImportIssue(issue) || canPreviewRemediation(issue)
 }
 
 const resolvableSelectedIssueIds = computed(() =>
-  selectedIssueIds.value.filter((issueId) => canResolveIssue(normalizedIssues.value.find((issue) => issue.id === issueId))),
+  selectedIssueIds.value.filter((issueId) => canResolveImportIssue(normalizedIssues.value.find((issue) => issue.id === issueId))),
 )
 
 const visibleIssueIds = computed(() => visibleIssues.value.map((issue) => issue.id))
@@ -258,7 +288,7 @@ function toggleAll() {
 }
 
 async function resolveIssues(issueIds) {
-  const resolvableIssueIds = issueIds.filter((issueId) => canResolveIssue(normalizedIssues.value.find((issue) => issue.id === issueId)))
+  const resolvableIssueIds = issueIds.filter((issueId) => canResolveImportIssue(normalizedIssues.value.find((issue) => issue.id === issueId)))
   if (!resolvableIssueIds.length || resolvePending.value) {
     return
   }
@@ -308,7 +338,105 @@ function resolveSingleIssue(issueId) {
 }
 
 function isResolving(issueId) {
-  return resolvingIssueIds.value.includes(issueId)
+  return resolvingIssueIds.value.includes(issueId) || (remediationApplyPending.value && remediationIssue.value?.id === issueId)
+}
+
+function closeRemediationModal() {
+  remediationModalOpen.value = false
+  remediationPreview.value = null
+  remediationIssue.value = null
+  remediationPreviewError.value = ''
+  remediationPreviewLoading.value = false
+  remediationApplyPending.value = false
+}
+
+async function openRemediationModal(issue) {
+  if (!canPreviewRemediation(issue)) {
+    return
+  }
+
+  remediationModalOpen.value = true
+  remediationIssue.value = issue
+  remediationPreview.value = null
+  remediationPreviewError.value = ''
+  remediationPreviewLoading.value = true
+
+  try {
+    remediationPreview.value = await api.workspace.previewValidationRemediation(issue.id, {
+      year: year.value,
+      month: month.value,
+      actionKey: issue.remediation.actionKey,
+    })
+  } catch (error) {
+    remediationPreviewError.value = error.message || 'Failed to load remediation preview.'
+  } finally {
+    remediationPreviewLoading.value = false
+  }
+}
+
+async function applyRemediation() {
+  const issue = remediationIssue.value
+  if (!issue?.remediation || remediationApplyPending.value) {
+    return
+  }
+
+  remediationApplyPending.value = true
+  remediationPreviewError.value = ''
+  actionErrorMessage.value = ''
+  actionMessage.value = ''
+
+  try {
+    const response = await api.workspace.applyValidationRemediation(issue.id, {
+      year: year.value,
+      month: month.value,
+      actionKey: issue.remediation.actionKey,
+    })
+
+    summary.value = response?.validation?.summary || { high: 0, medium: 0, low: 0, total: 0, blocking: 0 }
+    issues.value = response?.validation?.issues || []
+    topIssue.value = response?.validation?.topIssue || null
+    selectedIssueIds.value = selectedIssueIds.value.filter((id) => id !== issue.id)
+    actionMessage.value = t('workspace.validation.remediationSuccess', { count: response?.appliedCount || 0 })
+    closeRemediationModal()
+  } catch (error) {
+    remediationPreviewError.value = error.message || 'Failed to apply validation remediation.'
+    actionErrorMessage.value = remediationPreviewError.value
+  } finally {
+    remediationApplyPending.value = false
+  }
+}
+
+function triggerIssueAction(issue) {
+  if (canPreviewRemediation(issue)) {
+    void openRemediationModal(issue)
+    return
+  }
+  if (canResolveImportIssue(issue)) {
+    resolveSingleIssue(issue.id)
+  }
+}
+
+function remediationCopy(preview) {
+  const actionKey = preview?.actionKey || ''
+  if (actionKey === 'delete_invalid_team_scope') {
+    return {
+      title: t('workspace.validation.remediation.deleteInvalidTeamScope.title'),
+      summary: t('workspace.validation.remediation.deleteInvalidTeamScope.summary'),
+      warning: t('workspace.validation.remediation.deleteInvalidTeamScope.warning'),
+    }
+  }
+  if (actionKey === 'delete_orphan_assignment') {
+    return {
+      title: t('workspace.validation.remediation.deleteOrphanAssignment.title'),
+      summary: t('workspace.validation.remediation.deleteOrphanAssignment.summary'),
+      warning: t('workspace.validation.remediation.deleteOrphanAssignment.warning'),
+    }
+  }
+  return {
+    title: preview?.title || t('workspace.validation.remediationModalTitle'),
+    summary: preview?.summary || '',
+    warning: preview?.warning || '',
+  }
 }
 
 function getIssueTarget(issue) {
@@ -479,10 +607,10 @@ watch([year, month], () => {
 
                 <div class="mt-5 flex flex-wrap gap-2">
                   <button
-                    v-if="canResolveIssue(prioritizedIssue)"
+                    v-if="canFixIssue(prioritizedIssue)"
                     class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-60"
-                    :disabled="resolvePending"
-                    @click="resolveSingleIssue(prioritizedIssue.id)"
+                    :disabled="resolvePending || remediationPreviewLoading"
+                    @click="triggerIssueAction(prioritizedIssue)"
                   >
                     <Wrench class="h-3.5 w-3.5" />
                     {{ isResolving(prioritizedIssue.id) ? t('workspace.validation.fixing') : t('workspace.validation.fixNow') }}
@@ -574,6 +702,7 @@ watch([year, month], () => {
                     { value: 'manual-only', label: t('workspace.validation.manualOnly') },
                     { value: 'import-issue', label: t('workspace.validation.importPipeline') },
                     { value: 'live-data', label: t('workspace.validation.liveData') },
+                    { value: 'system-cleanup', label: t('workspace.validation.source.systemCleanup') },
                   ]"
                   :key="option.value"
                   :class="[
@@ -652,10 +781,10 @@ watch([year, month], () => {
                         <span
                           :class="cn(
                             'inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]',
-                            issue.resolvable ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-100 text-slate-600',
+                            issue.autoFixable ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-100 text-slate-600',
                           )"
                         >
-                          {{ issue.resolvable ? t('workspace.validation.autoFixableBadge') : t('workspace.validation.manualOnlyBadge') }}
+                          {{ issue.autoFixable ? t('workspace.validation.autoFixableBadge') : t('workspace.validation.manualOnlyBadge') }}
                         </span>
                       </div>
 
@@ -672,10 +801,10 @@ watch([year, month], () => {
 
                   <div class="flex flex-wrap items-center gap-2 xl:justify-end">
                     <button
-                      v-if="canResolveIssue(issue)"
+                      v-if="canFixIssue(issue)"
                       class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-60"
-                      :disabled="resolvePending"
-                      @click="resolveSingleIssue(issue.id)"
+                      :disabled="resolvePending || remediationPreviewLoading"
+                      @click="triggerIssueAction(issue)"
                     >
                       <Wrench class="h-3.5 w-3.5" />
                       {{ isResolving(issue.id) ? t('workspace.validation.fixing') : t('workspace.validation.fixNow') }}
@@ -696,5 +825,66 @@ watch([year, month], () => {
         </WorkspaceSurface>
       </div>
     </div>
+
+    <WorkspaceModal v-model="remediationModalOpen" :title="t('workspace.validation.remediationModalTitle')" width="680px">
+      <template #subtitle>
+        <p class="mt-1 text-sm text-slate-500">{{ remediationIssue?.type || t('workspace.validation.fixNow') }}</p>
+      </template>
+
+      <div class="space-y-4">
+        <WorkspaceSurface v-if="remediationPreviewError" tone="muted" class="border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          {{ remediationPreviewError }}
+        </WorkspaceSurface>
+
+        <WorkspaceSurface v-else-if="remediationPreviewLoading" class="border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+          {{ t('workspace.validation.loadingRemediationPreview') }}
+        </WorkspaceSurface>
+
+        <template v-else-if="remediationPreview">
+          <WorkspaceSurface class="border-slate-200 bg-slate-50 p-4">
+            <div class="text-sm font-semibold text-slate-900">{{ remediationCopy(remediationPreview).title }}</div>
+            <p class="mt-2 text-sm leading-6 text-slate-600">{{ remediationCopy(remediationPreview).summary }}</p>
+            <p v-if="remediationCopy(remediationPreview).warning" class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              {{ remediationCopy(remediationPreview).warning }}
+            </p>
+          </WorkspaceSurface>
+
+          <WorkspaceSurface class="border-slate-200 bg-white p-4">
+            <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.validation.remediationImpact') }}</div>
+            <div class="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{{ remediationPreview.recordCount }}</div>
+            <div class="mt-1 text-sm text-slate-500">{{ t('workspace.validation.remediationImpactHint') }}</div>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <span
+                v-for="recordId in remediationPreview.recordIds || []"
+                :key="recordId"
+                class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-600"
+              >
+                {{ t('workspace.validation.recordId', { id: recordId }) }}
+              </span>
+            </div>
+          </WorkspaceSurface>
+        </template>
+      </div>
+
+      <template #footer>
+        <div class="flex items-center justify-end gap-3">
+          <button
+            type="button"
+            class="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+            @click="closeRemediationModal"
+          >
+            {{ t('common.cancel') }}
+          </button>
+          <button
+            type="button"
+            class="rounded-md bg-rose-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="!remediationPreview || remediationPreviewLoading || remediationApplyPending"
+            @click="applyRemediation"
+          >
+            {{ remediationApplyPending ? t('workspace.validation.applyingRemediation') : t('workspace.validation.confirmRemediation') }}
+          </button>
+        </div>
+      </template>
+    </WorkspaceModal>
   </div>
 </template>

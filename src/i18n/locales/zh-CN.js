@@ -545,6 +545,14 @@ export default {
       date: '日期',
       fixNow: '立即修复',
       fixing: '修复中...',
+      remediationModalTitle: '确认清理动作',
+      loadingRemediationPreview: '正在加载清理预览...',
+      remediationImpact: '将删除的记录',
+      remediationImpactHint: '完成清理后会立即重新执行校验。',
+      recordId: '记录 ID：{id}',
+      confirmRemediation: '删除记录',
+      applyingRemediation: '删除中...',
+      remediationSuccess: '已通过校验清理删除 {count} 条无效记录。',
       openRelatedArea: '打开相关区域',
       issueList: '问题列表',
       openIssues: '待处理问题',
@@ -584,6 +592,19 @@ export default {
       source: {
         importIssue: '导入链路',
         manual: '实时数据',
+        systemCleanup: '系统清理',
+      },
+      remediation: {
+        deleteInvalidTeamScope: {
+          title: '删除无效团队范围',
+          summary: '此操作会移除孤立的账号团队范围记录，不会删除对应账号本身。',
+          warning: '该清理会永久生效，仅应用于历史遗留的无效范围记录。',
+        },
+        deleteOrphanAssignment: {
+          title: '删除孤儿排班',
+          summary: '此操作会移除引用了无效员工、团队或班次定义的排班记录。',
+          warning: '该排班记录会从当前所选月份中被永久删除。',
+        },
       },
       severity: {
         critical: '严重',
