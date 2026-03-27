@@ -12,6 +12,7 @@ import {
 } from 'radix-vue'
 import AvatarImage from '../AvatarImage.vue'
 import { cn } from '@/lib/utils'
+import { hexToRgba } from '../../lib/color'
 import { describeShiftWindow } from '../../lib/shiftTime'
 
 const props = defineProps({
@@ -141,7 +142,12 @@ function handleWindowMouseup() {
     return
   }
 
-  if (pointerState.value.dragged && pointerState.value.staffId && pointerState.value.startDay && pointerState.value.currentDay) {
+  if (
+    pointerState.value.dragged &&
+    pointerState.value.staffId &&
+    pointerState.value.startDay &&
+    pointerState.value.currentDay
+  ) {
     finishPointerSelection(pointerState.value.staffId, pointerState.value.currentDay)
     return
   }
@@ -200,21 +206,13 @@ function isWeekend(day) {
   return day.label === 'Su' || day.label === 'Sa'
 }
 
-function hexToRgba(hex, alpha = 1) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-  if (!result) return null
-  const r = parseInt(result[1], 16)
-  const g = parseInt(result[2], 16)
-  const b = parseInt(result[3], 16)
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`
-}
-
 function getShiftMeta(teamId, code) {
   if (!code) {
     return null
   }
 
-  const teamDetails = props.shiftDetailsByTeam?.[String(teamId)] || props.shiftDetailsByTeam?.[teamId] || {}
+  const teamDetails =
+    props.shiftDetailsByTeam?.[String(teamId)] || props.shiftDetailsByTeam?.[teamId] || {}
   return teamDetails?.[code] || null
 }
 
@@ -255,20 +253,26 @@ const shiftPresentationByTeam = computed(() => {
           code,
           {
             meta: detail,
-            cellStyle: colorHex ? {
-              backgroundColor: hexToRgba(colorHex, 0.15),
-              borderColor: hexToRgba(colorHex, 0.4),
-              color: colorHex,
-            } : null,
-            cardStyle: colorHex ? {
-              borderColor: hexToRgba(colorHex, 0.26),
-              background: `linear-gradient(135deg, ${hexToRgba(colorHex, 0.14)} 0%, rgba(255, 255, 255, 0.98) 72%)`,
-            } : null,
-            badgeStyle: colorHex ? {
-              backgroundColor: hexToRgba(colorHex, 0.14),
-              borderColor: hexToRgba(colorHex, 0.24),
-              color: colorHex,
-            } : null,
+            cellStyle: colorHex
+              ? {
+                  backgroundColor: hexToRgba(colorHex, 0.15),
+                  borderColor: hexToRgba(colorHex, 0.4),
+                  color: colorHex,
+                }
+              : null,
+            cardStyle: colorHex
+              ? {
+                  borderColor: hexToRgba(colorHex, 0.26),
+                  background: `linear-gradient(135deg, ${hexToRgba(colorHex, 0.14)} 0%, rgba(255, 255, 255, 0.98) 72%)`,
+                }
+              : null,
+            badgeStyle: colorHex
+              ? {
+                  backgroundColor: hexToRgba(colorHex, 0.14),
+                  borderColor: hexToRgba(colorHex, 0.24),
+                  color: colorHex,
+                }
+              : null,
             windowLabel: describeShiftWindow(detail.startTime, detail.endTime),
           },
         ]
@@ -285,7 +289,11 @@ function getShiftPresentation(teamId, code) {
   }
 
   const normalizedTeamId = String(teamId)
-  return shiftPresentationByTeam.value?.[normalizedTeamId]?.[code] || fallbackShiftPresentationByCode.value?.[code] || null
+  return (
+    shiftPresentationByTeam.value?.[normalizedTeamId]?.[code] ||
+    fallbackShiftPresentationByCode.value?.[code] ||
+    null
+  )
 }
 
 function getShiftStyle(teamId, code) {
@@ -428,8 +436,14 @@ onBeforeUnmount(() => {
 
 <template>
   <TooltipProvider :delay-duration="120">
-    <div ref="scrollContainer" class="relative flex-1 overflow-auto bg-[#fcfcfd]" @scroll="handleScroll">
-      <table class="min-w-full w-max border-separate border-spacing-0 text-left font-sans text-sm text-slate-700">
+    <div
+      ref="scrollContainer"
+      class="relative flex-1 overflow-auto bg-[#fcfcfd]"
+      @scroll="handleScroll"
+    >
+      <table
+        class="min-w-full w-max border-separate border-spacing-0 text-left font-sans text-sm text-slate-700"
+      >
         <thead class="sticky top-0 z-20 bg-white shadow-[0_1px_0_0_#e2e8f0]">
           <tr>
             <th
@@ -449,14 +463,25 @@ onBeforeUnmount(() => {
             >
               <div class="flex flex-col items-center">
                 <span class="text-[10px] uppercase text-slate-400">{{ day.label }}</span>
-                <span :class="['mt-0.5', weekdayTone(day), isToday(day) ? 'font-bold text-teal-700' : '']">{{ day.value }}</span>
+                <span
+                  :class="[
+                    'mt-0.5',
+                    weekdayTone(day),
+                    isToday(day) ? 'font-bold text-teal-700' : '',
+                  ]"
+                  >{{ day.value }}</span
+                >
               </div>
             </th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="visibleWindow.topPadding > 0" aria-hidden="true">
-            <td :colspan="colspanCount" class="border-0 p-0" :style="{ height: `${visibleWindow.topPadding}px` }"></td>
+            <td
+              :colspan="colspanCount"
+              class="border-0 p-0"
+              :style="{ height: `${visibleWindow.topPadding}px` }"
+            ></td>
           </tr>
           <template v-for="row in visibleWindow.rows" :key="row.key">
             <tr v-if="row.type === 'group'">
@@ -472,131 +497,172 @@ onBeforeUnmount(() => {
               ></td>
             </tr>
             <tr v-else class="group transition-colors hover:bg-slate-50/60">
-              <td :class="[
-                 'sticky left-0 z-20 min-w-[256px] w-64 border-b border-r border-slate-200 bg-white px-4 py-2.5 shadow-[1px_0_0_0_#e2e8f0] group-hover:bg-slate-50',
+              <td
+                :class="[
+                  'sticky left-0 z-20 min-w-[256px] w-64 border-b border-r border-slate-200 bg-white px-4 py-2.5 shadow-[1px_0_0_0_#e2e8f0] group-hover:bg-slate-50',
                   isSelectedStaff(row.person.id) ? 'bg-teal-50/40 group-hover:bg-teal-50/60' : '',
                 ]"
                 :style="{ minWidth: `${FROZEN_COLUMN_WIDTH}px` }"
               >
-                 <div class="flex items-center gap-3">
-                    <AvatarImage
-                     :name="row.person.name"
-                     :src="row.person.avatar"
-                     size-class="h-6 w-6"
-                     fallback-class="border border-slate-200 bg-slate-100 text-[10px] font-semibold text-slate-600"
-                   />
-                   <div class="flex flex-col">
-                     <span class="text-sm font-medium text-slate-800">{{ row.person.name }}</span>
-                     <span class="text-[10px] text-slate-400">{{ row.person.role }}</span>
-                   </div>
-                 </div>
-               </td>
-               <td
-                 v-for="(code, index) in row.person.schedule"
-                 :key="`${row.person.id}-${index}`"
-                 :class="[
-                   'relative cursor-cell border-b border-r border-slate-100 p-1 text-center font-mono text-[11px] outline-none transition-all focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500',
-                   isWeekend(days[index]) ? 'bg-rose-50/20' : '',
-                   isSelected(row.person.id, index + 1) ? 'z-10 bg-teal-50/60 ring-2 ring-inset ring-teal-500' : 'hover:bg-slate-100/80',
-                   isRangeSelected(row.person.id, index + 1) ? 'bg-sky-50/70 ring-1 ring-inset ring-sky-300' : '',
-                   isPendingUpdate(row.person.id, index + 1) ? 'bg-amber-50/70 ring-1 ring-inset ring-amber-300' : '',
-                 ]"
-                 :tabindex="0"
-                  :aria-label="t('workspace.grid.rosterCell', { name: row.person.name, day: index + 1 })"
-                 @focus="emit('select-cell', { staffId: row.person.id, day: index + 1 })"
-                 @keydown="handleCellKeydown($event, row.person.id, index + 1)"
-                 @mousedown.prevent="startPointerSelection(row.person.id, index + 1)"
-                 @mouseenter="updatePointerSelection(row.person.id, index + 1)"
-                 @mouseup.prevent="finishPointerSelection(row.person.id, index + 1)"
-               >
-                 <span
-                   v-if="isPendingUpdate(row.person.id, index + 1)"
-                   class="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-amber-500"
-                 ></span>
-                 <TooltipRoot v-if="code">
+                <div class="flex items-center gap-3">
+                  <AvatarImage
+                    :name="row.person.name"
+                    :src="row.person.avatar"
+                    size-class="h-6 w-6"
+                    fallback-class="border border-slate-200 bg-slate-100 text-[10px] font-semibold text-slate-600"
+                  />
+                  <div class="flex flex-col">
+                    <span class="text-sm font-medium text-slate-800">{{ row.person.name }}</span>
+                    <span class="text-[10px] text-slate-400">{{ row.person.role }}</span>
+                  </div>
+                </div>
+              </td>
+              <td
+                v-for="(code, index) in row.person.schedule"
+                :key="`${row.person.id}-${index}`"
+                :class="[
+                  'relative cursor-cell border-b border-r border-slate-100 p-1 text-center font-mono text-[11px] outline-none transition-all focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500',
+                  isWeekend(days[index]) ? 'bg-rose-50/20' : '',
+                  isSelected(row.person.id, index + 1)
+                    ? 'z-10 bg-teal-50/60 ring-2 ring-inset ring-teal-500'
+                    : 'hover:bg-slate-100/80',
+                  isRangeSelected(row.person.id, index + 1)
+                    ? 'bg-sky-50/70 ring-1 ring-inset ring-sky-300'
+                    : '',
+                  isPendingUpdate(row.person.id, index + 1)
+                    ? 'bg-amber-50/70 ring-1 ring-inset ring-amber-300'
+                    : '',
+                ]"
+                :tabindex="0"
+                :aria-label="
+                  t('workspace.grid.rosterCell', { name: row.person.name, day: index + 1 })
+                "
+                @focus="emit('select-cell', { staffId: row.person.id, day: index + 1 })"
+                @keydown="handleCellKeydown($event, row.person.id, index + 1)"
+                @mousedown.prevent="startPointerSelection(row.person.id, index + 1)"
+                @mouseenter="updatePointerSelection(row.person.id, index + 1)"
+                @mouseup.prevent="finishPointerSelection(row.person.id, index + 1)"
+              >
+                <span
+                  v-if="isPendingUpdate(row.person.id, index + 1)"
+                  class="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-amber-500"
+                ></span>
+                <TooltipRoot v-if="code">
                   <TooltipTrigger as-child>
                     <div
-                       :class="[
-                         'flex min-h-[28px] w-full items-center justify-center rounded-[3px] border outline-none transition-transform hover:-translate-y-0.5 focus-visible:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-teal-500/30',
-                         !getShiftStyle(row.person.teamId, code) && (colorMap[code] || 'border-slate-200 bg-white text-slate-700')
-                       ]"
-                       :style="getShiftStyle(row.person.teamId, code)"
-                     >
-                       {{ code }}
-                     </div>
+                      :class="[
+                        'flex min-h-[28px] w-full items-center justify-center rounded-[3px] border outline-none transition-transform hover:-translate-y-0.5 focus-visible:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-teal-500/30',
+                        !getShiftStyle(row.person.teamId, code) &&
+                          (colorMap[code] || 'border-slate-200 bg-white text-slate-700'),
+                      ]"
+                      :style="getShiftStyle(row.person.teamId, code)"
+                    >
+                      {{ code }}
+                    </div>
                   </TooltipTrigger>
 
                   <TooltipPortal>
-                     <TooltipContent
-                       class="z-50 w-64 rounded-2xl border border-slate-200 bg-white/98 p-3.5 text-left shadow-[0_18px_50px_rgba(15,23,42,0.18)] backdrop-blur"
-                       :style="getShiftCardStyle(row.person.teamId, code)"
-                       side="top"
-                       align="center"
-                       :side-offset="8"
+                    <TooltipContent
+                      class="z-50 w-64 rounded-2xl border border-slate-200 bg-white/98 p-3.5 text-left shadow-[0_18px_50px_rgba(15,23,42,0.18)] backdrop-blur"
+                      :style="getShiftCardStyle(row.person.teamId, code)"
+                      side="top"
+                      align="center"
+                      :side-offset="8"
                     >
                       <div class="space-y-3">
                         <div class="flex items-start justify-between gap-3">
                           <div class="space-y-1">
                             <div class="flex items-center gap-2">
-                               <span
-                                 class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
-                                 :class="!getShiftBadgeStyle(row.person.teamId, code) && (colorMap[code] || 'border-slate-200 bg-slate-100 text-slate-700')"
-                                 :style="getShiftBadgeStyle(row.person.teamId, code)"
-                               >
-                                 {{ code }}
-                               </span>
-                               <span v-if="getShiftMeta(row.person.teamId, code)?.primaryShift" class="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-600">
-                                 <Star class="h-3 w-3 fill-current" />
-                                  {{ t('workspace.grid.primary') }}
-                               </span>
-                             </div>
-                             <p class="text-sm font-semibold leading-5 text-slate-900">
-                                {{ getShiftMeta(row.person.teamId, code)?.meaning || t('workspace.grid.shiftDefinition') }}
-                             </p>
-                           </div>
+                              <span
+                                class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
+                                :class="
+                                  !getShiftBadgeStyle(row.person.teamId, code) &&
+                                  (colorMap[code] || 'border-slate-200 bg-slate-100 text-slate-700')
+                                "
+                                :style="getShiftBadgeStyle(row.person.teamId, code)"
+                              >
+                                {{ code }}
+                              </span>
+                              <span
+                                v-if="getShiftMeta(row.person.teamId, code)?.primaryShift"
+                                class="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-600"
+                              >
+                                <Star class="h-3 w-3 fill-current" />
+                                {{ t('workspace.grid.primary') }}
+                              </span>
+                            </div>
+                            <p class="text-sm font-semibold leading-5 text-slate-900">
+                              {{
+                                getShiftMeta(row.person.teamId, code)?.meaning ||
+                                t('workspace.grid.shiftDefinition')
+                              }}
+                            </p>
+                          </div>
                         </div>
 
-                        <div class="rounded-xl border border-slate-200/80 bg-slate-50/80 px-3 py-2.5">
+                        <div
+                          class="rounded-xl border border-slate-200/80 bg-slate-50/80 px-3 py-2.5"
+                        >
                           <div class="flex items-start gap-2 text-slate-700">
                             <Clock3 class="mt-0.5 h-3.5 w-3.5 flex-none text-slate-400" />
                             <div>
-                               <div class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{{ t('workspace.grid.timeWindow') }}</div>
+                              <div
+                                class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400"
+                              >
+                                {{ t('workspace.grid.timeWindow') }}
+                              </div>
                               <div class="mt-1 font-mono text-[12px] leading-5 text-slate-800">
-                                  {{ getShiftWindowLabel(row.person.teamId, code) || t('workspace.grid.timeUnavailable') }}
+                                {{
+                                  getShiftWindowLabel(row.person.teamId, code) ||
+                                  t('workspace.grid.timeUnavailable')
+                                }}
                               </div>
                             </div>
                           </div>
                         </div>
 
-                        <div class="flex items-center justify-between gap-3 rounded-xl border border-dashed border-slate-200 px-3 py-2 text-[11px] text-slate-600">
+                        <div
+                          class="flex items-center justify-between gap-3 rounded-xl border border-dashed border-slate-200 px-3 py-2 text-[11px] text-slate-600"
+                        >
                           <div class="flex items-center gap-2">
                             <Globe2 class="h-3.5 w-3.5 text-slate-400" />
-                             <span class="uppercase tracking-[0.14em] text-slate-400">{{ t('workspace.grid.timezone') }}</span>
+                            <span class="uppercase tracking-[0.14em] text-slate-400">{{
+                              t('workspace.grid.timezone')
+                            }}</span>
                           </div>
                           <span class="font-semibold text-slate-800">
-                              {{ getShiftMeta(row.person.teamId, code)?.timezone || t('workspace.grid.notAvailable') }}
-                           </span>
-                         </div>
-                       </div>
+                            {{
+                              getShiftMeta(row.person.teamId, code)?.timezone ||
+                              t('workspace.grid.notAvailable')
+                            }}
+                          </span>
+                        </div>
+                      </div>
 
-                    <TooltipArrow class="fill-white" />
-                  </TooltipContent>
-                </TooltipPortal>
-              </TooltipRoot>
-                 <div
-                   v-else
-                   :class="[
-                     'flex min-h-[28px] w-full items-center justify-center rounded-[3px] border border-dashed text-slate-300 transition-colors',
-                     isPendingUpdate(row.person.id, index + 1) ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-slate-200/80',
-                   ]"
-                 >
-                    {{ isPendingUpdate(row.person.id, index + 1) ? t('workspace.grid.clear') : '' }}
-                  </div>
-               </td>
+                      <TooltipArrow class="fill-white" />
+                    </TooltipContent>
+                  </TooltipPortal>
+                </TooltipRoot>
+                <div
+                  v-else
+                  :class="[
+                    'flex min-h-[28px] w-full items-center justify-center rounded-[3px] border border-dashed text-slate-300 transition-colors',
+                    isPendingUpdate(row.person.id, index + 1)
+                      ? 'border-amber-300 bg-amber-50 text-amber-700'
+                      : 'border-slate-200/80',
+                  ]"
+                >
+                  {{ isPendingUpdate(row.person.id, index + 1) ? t('workspace.grid.clear') : '' }}
+                </div>
+              </td>
             </tr>
           </template>
           <tr v-if="visibleWindow.bottomPadding > 0" aria-hidden="true">
-            <td :colspan="colspanCount" class="border-0 p-0" :style="{ height: `${visibleWindow.bottomPadding}px` }"></td>
+            <td
+              :colspan="colspanCount"
+              class="border-0 p-0"
+              :style="{ height: `${visibleWindow.bottomPadding}px` }"
+            ></td>
           </tr>
         </tbody>
       </table>

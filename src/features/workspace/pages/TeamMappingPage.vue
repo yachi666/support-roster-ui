@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { api } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
+import { normalizeHexColor, resolveWorkspaceColor } from '../lib/color'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
@@ -143,7 +144,7 @@ function handleDrop(targetTeamId) {
 }
 
 function teamColorStyle(team) {
-  return { backgroundColor: team.color || '#94a3b8' }
+  return { backgroundColor: resolveWorkspaceColor(team.color, '#94a3b8') }
 }
 
 function reorderLocalTeams(orderedTeams) {
@@ -163,7 +164,7 @@ function resetForm() {
 function fillForm(team) {
   Object.assign(formState, {
     name: team?.name || '',
-    color: team?.color || '#14b8a6',
+    color: normalizeHexColor(team?.color) || resolveWorkspaceColor(team?.color, '#14b8a6'),
     visible: team?.visible !== false,
     description: team?.description || '',
   })
@@ -409,7 +410,9 @@ watch(
                 <p class="mt-2 text-2xl font-semibold text-emerald-900">
                   {{ visibleTeams.length }}
                 </p>
-                <p class="mt-1 text-sm text-emerald-800/75">{{ t('workspace.teams.visibleBody') }}</p>
+                <p class="mt-1 text-sm text-emerald-800/75">
+                  {{ t('workspace.teams.visibleBody') }}
+                </p>
               </WorkspaceSurface>
               <WorkspaceSurface class="border-slate-200 bg-slate-100/80 p-4">
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -432,15 +435,19 @@ watch(
                 </p>
               </div>
             </div>
-            <WorkspaceSurface v-if="loading" class="p-6 text-sm text-slate-500"
-              >{{ t('workspace.teams.loading') }}</WorkspaceSurface
-            >
+            <WorkspaceSurface v-if="loading" class="p-6 text-sm text-slate-500">{{
+              t('workspace.teams.loading')
+            }}</WorkspaceSurface>
             <WorkspaceSurface
               v-for="team in sortedTeams"
               :key="team.id"
               :class="[
                 'group flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md',
-                reorderPending ? 'cursor-wait' : canManageTeams ? 'cursor-pointer' : 'cursor-default',
+                reorderPending
+                  ? 'cursor-wait'
+                  : canManageTeams
+                    ? 'cursor-pointer'
+                    : 'cursor-default',
                 dragOverTeamId === team.id ? 'border-teal-300 bg-teal-50/70 shadow-teal-100' : '',
               ]"
               :draggable="canManageTeams"
@@ -468,7 +475,7 @@ watch(
                         : 'bg-slate-100 text-slate-500'
                     "
                   >
-                      {{ team.visible ? t('workspace.teams.visible') : t('workspace.teams.hidden') }}
+                    {{ team.visible ? t('workspace.teams.visible') : t('workspace.teams.hidden') }}
                   </span>
                 </div>
                 <p
@@ -494,17 +501,19 @@ watch(
               <div
                 class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center"
               >
-                 <p class="text-base font-medium text-slate-700">{{ t('workspace.teams.emptyTitle') }}</p>
-                 <p class="mt-2 text-sm text-slate-500">
-                   {{ t('workspace.teams.emptyBody') }}
-                 </p>
+                <p class="text-base font-medium text-slate-700">
+                  {{ t('workspace.teams.emptyTitle') }}
+                </p>
+                <p class="mt-2 text-sm text-slate-500">
+                  {{ t('workspace.teams.emptyBody') }}
+                </p>
               </div>
             </WorkspaceSurface>
-             <button
-                v-if="canManageTeams"
-               class="w-full rounded-2xl border-2 border-dashed border-slate-200 py-4 text-sm font-medium text-slate-500 transition-colors hover:border-teal-400 hover:bg-teal-50/50 hover:text-teal-600"
-               @click="openCreateDrawer"
-             >
+            <button
+              v-if="canManageTeams"
+              class="w-full rounded-2xl border-2 border-dashed border-slate-200 py-4 text-sm font-medium text-slate-500 transition-colors hover:border-teal-400 hover:bg-teal-50/50 hover:text-teal-600"
+              @click="openCreateDrawer"
+            >
               {{ t('workspace.teams.createNew') }}
             </button>
           </div>
@@ -515,22 +524,22 @@ watch(
                 <div class="flex items-start justify-between gap-4">
                   <div>
                     <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-700">
-                       {{ t('workspace.teams.previewTitle') }}
-                     </h2>
-                     <p class="mt-1 text-sm text-slate-500">
-                       {{ t('workspace.teams.previewBody') }}
-                     </p>
+                      {{ t('workspace.teams.previewTitle') }}
+                    </h2>
+                    <p class="mt-1 text-sm text-slate-500">
+                      {{ t('workspace.teams.previewBody') }}
+                    </p>
                   </div>
                   <span
                     class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600"
                   >
-                     {{ t('workspace.teams.visibleCount', { count: visibleTeams.length }) }}
-                   </span>
-                 </div>
-                 <div v-if="hiddenTeams.length" class="mt-4 border-t border-slate-100 pt-4">
-                   <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                     {{ t('workspace.teams.hiddenFromDashboard') }}
-                   </p>
+                    {{ t('workspace.teams.visibleCount', { count: visibleTeams.length }) }}
+                  </span>
+                </div>
+                <div v-if="hiddenTeams.length" class="mt-4 border-t border-slate-100 pt-4">
+                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    {{ t('workspace.teams.hiddenFromDashboard') }}
+                  </p>
                   <div class="mt-2 flex flex-wrap gap-2">
                     <span
                       v-for="team in hiddenTeams"
@@ -548,7 +557,9 @@ watch(
                 class="overflow-hidden border-slate-200/80 shadow-sm"
               >
                 <div class="flex items-center justify-between bg-slate-900 px-3.5 py-2">
-                  <span class="text-xs font-semibold text-white">{{ t('workspace.teams.viewerTitle') }}</span>
+                  <span class="text-xs font-semibold text-white">{{
+                    t('workspace.teams.viewerTitle')
+                  }}</span>
                   <div class="flex gap-1.5">
                     <div class="h-2 w-2 rounded-full bg-slate-600"></div>
                     <div class="h-2 w-2 rounded-full bg-slate-600"></div>
@@ -573,7 +584,7 @@ watch(
                           <span
                             class="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400"
                           >
-                             {{ t('workspace.teams.live') }}
+                            {{ t('workspace.teams.live') }}
                           </span>
                         </div>
                         <p
@@ -667,7 +678,7 @@ watch(
             <p v-if="fieldErrors.name" class="text-xs text-rose-600">{{ fieldErrors.name }}</p>
           </label>
           <label class="space-y-2 text-sm text-slate-700">
-            <span class="font-medium">Color</span>
+            <span class="font-medium">{{ t('workspace.teams.colorLabel') }}</span>
             <input
               id="team-color"
               v-model="formState.color"

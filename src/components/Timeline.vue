@@ -5,6 +5,7 @@ import { fromZonedTime } from 'date-fns-tz'
 import { User, Mail, Phone, MessageSquare, Star, Clock } from 'lucide-vue-next'
 import { cn } from '@/lib/utils'
 import { toIanaTimezone } from '@/lib/timezones'
+import { hexToRgba } from '@/features/workspace/lib/color'
 import {
   TooltipRoot,
   TooltipTrigger,
@@ -179,17 +180,6 @@ const getShiftBgClass = (teamColor) => {
   return colors[teamColor] || 'bg-gray-100 border-gray-200 text-gray-900 hover:bg-gray-200'
 }
 
-const hexToRgba = (hex, alpha = 1) => {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-  if (!result) return null
-
-  const red = parseInt(result[1], 16)
-  const green = parseInt(result[2], 16)
-  const blue = parseInt(result[3], 16)
-
-  return `rgba(${red}, ${green}, ${blue}, ${alpha})`
-}
-
 const getTeamShiftStyle = (teamColor) => {
   if (!teamColor || !teamColor.startsWith('#')) return null
 
@@ -261,7 +251,9 @@ const getTeamShiftCount = (teamId) => props.shifts.filter((shift) => shift.teamI
               class="pointer-events-none absolute bottom-0 top-0 z-50 w-px bg-red-500"
               :style="{ left: `${currentTimeLeft}px` }"
             >
-              <div class="-ml-[4.5px] h-0 w-0 border-l-[5px] border-r-[5px] border-t-[6px] border-l-transparent border-r-transparent border-t-red-500"></div>
+              <div
+                class="-ml-[4.5px] h-0 w-0 border-l-[5px] border-r-[5px] border-t-[6px] border-l-transparent border-r-transparent border-t-red-500"
+              ></div>
             </div>
           </div>
         </div>
@@ -296,7 +288,12 @@ const getTeamShiftCount = (teamId) => props.shifts.filter((shift) => shift.teamI
             >
               <div class="flex items-center text-sm font-semibold text-gray-800">
                 <span
-                  :class="cn('mr-2 h-2 w-2 rounded-full', !team.color?.startsWith('#') && getTeamColorClass(team.color))"
+                  :class="
+                    cn(
+                      'mr-2 h-2 w-2 rounded-full',
+                      !team.color?.startsWith('#') && getTeamColorClass(team.color),
+                    )
+                  "
                   :style="getTeamColorStyle(team.color)"
                 ></span>
                 {{ team.name }}
@@ -315,10 +312,14 @@ const getTeamShiftCount = (teamId) => props.shifts.filter((shift) => shift.teamI
               <TooltipRoot v-for="layoutShift in shifts" :key="layoutShift.shift.id">
                 <TooltipTrigger as-child>
                   <div
-                    :class="cn(
-                      'absolute z-10 flex cursor-pointer items-center justify-between overflow-hidden rounded-lg border px-2 shadow-sm transition-all select-none hover:z-20 hover:shadow-md',
-                      !layoutShift.shift.colorHex && !team.color?.startsWith('#') && getShiftBgClass(team.color),
-                    )"
+                    :class="
+                      cn(
+                        'absolute z-10 flex cursor-pointer items-center justify-between overflow-hidden rounded-lg border px-2 shadow-sm transition-all select-none hover:z-20 hover:shadow-md',
+                        !layoutShift.shift.colorHex &&
+                          !team.color?.startsWith('#') &&
+                          getShiftBgClass(team.color),
+                      )
+                    "
                     :style="{
                       ...getShiftStyle(layoutShift),
                       ...getShiftCustomStyle(layoutShift.shift.colorHex),
@@ -337,7 +338,9 @@ const getTeamShiftCount = (teamId) => props.shifts.filter((shift) => shift.teamI
                         alt=""
                         class="h-4 w-4 flex-shrink-0 rounded-full border border-white/30 bg-white/50 object-cover"
                       />
-                      <span class="truncate text-xs font-semibold">{{ layoutShift.shift.userName }}</span>
+                      <span class="truncate text-xs font-semibold">{{
+                        layoutShift.shift.userName
+                      }}</span>
                     </div>
 
                     <span
@@ -362,18 +365,26 @@ const getTeamShiftCount = (teamId) => props.shifts.filter((shift) => shift.teamI
                           class="h-10 w-10 rounded-full border border-gray-100 object-cover"
                         />
                         <div>
-                          <div class="font-bold text-gray-900">{{ layoutShift.shift.userName }}</div>
+                          <div class="font-bold text-gray-900">
+                            {{ layoutShift.shift.userName }}
+                          </div>
                           <div class="mt-0.5 flex items-center text-xs text-gray-500">
-                            {{ layoutShift.shift.isPrimary ? 'Primary On-call' : 'Secondary Support' }}
+                            {{
+                              layoutShift.shift.isPrimary ? 'Primary On-call' : 'Secondary Support'
+                            }}
                           </div>
                         </div>
                       </div>
 
                       <div
-                        :class="cn(
-                          'rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide',
-                          !layoutShift.shift.colorHex && !team.color?.startsWith('#') && getShiftBgClass(team.color),
-                        )"
+                        :class="
+                          cn(
+                            'rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide',
+                            !layoutShift.shift.colorHex &&
+                              !team.color?.startsWith('#') &&
+                              getShiftBgClass(team.color),
+                          )
+                        "
                         :style="{
                           ...getShiftCustomStyle(layoutShift.shift.colorHex),
                           ...(!layoutShift.shift.colorHex && team.color?.startsWith('#')
@@ -394,15 +405,21 @@ const getTeamShiftCount = (teamId) => props.shifts.filter((shift) => shift.teamI
                         </span>
                       </div>
                       <div class="my-2 h-px bg-gray-100"></div>
-                      <div class="flex cursor-pointer items-center transition-colors hover:text-gray-900">
+                      <div
+                        class="flex cursor-pointer items-center transition-colors hover:text-gray-900"
+                      >
                         <MessageSquare class="mr-2 h-3.5 w-3.5 text-gray-400" />
                         <span class="select-all">{{ layoutShift.shift.contact.slack }}</span>
                       </div>
-                      <div class="flex cursor-pointer items-center transition-colors hover:text-gray-900">
+                      <div
+                        class="flex cursor-pointer items-center transition-colors hover:text-gray-900"
+                      >
                         <Mail class="mr-2 h-3.5 w-3.5 text-gray-400" />
                         <span class="select-all">{{ layoutShift.shift.contact.email }}</span>
                       </div>
-                      <div class="flex cursor-pointer items-center transition-colors hover:text-gray-900">
+                      <div
+                        class="flex cursor-pointer items-center transition-colors hover:text-gray-900"
+                      >
                         <Phone class="mr-2 h-3.5 w-3.5 text-gray-400" />
                         <span class="select-all">{{ layoutShift.shift.contact.phone }}</span>
                       </div>
@@ -413,7 +430,9 @@ const getTeamShiftCount = (teamId) => props.shifts.filter((shift) => shift.teamI
                       <div class="flex items-center text-sm">
                         <User class="mr-2 h-3.5 w-3.5 text-gray-400" />
                         {{ layoutShift.shift.backup.name }}
-                        <span class="ml-1 text-gray-400">({{ layoutShift.shift.backup.contact }})</span>
+                        <span class="ml-1 text-gray-400"
+                          >({{ layoutShift.shift.backup.contact }})</span
+                        >
                       </div>
                     </div>
 
