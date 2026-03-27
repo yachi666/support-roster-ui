@@ -170,6 +170,7 @@ const drawerSubtitle = computed(() =>
 const endTimeValue = computed(
   () => calculateShiftWindow(formState.startTime, formState.durationMinutes).endTime,
 )
+const shiftColorInputValue = computed(() => formState.colorHex || EMPTY_FORM.colorHex)
 
 function previewSegments(shift) {
   const start = (toMinutes(shift.startTime) / 1440) * 100
@@ -292,6 +293,16 @@ function handleDurationChange(event) {
   formState.durationMinutes = normalizeDurationMinutes(
     event?.target?.value || formState.durationMinutes,
   )
+}
+
+function handleColorHexInput(event) {
+  formState.colorHex = normalizeHexColor(event?.target?.value)
+  delete fieldErrors.colorHex
+}
+
+function clearColorHex() {
+  formState.colorHex = ''
+  delete fieldErrors.colorHex
 }
 
 function resetForm() {
@@ -893,15 +904,33 @@ onMounted(() => {
             </p>
           </label>
           <label class="space-y-2 text-sm text-slate-700">
-            <span class="font-medium">{{ t('workspace.shifts.color') }}</span>
+            <div class="flex items-center justify-between gap-3">
+              <span class="font-medium">{{ t('workspace.shifts.color') }}</span>
+              <button
+                type="button"
+                :disabled="isReadOnlyDrawer || !formState.colorHex"
+                class="text-xs font-medium text-teal-700 transition hover:text-teal-800 disabled:cursor-not-allowed disabled:text-slate-400"
+                @click="clearColorHex"
+              >
+                {{ t('workspace.shifts.useTeamColor') }}
+              </button>
+            </div>
             <input
               id="shift-colorHex"
-              v-model="formState.colorHex"
+              :value="shiftColorInputValue"
               :disabled="isReadOnlyDrawer"
               name="colorHex"
               type="color"
               :class="['h-10 bg-white px-2 py-1', ...inputClass('colorHex')]"
+              @input="handleColorHexInput"
             />
+            <p class="text-xs text-slate-500">
+              {{
+                formState.colorHex
+                  ? t('workspace.shifts.colorHint')
+                  : t('workspace.shifts.colorEmptyHint')
+              }}
+            </p>
             <p v-if="fieldErrors.colorHex" class="text-xs text-rose-600">
               {{ fieldErrors.colorHex }}
             </p>

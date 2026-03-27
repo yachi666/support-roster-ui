@@ -315,6 +315,7 @@ export default {
       color: '颜色',
       colorHint: '为时间线块和排班徽标选择一个容易区分的强调色。',
       colorEmptyHint: '留空后，排班界面会继承各团队自己的视觉颜色。',
+      useTeamColor: '继承团队颜色',
       primaryShift: '主班次',
       primaryShiftHintEmpty: '请先选择至少一个团队，再决定是否设为主班次。',
       primaryShiftHint: '设为主班次后，将对当前选中的 {count} 个团队全部生效。',

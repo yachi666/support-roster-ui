@@ -327,6 +327,7 @@ export default {
       color: 'Color',
       colorHint: 'Pick a distinct accent for timeline blocks and roster badges.',
       colorEmptyHint: 'Leave this empty to inherit each team’s visual color in roster surfaces.',
+      useTeamColor: 'Use team color',
       primaryShift: 'Primary shift',
       primaryShiftHintEmpty:
         'Select at least one team before deciding whether this should be the primary shift.',
