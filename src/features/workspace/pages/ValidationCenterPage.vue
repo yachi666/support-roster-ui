@@ -370,6 +370,7 @@ async function openRemediationModal(issue) {
       year: year.value,
       month: month.value,
       actionKey: issue.remediation.actionKey,
+      recordId: issue.remediation.recordId,
     })
   } catch (error) {
     remediationPreviewError.value = error.message || 'Failed to load remediation preview.'
@@ -394,6 +395,7 @@ async function applyRemediation() {
       year: year.value,
       month: month.value,
       actionKey: issue.remediation.actionKey,
+      recordId: issue.remediation.recordId,
     })
 
     summary.value = response?.validation?.summary || { high: 0, medium: 0, low: 0, total: 0, blocking: 0 }
