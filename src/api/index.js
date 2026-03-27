@@ -322,6 +322,16 @@ export const api = {
       body: payload,
     }),
 
+    previewValidationRemediation: (issueId, payload) => request(`/workspace/validation/${issueId}/preview-remediation`, {
+      method: 'POST',
+      body: payload,
+    }),
+
+    applyValidationRemediation: (issueId, payload) => request(`/workspace/validation/${issueId}/apply-remediation`, {
+      method: 'POST',
+      body: payload,
+    }),
+
     previewImport: (formData) => request('/workspace/import-export/preview', {
       method: 'POST',
       body: formData,

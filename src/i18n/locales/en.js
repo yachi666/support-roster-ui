@@ -545,6 +545,14 @@ export default {
       date: 'Date',
       fixNow: 'Fix now',
       fixing: 'Fixing...',
+      remediationModalTitle: 'Review cleanup action',
+      loadingRemediationPreview: 'Loading cleanup preview...',
+      remediationImpact: 'Records to remove',
+      remediationImpactHint: 'Validation will re-run after this cleanup completes.',
+      recordId: 'Record ID: {id}',
+      confirmRemediation: 'Delete records',
+      applyingRemediation: 'Deleting...',
+      remediationSuccess: 'Removed {count} invalid record(s) via validation cleanup.',
       openRelatedArea: 'Open related area',
       issueList: 'Issue list',
       openIssues: 'Open issues',
@@ -584,6 +592,19 @@ export default {
       source: {
         importIssue: 'Import pipeline',
         manual: 'Live data',
+        systemCleanup: 'System cleanup',
+      },
+      remediation: {
+        deleteInvalidTeamScope: {
+          title: 'Delete invalid team scope',
+          summary: 'This removes the orphaned workspace account team scope record and leaves the account itself untouched.',
+          warning: 'The cleanup is permanent and should only be used for historical invalid scope rows.',
+        },
+        deleteOrphanAssignment: {
+          title: 'Delete orphan assignment',
+          summary: 'This removes the roster assignment whose staff, team, or shift definition reference is no longer valid.',
+          warning: 'The roster entry will be permanently deleted from the selected month.',
+        },
       },
       severity: {
         critical: 'Critical',
