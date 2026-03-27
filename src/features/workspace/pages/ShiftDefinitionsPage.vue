@@ -1,12 +1,11 @@
 <script setup>
 import { computed, onMounted, reactive, shallowRef } from 'vue'
-import { Clock3, Plus, Search, Trash2 } from 'lucide-vue-next'
+import { Clock3, Lock, Pencil, Plus, Search, Trash2 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { api } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
 import {
-  addMinutesToTime,
   calculateShiftWindow,
   createTimeOptions,
   describeShiftWindow,
@@ -47,6 +46,7 @@ const deletePending = shallowRef(false)
 const submitPending = shallowRef(false)
 const formErrorMessage = shallowRef('')
 const confirmDeleteVisible = shallowRef(false)
+const baselineSnapshot = shallowRef('')
 const fieldErrors = reactive({})
 const formState = reactive({ ...EMPTY_FORM })
 const authStore = useAuthStore()
@@ -130,26 +130,64 @@ const selectedShiftTeamIds = computed(() =>
     .filter(Boolean),
 )
 const canEditSelectedShift = computed(() => Boolean(selectedShift.value) && authStore.canEditAllTeams(selectedShiftTeamIds.value))
+const isReadOnlyDrawer = computed(() => Boolean(selectedShift.value) && !canEditSelectedShift.value)
+const drawerTeamOptions = computed(() => {
+  const optionMap = new Map()
 
-function previewStyle(shift) {
+  editableTeamOptions.value.forEach((team) => {
+    optionMap.set(String(team.id), team)
+  })
+
+  if (isReadOnlyDrawer.value) {
+    getShiftTeams(selectedShift.value).forEach((team) => {
+      optionMap.set(String(team.id), team)
+    })
+  }
+
+  return [...optionMap.values()]
+})
+const drawerTitle = computed(() => {
+  if (!selectedShift.value) {
+    return t('workspace.shifts.createTitle')
+  }
+  return isReadOnlyDrawer.value ? t('workspace.shifts.readonlyTitle') : t('workspace.shifts.editTitle')
+})
+const drawerSubtitle = computed(() => (
+  isReadOnlyDrawer.value ? t('workspace.shifts.readonlySubtitle') : t('workspace.shifts.subtitle')
+))
+const endTimeValue = computed(() => calculateShiftWindow(formState.startTime, formState.durationMinutes).endTime)
+
+function previewSegments(shift) {
   const start = (toMinutes(shift.startTime) / 1440) * 100
   const durationMinutes = normalizeDurationMinutes(shift.durationMinutes)
+  const backgroundColor = shift.colorHex || '#94a3b8'
+
+  if (!durationMinutes) {
+    return []
+  }
 
   if (durationMinutes >= 1440) {
-    return {
-      left: '0%',
-      right: '0%',
-      backgroundColor: shift.colorHex || '#94a3b8',
-    }
+    return [{ left: '0%', right: '0%', backgroundColor }]
   }
 
-  const endPercentage = (Math.min(1440, toMinutes(shift.startTime) + durationMinutes) / 1440) * 100
-
-  return {
+  const endMinutes = toMinutes(shift.startTime) + durationMinutes
+  const endPercentage = (Math.min(1440, endMinutes) / 1440) * 100
+  const segments = [{
     left: `${start}%`,
     right: `${Math.max(0, 100 - endPercentage)}%`,
-    backgroundColor: shift.colorHex || '#94a3b8',
+    backgroundColor,
+  }]
+
+  if (endMinutes > 1440) {
+    const overflowPercentage = ((endMinutes - 1440) / 1440) * 100
+    segments.push({
+      left: '0%',
+      right: `${Math.max(0, 100 - overflowPercentage)}%`,
+      backgroundColor,
+    })
   }
+
+  return segments
 }
 
 function codeIconStyle(shift) {
@@ -164,16 +202,34 @@ function codeIconStyle(shift) {
 }
 
 const timeSummary = computed(() => describeShiftWindow(formState.startTime, formState.durationMinutes))
-const endTimePreview = computed(() => {
-  if (!formState.startTime || !normalizeDurationMinutes(formState.durationMinutes)) {
-    return ''
-  }
-  return addMinutesToTime(formState.startTime, normalizeDurationMinutes(formState.durationMinutes))
-})
 const durationLabel = computed(() => {
   const durationMinutes = normalizeDurationMinutes(formState.durationMinutes)
   return durationMinutes ? formatDurationLabel(durationMinutes) : ''
 })
+const primaryShiftImpactHint = computed(() => {
+  if (!formState.teamIds.length) {
+    return t('workspace.shifts.primaryShiftHintEmpty')
+  }
+  return t('workspace.shifts.primaryShiftHint', { count: formState.teamIds.length })
+})
+const formSnapshot = computed(() => JSON.stringify({
+  teamIds: [...formState.teamIds].sort(),
+  code: formState.code.trim(),
+  meaning: formState.meaning.trim(),
+  startTime: normalizeTimeValue(formState.startTime),
+  durationMinutes: normalizeDurationMinutes(formState.durationMinutes),
+  timezone: formState.timezone.trim(),
+  primaryShift: Boolean(formState.primaryShift),
+  visible: Boolean(formState.visible),
+  colorHex: formState.colorHex.trim(),
+  remark: formState.remark.trim(),
+}))
+const hasUnsavedChanges = computed(() => (
+  !isReadOnlyDrawer.value
+  && Boolean(formVisible.value)
+  && baselineSnapshot.value !== ''
+  && baselineSnapshot.value !== formSnapshot.value
+))
 
 function getShiftTeams(shift) {
   if (shift.teams?.length) {
@@ -183,6 +239,14 @@ function getShiftTeams(shift) {
     return [{ id: shift.teamId, name: shift.teamName || 'Unknown Team' }]
   }
   return []
+}
+
+function canEditShift(shift) {
+  return authStore.canEditAllTeams(getShiftTeams(shift).map((team) => team.id))
+}
+
+function markFormPristine() {
+  baselineSnapshot.value = formSnapshot.value
 }
 
 function toggleFormTeam(teamId) {
@@ -199,12 +263,12 @@ function applyDurationPreset(durationMinutes) {
   formState.durationMinutes = durationMinutes
 }
 
-function handleStartTimeChange() {
-  formState.startTime = normalizeTimeValue(formState.startTime)
+function handleStartTimeChange(event) {
+  formState.startTime = normalizeTimeValue(event?.target?.value || formState.startTime)
 }
 
-function handleDurationChange() {
-  formState.durationMinutes = normalizeDurationMinutes(formState.durationMinutes)
+function handleDurationChange(event) {
+  formState.durationMinutes = normalizeDurationMinutes(event?.target?.value || formState.durationMinutes)
 }
 
 function resetForm() {
@@ -238,15 +302,14 @@ function openCreateDrawer() {
   selectedShiftId.value = null
   resetForm()
   formVisible.value = true
+  markFormPristine()
 }
 
 function openShiftDrawer(shift) {
-  if (!authStore.canEditAllTeams(getShiftTeams(shift).map((team) => team.id))) {
-    return
-  }
   selectedShiftId.value = shift.id
   fillForm(shift)
   formVisible.value = true
+  markFormPristine()
 }
 
 function validateForm() {
@@ -309,7 +372,7 @@ async function saveShift() {
     }
 
     await loadShiftDefinitions()
-    closeDrawer()
+    closeDrawer(true)
   } catch (error) {
     const hasFieldErrors = applyApiFieldErrors(error, fieldErrors, shiftErrorRules)
     formErrorMessage.value = hasFieldErrors ? 'Please correct the highlighted fields before saving.' : getApiErrorMessage(error, 'Failed to save shift definition.')
@@ -334,7 +397,7 @@ async function confirmDeleteShift() {
   try {
     await api.workspace.deleteShiftDefinition(selectedShift.value.id)
     await loadShiftDefinitions()
-    closeDrawer()
+    closeDrawer(true)
   } catch (error) {
     formErrorMessage.value = getApiErrorMessage(error, 'Failed to delete shift definition.')
   } finally {
@@ -346,15 +409,22 @@ function cancelDeleteShift() {
   confirmDeleteVisible.value = false
 }
 
-function closeDrawer() {
+function closeDrawer(force = false) {
+  if (!force && hasUnsavedChanges.value && typeof window !== 'undefined') {
+    const shouldDiscard = window.confirm(t('workspace.shifts.discardChangesConfirm'))
+    if (!shouldDiscard) {
+      return
+    }
+  }
   selectedShiftId.value = null
   formVisible.value = false
+  baselineSnapshot.value = ''
   resetForm()
 }
 
 function inputClass(fieldName) {
   return [
-    'w-full rounded-md border px-3 py-2 outline-none transition focus:ring-2 focus:ring-teal-500/20',
+    'w-full rounded-md border px-3 py-2 outline-none transition focus:ring-2 focus:ring-teal-500/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500',
     fieldErrors[fieldName] ? 'border-rose-300 focus:border-rose-400' : 'border-slate-200 focus:border-teal-500',
   ]
 }
@@ -449,7 +519,7 @@ onMounted(() => {
                   </td>
                   <td class="px-6 py-4">
                     <div class="relative h-1.5 w-full overflow-hidden rounded-full border border-slate-200 bg-slate-100">
-                      <div class="absolute inset-y-0 rounded-full" :style="previewStyle(shift)"></div>
+                      <div v-for="(segment, index) in previewSegments(shift)" :key="`${shift.id || shift.code}-segment-${index}`" class="absolute inset-y-0 rounded-full" :style="segment"></div>
                     </div>
                   </td>
                   <td class="px-6 py-4 text-center">
@@ -463,7 +533,10 @@ onMounted(() => {
                     </div>
                   </td>
                   <td class="px-6 py-4 text-right text-xs text-slate-400">
-                    <span class="opacity-0 transition-opacity group-hover:opacity-100">{{ t('common.edit') }}</span>
+                    <span class="inline-flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <Lock v-if="!canEditShift(shift)" class="h-3.5 w-3.5" />
+                      {{ canEditShift(shift) ? t('common.edit') : t('common.view') }}
+                    </span>
                   </td>
                 </tr>
                 <tr v-if="loading">
@@ -479,14 +552,24 @@ onMounted(() => {
       </div>
     </div>
 
-    <WorkspaceDrawer :model-value="drawerOpen" :title="selectedShift ? t('workspace.shifts.editTitle') : t('workspace.shifts.createTitle')" width="460px" @update:model-value="closeDrawer">
+    <WorkspaceDrawer :model-value="drawerOpen" :title="drawerTitle" width="460px" @update:model-value="closeDrawer">
       <template #subtitle>
-        <p class="mt-1 text-xs text-slate-500">{{ t('workspace.shifts.subtitle') }}</p>
+        <p class="mt-1 text-xs text-slate-500">{{ drawerSubtitle }}</p>
       </template>
 
       <form class="space-y-5" @submit.prevent="saveShift">
         <WorkspaceSurface v-if="formErrorMessage" tone="muted" class="border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
           {{ formErrorMessage }}
+        </WorkspaceSurface>
+
+        <WorkspaceSurface v-if="isReadOnlyDrawer" tone="muted" class="border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+          <div class="flex items-start gap-3">
+            <Lock class="mt-0.5 h-4 w-4 flex-none text-slate-500" />
+            <div class="space-y-1">
+              <p class="font-medium">{{ t('workspace.shifts.readonlyBannerTitle') }}</p>
+              <p class="text-xs text-slate-500">{{ t('workspace.shifts.readonlyBannerBody') }}</p>
+            </div>
+          </div>
         </WorkspaceSurface>
 
         <WorkspaceSurface v-if="confirmDeleteVisible && canEditSelectedShift" tone="muted" class="space-y-3 border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
@@ -511,8 +594,15 @@ onMounted(() => {
                 <span>{{ t('workspace.shifts.selectedCount', { count: formState.teamIds.length }) }}</span>
               </div>
               <div class="grid gap-2 md:grid-cols-2">
-                <label v-for="team in editableTeamOptions" :key="team.id" class="flex cursor-pointer items-center gap-3 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 transition-colors hover:border-teal-300 hover:bg-teal-50/40">
-                  <input :checked="formState.teamIds.includes(String(team.id))" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" @change="toggleFormTeam(team.id)" />
+                <label
+                  v-for="team in drawerTeamOptions"
+                  :key="team.id"
+                  :class="[
+                    'flex items-center gap-3 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 transition-colors',
+                    isReadOnlyDrawer ? 'cursor-not-allowed bg-slate-50/70 opacity-80' : 'cursor-pointer hover:border-teal-300 hover:bg-teal-50/40',
+                  ]"
+                >
+                  <input :checked="formState.teamIds.includes(String(team.id))" :disabled="isReadOnlyDrawer" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" @change="toggleFormTeam(team.id)" />
                   <span class="h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: team.color || '#94a3b8' }"></span>
                   <span>{{ team.name }}</span>
                 </label>
@@ -522,17 +612,17 @@ onMounted(() => {
           </label>
           <label class="space-y-2 text-sm text-slate-700">
             <span class="font-medium">{{ t('workspace.shifts.shiftCode') }}</span>
-            <input id="shift-code" v-model="formState.code" name="code" type="text" :class="inputClass('code')" />
+            <input id="shift-code" v-model="formState.code" :disabled="isReadOnlyDrawer" name="code" type="text" :class="inputClass('code')" />
             <p v-if="fieldErrors.code" class="text-xs text-rose-600">{{ fieldErrors.code }}</p>
           </label>
           <label class="space-y-2 text-sm text-slate-700">
             <span class="font-medium">{{ t('workspace.shifts.meaning') }}</span>
-            <input id="shift-meaning" v-model="formState.meaning" name="meaning" type="text" :class="inputClass('meaning')" />
+            <input id="shift-meaning" v-model="formState.meaning" :disabled="isReadOnlyDrawer" name="meaning" type="text" :class="inputClass('meaning')" />
             <p v-if="fieldErrors.meaning" class="text-xs text-rose-600">{{ fieldErrors.meaning }}</p>
           </label>
           <label class="space-y-2 text-sm text-slate-700">
             <span class="font-medium">{{ t('workspace.shifts.startTime') }}</span>
-            <select id="shift-startTime" v-model="formState.startTime" name="startTime" :class="['bg-white', ...inputClass('startTime')]" @change="handleStartTimeChange">
+            <select id="shift-startTime" v-model="formState.startTime" :disabled="isReadOnlyDrawer" name="startTime" :class="['bg-white', ...inputClass('startTime')]" @change="handleStartTimeChange">
               <option v-for="timeOption in TIME_OPTIONS" :key="timeOption.value" :value="timeOption.value">{{ timeOption.label }}</option>
             </select>
             <p v-if="fieldErrors.startTime" class="text-xs text-rose-600">{{ fieldErrors.startTime }}</p>
@@ -542,6 +632,7 @@ onMounted(() => {
             <input
               id="shift-durationMinutes"
               v-model="formState.durationMinutes"
+              :disabled="isReadOnlyDrawer"
               name="durationMinutes"
               type="number"
               min="30"
@@ -555,17 +646,17 @@ onMounted(() => {
           <div class="space-y-2 text-sm text-slate-700 md:col-span-2">
             <span class="font-medium">{{ t('workspace.shifts.quickDuration') }}</span>
             <div class="flex flex-wrap gap-2">
-              <button type="button" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700" @click="applyDurationPreset(8 * 60)">+8h</button>
-              <button type="button" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700" @click="applyDurationPreset(9 * 60)">+9h</button>
-              <button type="button" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700" @click="applyDurationPreset(12 * 60)">+12h</button>
-              <button type="button" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700" @click="applyDurationPreset(24 * 60)">+24h</button>
+              <button type="button" :disabled="isReadOnlyDrawer" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400" @click="applyDurationPreset(8 * 60)">+8h</button>
+              <button type="button" :disabled="isReadOnlyDrawer" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400" @click="applyDurationPreset(9 * 60)">+9h</button>
+              <button type="button" :disabled="isReadOnlyDrawer" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400" @click="applyDurationPreset(12 * 60)">+12h</button>
+              <button type="button" :disabled="isReadOnlyDrawer" class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400" @click="applyDurationPreset(24 * 60)">+24h</button>
             </div>
             <p class="text-xs text-slate-500">{{ timeSummary || t('workspace.shifts.selectStartAndDuration') }}</p>
-            <p v-if="endTimePreview" class="text-xs text-slate-400">{{ t('workspace.shifts.endsAt', { time: endTimePreview, duration: durationLabel }) }}</p>
+            <p v-if="endTimeValue" class="text-xs text-slate-400">{{ t('workspace.shifts.endsAt', { time: endTimeValue, duration: durationLabel }) }}</p>
           </div>
           <label class="space-y-2 text-sm text-slate-700">
             <span class="font-medium">{{ t('workspace.shifts.timezone') }}</span>
-            <select id="shift-timezone" v-model="formState.timezone" name="timezone" :class="['bg-white', ...inputClass('timezone')]">
+            <select id="shift-timezone" v-model="formState.timezone" :disabled="isReadOnlyDrawer" name="timezone" :class="['bg-white', ...inputClass('timezone')]">
               <option v-for="timezoneOption in WORKSPACE_STAFF_TIMEZONE_OPTIONS" :key="timezoneOption.value" :value="timezoneOption.value">
                 {{ timezoneOption.label }}
               </option>
@@ -574,20 +665,23 @@ onMounted(() => {
           </label>
           <label class="space-y-2 text-sm text-slate-700">
             <span class="font-medium">{{ t('workspace.shifts.color') }}</span>
-            <input id="shift-colorHex" v-model="formState.colorHex" name="colorHex" type="color" :class="['h-10 bg-white px-2 py-1', ...inputClass('colorHex')]" />
+            <input id="shift-colorHex" v-model="formState.colorHex" :disabled="isReadOnlyDrawer" name="colorHex" type="color" :class="['h-10 bg-white px-2 py-1', ...inputClass('colorHex')]" />
             <p v-if="fieldErrors.colorHex" class="text-xs text-rose-600">{{ fieldErrors.colorHex }}</p>
           </label>
+          <div class="space-y-2">
+            <label class="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-700">
+              <input id="shift-primaryShift" v-model="formState.primaryShift" :disabled="isReadOnlyDrawer" name="primaryShift" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 disabled:cursor-not-allowed" />
+              <span>{{ t('workspace.shifts.primaryShift') }}</span>
+            </label>
+            <p class="text-xs text-slate-500">{{ primaryShiftImpactHint }}</p>
+          </div>
           <label class="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-700">
-            <input id="shift-primaryShift" v-model="formState.primaryShift" name="primaryShift" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
-            <span>{{ t('workspace.shifts.primaryShift') }}</span>
-          </label>
-          <label class="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-3 text-sm text-slate-700">
-            <input id="shift-visible" v-model="formState.visible" name="visible" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
+            <input id="shift-visible" v-model="formState.visible" :disabled="isReadOnlyDrawer" name="visible" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 disabled:cursor-not-allowed" />
             <span>{{ t('workspace.shifts.visibleInPlanners') }}</span>
           </label>
           <label class="space-y-2 text-sm text-slate-700 md:col-span-2">
             <span class="font-medium">{{ t('workspace.shifts.remark') }}</span>
-            <textarea id="shift-remark" v-model="formState.remark" name="remark" rows="4" :class="inputClass('remark')"></textarea>
+            <textarea id="shift-remark" v-model="formState.remark" :disabled="isReadOnlyDrawer" name="remark" rows="4" :class="inputClass('remark')"></textarea>
             <p v-if="fieldErrors.remark" class="text-xs text-rose-600">{{ fieldErrors.remark }}</p>
           </label>
         </div>
@@ -608,7 +702,7 @@ onMounted(() => {
           <div v-else></div>
           <div class="flex items-center gap-3">
             <button type="button" class="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50" @click="closeDrawer">{{ t('common.cancel') }}</button>
-            <button v-if="canCreateShift" type="button" class="inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60" :disabled="submitPending" @click="saveShift">
+            <button v-if="canCreateShift && !isReadOnlyDrawer" type="button" class="inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60" :disabled="submitPending" @click="saveShift">
               <Pencil class="h-4 w-4" />
               {{ submitPending ? t('common.saving') : selectedShift ? t('workspace.shifts.saveAction') : t('workspace.shifts.createShift') }}
             </button>
