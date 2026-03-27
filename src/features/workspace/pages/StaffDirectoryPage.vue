@@ -124,7 +124,8 @@ const selectedStaff = computed(() => {
   return staffList.value.find((staff) => staff.id === selectedStaffId.value) || null
 })
 
-const teamOptions = computed(() => teams.value.filter((team) => team.visible !== false))
+// Hidden teams stay schedulable in workspace staff management, so keep them selectable here.
+const teamOptions = computed(() => teams.value)
 const editableTeamOptions = computed(() =>
   teamOptions.value.filter((team) => authStore.isAdmin || authStore.canEditTeam(team.id)),
 )

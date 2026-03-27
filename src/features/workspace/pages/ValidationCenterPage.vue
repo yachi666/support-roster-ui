@@ -341,6 +341,10 @@ function isResolving(issueId) {
   return resolvingIssueIds.value.includes(issueId) || (remediationApplyPending.value && remediationIssue.value?.id === issueId)
 }
 
+function showIssueId(issue) {
+  return expandedIssueMode.value || issue?.resolutionKind === 'system-cleanup'
+}
+
 function closeRemediationModal() {
   remediationModalOpen.value = false
   remediationPreview.value = null
@@ -366,6 +370,7 @@ async function openRemediationModal(issue) {
       year: year.value,
       month: month.value,
       actionKey: issue.remediation.actionKey,
+      recordId: issue.remediation.recordId,
     })
   } catch (error) {
     remediationPreviewError.value = error.message || 'Failed to load remediation preview.'
@@ -390,6 +395,7 @@ async function applyRemediation() {
       year: year.value,
       month: month.value,
       actionKey: issue.remediation.actionKey,
+      recordId: issue.remediation.recordId,
     })
 
     summary.value = response?.validation?.summary || { high: 0, medium: 0, low: 0, total: 0, blocking: 0 }
@@ -794,7 +800,7 @@ watch([year, month], () => {
                       <div class="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                         <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ t('workspace.validation.team') }}: {{ issue.team || '-' }}</span>
                         <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ t('workspace.validation.date') }}: {{ issue.date || '-' }}</span>
-                        <span v-if="expandedIssueMode" class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ t('workspace.validation.issueId', { id: issue.id }) }}</span>
+                        <span v-if="showIssueId(issue)" class="rounded-full border border-slate-200 bg-white px-3 py-1.5">{{ t('workspace.validation.issueId', { id: issue.id }) }}</span>
                       </div>
                     </div>
                   </div>
@@ -828,7 +834,10 @@ watch([year, month], () => {
 
     <WorkspaceModal v-model="remediationModalOpen" :title="t('workspace.validation.remediationModalTitle')" width="680px">
       <template #subtitle>
-        <p class="mt-1 text-sm text-slate-500">{{ remediationIssue?.type || t('workspace.validation.fixNow') }}</p>
+        <p class="mt-1 text-sm text-slate-500">
+          {{ remediationIssue?.type || t('workspace.validation.fixNow') }}
+          <span v-if="remediationIssue"> · {{ t('workspace.validation.issueId', { id: remediationIssue.id }) }}</span>
+        </p>
       </template>
 
       <div class="space-y-4">

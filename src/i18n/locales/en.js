@@ -45,9 +45,11 @@ export default {
     hero: {
       badge: 'Support Roster Workspace',
       title: 'Secure access for workspace operations.',
-      description: '`viewer` remains public. Workspace access now uses staff ID based sign-in, role-aware navigation, and team-scoped editor permissions.',
+      description:
+        '`viewer` remains public. Workspace access now uses staff ID based sign-in, role-aware navigation, and team-scoped editor permissions.',
       noteTitle: 'Current rollout note',
-      noteBody: 'First-time activation currently works inside the intranet/test scope only. Production rollout still needs stronger activation verification.',
+      noteBody:
+        'First-time activation currently works inside the intranet/test scope only. Production rollout still needs stronger activation verification.',
     },
     card: {
       eyebrow: 'Workspace authentication',
@@ -60,7 +62,8 @@ export default {
       passwordPlaceholder: 'Enter your password',
       newPassword: 'New password',
       newPasswordPlaceholder: 'Set a password with at least 4 characters',
-      intranetHint: 'This first-time activation flow is temporarily accepted for intranet/testing only.',
+      intranetHint:
+        'This first-time activation flow is temporarily accepted for intranet/testing only.',
     },
   },
   workspace: {
@@ -103,14 +106,16 @@ export default {
     },
     overview: {
       title: 'Monthly Roster Overview',
-      description: 'Month-first control board for {monthLabel}, focused on roster readiness, coverage signals, and the smallest set of issues that need escalation.',
+      description:
+        'Month-first control board for {monthLabel}, focused on roster readiness, coverage signals, and the smallest set of issues that need escalation.',
       refresh: 'Refresh',
       openRoster: 'Open Monthly Roster',
       importExport: 'Import or Export',
       monthOperationsBrief: 'Monthly operations brief',
       rosterOverview: '{monthLabel} roster overview',
       loadingHero: 'Refreshing month-level roster signals from the workspace API...',
-      monthAligned: 'Aligned with the shared workspace period and used across roster, import, and validation flows.',
+      monthAligned:
+        'Aligned with the shared workspace period and used across roster, import, and validation flows.',
       selectedMonth: 'Selected month',
       monthStatus: 'Month status',
       primarySignal: 'Primary roster signal',
@@ -124,7 +129,8 @@ export default {
       recentOperations: 'Recent operations',
       loadingActivity: 'Loading recent activity...',
       emptyActivity: 'No recent activity returned by the server.',
-      activityHint: 'Captured from the latest workspace operation log for month-level roster operations.',
+      activityHint:
+        'Captured from the latest workspace operation log for month-level roster operations.',
       actionDeck: 'Action deck',
       nextMoves: 'Next moves for this month',
       loadingActions: 'Loading quick actions...',
@@ -151,7 +157,8 @@ export default {
         defaultCta: 'Open workspace',
         emptyEyebrow: 'Waiting for data',
         emptyTitle: 'No month signals returned',
-        emptyDetail: 'Once overview stats are available, this area will summarize completion, coverage, and roster execution for the selected month.',
+        emptyDetail:
+          'Once overview stats are available, this area will summarize completion, coverage, and roster execution for the selected month.',
         emptyCta: 'Refresh overview',
       },
     },
@@ -189,7 +196,8 @@ export default {
         currentAssignment: 'Current Assignment',
         pendingAssignment: 'Pending Assignment',
         unsaved: 'Unsaved',
-        readonlyMessage: 'Readonly mode is enabled. You can inspect assignments here, but roster changes are disabled.',
+        readonlyMessage:
+          'Readonly mode is enabled. You can inspect assignments here, but roster changes are disabled.',
         shiftCode: 'Shift Code',
         rangeFill: 'Range Fill',
         resetSingleDay: 'Reset to single day',
@@ -231,7 +239,8 @@ export default {
       empty: 'No staff records matched the current filter.',
       detailSubtitle: 'Inspect and maintain the selected roster participant.',
       formSubtitle: 'Changes are saved directly to the workspace staff registry.',
-      createSubtitle: 'Enter one or more staff IDs and the server will sync employee details when you save.',
+      createSubtitle:
+        'Enter one or more staff IDs and the server will sync employee details when you save.',
       addTitle: 'Add Staff',
       editTitle: 'Edit Staff',
       profileTitle: 'Staff Profile',
@@ -243,7 +252,8 @@ export default {
       keepRecord: 'Keep Record',
       confirmDelete: 'Confirm Delete',
       deleteConfirm: 'Delete {name} from the workspace staff registry?',
-      deleteWarning: 'This removes the staff record immediately. Existing roster assignments may lose their linked profile.',
+      deleteWarning:
+        'This removes the staff record immediately. Existing roster assignments may lose their linked profile.',
       fields: {
         staffId: 'Staff ID',
         staffIds: 'Staff IDs (one per line)',
@@ -259,7 +269,8 @@ export default {
         notes: 'Notes',
       },
       batchStaffHint: 'Enter one staff ID per line, for example: A001.',
-      autoFillHint: 'The server will fetch the name, email, role, and region automatically when the staff records are created.',
+      autoFillHint:
+        'The server will fetch the name, email, role, and region automatically when the staff records are created.',
       createAction: 'Create Staff',
       saveAction: 'Save Changes',
       deleteAction: 'Delete',
@@ -290,11 +301,14 @@ export default {
       readonlyTitle: 'View Shift Definition',
       createTitle: 'Create Shift Definition',
       subtitle: 'The drawer saves directly to the workspace shift definition registry.',
-      readonlySubtitle: 'Inspect the shared shift definition details. Edits are disabled for your current team scope.',
+      readonlySubtitle:
+        'Inspect the shared shift definition details. Edits are disabled for your current team scope.',
       readonlyBannerTitle: 'Readonly details',
-      readonlyBannerBody: 'You can inspect this shift definition, but your current team scope does not allow edits.',
+      readonlyBannerBody:
+        'You can inspect this shift definition, but your current team scope does not allow edits.',
       deleteConfirm: 'Delete shift code {code}?',
-      deleteWarning: 'This removes the definition from planners and future roster edits immediately.',
+      deleteWarning:
+        'This removes the definition from planners and future roster edits immediately.',
       keepShift: 'Keep Shift',
       confirmDelete: 'Confirm Delete',
       discardChangesConfirm: 'Discard unsaved shift changes?',
@@ -311,9 +325,14 @@ export default {
       endsAt: 'Ends at {time} · {duration}',
       timezone: 'Timezone',
       color: 'Color',
+      colorHint: 'Pick a distinct accent for timeline blocks and roster badges.',
+      colorEmptyHint: 'Leave this empty to inherit each team’s visual color in roster surfaces.',
+      useTeamColor: 'Use team color',
       primaryShift: 'Primary shift',
-      primaryShiftHintEmpty: 'Select at least one team before deciding whether this should be the primary shift.',
-      primaryShiftHint: 'When enabled, this primary shift setting applies to all {count} selected teams.',
+      primaryShiftHintEmpty:
+        'Select at least one team before deciding whether this should be the primary shift.',
+      primaryShiftHint:
+        'When enabled, this primary shift setting applies to all {count} selected teams.',
       visibleInPlanners: 'Visible in planners',
       remark: 'Remark',
       saveAction: 'Save Changes',
@@ -321,10 +340,12 @@ export default {
     },
     teams: {
       title: 'Team Management',
-      description: 'Configure team groupings, drag-to-reorder presentation, and downstream dashboard visibility.',
+      description:
+        'Configure team groupings, drag-to-reorder presentation, and downstream dashboard visibility.',
       createAction: 'Create Team',
       mappingTitle: 'How mapping works',
-      mappingBody: 'These rules control how staff members are grouped on the public On-Call Dashboard. Teams marked as hidden remain schedulable here but stay out of downstream read-only views.',
+      mappingBody:
+        'These rules control how staff members are grouped on the public On-Call Dashboard. Teams marked as hidden remain schedulable here but stay out of downstream read-only views.',
       mappingHint: 'Drag a row up or down to save the display order.',
       totalTeams: 'Total Teams',
       totalTeamsBody: 'All managed groups in this workspace.',
@@ -354,10 +375,55 @@ export default {
       editTitle: 'Edit Team',
       createTitle: 'Create Team',
       subtitle: 'Team definitions are persisted directly to the workspace team service.',
+      colorLabel: 'Color',
+      colorHint:
+        'Choose a stable team color that stays recognizable across dashboard dots, cards, and filters.',
+      colorDuplicateHint:
+        'This color already matches {name}. Consider choosing a more distinct team color.',
       deleteConfirm: 'Delete team {name}?',
       deleteWarning: 'This affects downstream grouping and dashboard visibility immediately.',
       keepTeam: 'Keep Team',
       confirmDelete: 'Confirm Delete',
+    },
+    colorField: {
+      hexLabel: 'Hex Value',
+      optionalPlaceholder: 'Leave blank to inherit',
+      swatchLabel: 'Apply swatch',
+      livePreview: 'Live preview',
+      inheritedPreview: 'Inherited preview',
+      previewChip: 'Live badge',
+      teamPreview: 'Team Dot',
+      cardPreview: 'Roster Card',
+      badgePreview: 'Badge',
+      currentColor: 'Current choice',
+      customColor: 'Custom accent',
+      defaultColor: 'Default accent',
+      fallbackColor: 'Inherited from team accent {color}',
+      inheritLabel: 'Inherit team color',
+      inheritModeLabel: 'Use team color',
+      inheritModeBody: 'Keep this item visually aligned with the team accent.',
+      customModeLabel: 'Custom color',
+      customModeBody: 'Override the inherited accent for this specific item.',
+      paletteTitle: 'Palette groups',
+      paletteBody:
+        'Start from a balanced palette first, then fine-tune with the picker or hex input.',
+      previewTitle: 'Scheduling preview',
+      previewBody:
+        'This mirrors how the accent will land across team lists, roster cards, and shift badges.',
+      paletteGroups: {
+        cool: 'Cool tones',
+        warm: 'Warm tones',
+        grounded: 'Grounded tones',
+      },
+      previewTeamName: 'Support Team',
+      previewTeamCaption: 'Shared workspace group',
+      previewShift: 'Shift coverage',
+      previewShiftTime: '09:00 - 18:00 · Timeline card',
+      previewCode: 'SHIFT',
+      defaultHint: 'Use a 6-digit hex color. Quick picks help keep workspace colors consistent.',
+      invalidHex: 'Use a 6-digit hex color such as #14b8a6.',
+      lowContrastWarning:
+        'This color may feel too light on white surfaces. Consider a darker option for clearer visibility.',
     },
     accounts: {
       title: 'Account Management',
@@ -367,9 +433,11 @@ export default {
       createAction: 'Create Account',
       accessPolicyEntry: 'Access Policy',
       activationTitle: 'Activation note',
-      activationBody: 'First-time activation currently relies on staff ID only and is intended for intranet/testing rollout. Production release still needs a stronger activation check.',
+      activationBody:
+        'First-time activation currently relies on staff ID only and is intended for intranet/testing rollout. Production release still needs a stronger activation check.',
       accessPolicyTitle: 'Workspace access policy',
-      accessPolicyBody: 'Anonymous visitors can open `/workspace` in readonly mode. Use these switches to decide which workspace pages still require login.',
+      accessPolicyBody:
+        'Anonymous visitors can open `/workspace` in readonly mode. Use these switches to decide which workspace pages still require login.',
       accessPolicyLoading: 'Loading workspace access policy...',
       accessPolicyLocked: 'Always protected',
       accessPolicyRequireLogin: 'Require login',
@@ -409,12 +477,14 @@ export default {
       confirmDeleteAction: 'Confirm Delete',
       keepAccount: 'Keep Account',
       deleteConfirm: 'Delete the workspace account for {name}?',
-      deleteWarning: 'This removes only the login account and team scope. The staff profile stays intact, and the current signed-in account cannot delete itself.',
+      deleteWarning:
+        'This removes only the login account and team scope. The staff profile stays intact, and the current signed-in account cannot delete itself.',
       saveAction: 'Save Changes',
     },
     importExport: {
       title: 'Import / Export Center',
-      description: 'Import or export the monthly roster for {monthLabel}, preview imported changes in a modal, and save only after review.',
+      description:
+        'Import or export the monthly roster for {monthLabel}, preview imported changes in a modal, and save only after review.',
       downloadTemplate: 'Download Template',
       downloadingTemplate: 'Downloading...',
       exportExcel: 'Export Excel',
@@ -435,11 +505,13 @@ export default {
       workflowPreview: 'Preview',
       workflowApply: 'Apply',
       clickOrDrop: 'Click to upload or drag & drop',
-      uploadHint: 'Upload a roster workbook for {monthLabel}. The server will preview row counts and validation issues before anything is applied.',
+      uploadHint:
+        'Upload a roster workbook for {monthLabel}. The server will preview row counts and validation issues before anything is applied.',
       browseFiles: 'Browse files',
       uploadingWorkbook: 'Uploading workbook...',
       runningChecks: 'Running preflight checks...',
-      runningChecksHint: 'Parsing workbook structure, validating rows, and preparing the preview batch.',
+      runningChecksHint:
+        'Parsing workbook structure, validating rows, and preparing the preview batch.',
       previewFailed: 'Import preview failed',
       reset: 'Reset',
       parsed: '{count} parsed',
@@ -449,14 +521,16 @@ export default {
       previewIssueList: 'Preview issue list',
       previewIssueListHint: 'Findings returned by the preview API',
       issueCount: '{count} issues',
-      noPreviewIssues: 'No validation issues were returned. This batch is ready for final review and apply.',
+      noPreviewIssues:
+        'No validation issues were returned. This batch is ready for final review and apply.',
       issueBreakdown: 'Issue breakdown',
       highSeverity: 'High severity',
       mediumSeverity: 'Medium severity',
       lowSeverity: 'Low severity',
       nextStep: 'Next step',
       batchApplied: 'Batch already applied',
-      appliedSummary: '{count} record(s) were applied for {monthLabel}. Keep this preview for reference or reset to import another file.',
+      appliedSummary:
+        '{count} record(s) were applied for {monthLabel}. Keep this preview for reference or reset to import another file.',
       applying: 'Applying...',
       applied: 'Applied',
       applyChanges: 'Apply Changes',
@@ -464,7 +538,8 @@ export default {
       resetImport: 'Reset import',
       templateReference: 'Template reference',
       sampleRows: 'Sample rows from the official workbook',
-      workbookDescription: 'The import workbook contains three sheets: Shift Definitions, Staff Shifts, and Color Definitions. In Shift Definitions, the team column can contain a single team or multiple team names separated by commas.',
+      workbookDescription:
+        'The import workbook contains three sheets: Shift Definitions, Staff Shifts, and Color Definitions. In Shift Definitions, the team column can contain a single team or multiple team names separated by commas.',
       sheet1: 'Sheet 1: Shift Definitions',
       sheet2: 'Sheet 2: Staff Shifts',
       sheet3: 'Sheet 3: Color Definitions',
@@ -478,23 +553,29 @@ export default {
       },
       health: {
         waiting: 'Waiting for file',
-        waitingDesc: 'Upload a workbook to generate a preview batch, issue list, and apply decision.',
+        waitingDesc:
+          'Upload a workbook to generate a preview batch, issue list, and apply decision.',
         review: 'Review before apply',
-        reviewDesc: 'The preview found invalid rows or blocking issues. Review the issue list before applying.',
+        reviewDesc:
+          'The preview found invalid rows or blocking issues. Review the issue list before applying.',
         ready: 'Ready to apply',
-        readyDesc: 'The preview returned valid rows and no blocking issues. You can apply this batch when ready.',
+        readyDesc:
+          'The preview returned valid rows and no blocking issues. You can apply this batch when ready.',
         none: 'No importable rows',
-        noneDesc: 'The workbook uploaded successfully, but the preview did not yield rows that can be applied.',
+        noneDesc:
+          'The workbook uploaded successfully, but the preview did not yield rows that can be applied.',
       },
       readonlyPreviewError: 'Readonly users cannot preview or save imports.',
       previewFailedMessage: 'Failed to preview import file.',
-      saveSuccess: 'Import saved for {monthLabel}. Updated {applied} employee(s), created {teams} team(s), and created {staff} employee profile(s).',
+      saveSuccess:
+        'Import saved for {monthLabel}. Updated {applied} employee(s), created {teams} team(s), and created {staff} employee profile(s).',
       saveFailed: 'Failed to save the imported preview.',
       exportFailed: 'Failed to export monthly roster.',
       templateFailed: 'Failed to download import template.',
       simpleFlowBadge: 'Month roster only',
       simpleFlowTitle: 'Upload once, adjust in preview, then save to the live roster.',
-      simpleFlowDescription: 'The workbook now only keeps `staff_id`, `team`, and day-by-day shift codes for {monthLabel}. Nothing is written into the real roster until you save from the preview window.',
+      simpleFlowDescription:
+        'The workbook now only keeps `staff_id`, `team`, and day-by-day shift codes for {monthLabel}. Nothing is written into the real roster until you save from the preview window.',
       stepUpload: 'Upload the simplified workbook',
       stepUploadHint: 'Use the same shape for template download, export, and re-import.',
       stepPreview: 'Review and edit in the preview window',
@@ -512,14 +593,16 @@ export default {
       reopenPreview: 'Reopen preview',
       previewModal: {
         title: 'Import preview',
-        subtitle: 'Review and adjust the imported roster for {month}. Save only when the preview looks correct.',
+        subtitle:
+          'Review and adjust the imported roster for {month}. Save only when the preview looks correct.',
         summaryTitle: 'Preview summary',
         parsed: '{count} parsed',
         ready: '{count} ready',
         review: '{count} need review',
         unsaved: '{count} unsaved edit(s)',
         newStaffTitle: 'New employees',
-        newStaffHint: '{count} employee(s) are not in the system yet and will be created on first save.',
+        newStaffHint:
+          '{count} employee(s) are not in the system yet and will be created on first save.',
         newTeamTitle: 'New teams',
         newTeamHint: '{count} team(s) are not in the system yet and will be created on first save.',
         none: 'None for this preview.',
@@ -527,7 +610,8 @@ export default {
         searchPlaceholder: 'Search by staff ID, name, or role...',
         newTag: 'new',
         issueTitle: 'Import warnings',
-        issueHint: 'Invalid shift codes were blanked, and first-time teams or employees are called out here.',
+        issueHint:
+          'Invalid shift codes were blanked, and first-time teams or employees are called out here.',
         issueCount: '{count} warning(s)',
         save: 'Save imported roster',
         saving: 'Saving...',
@@ -535,7 +619,8 @@ export default {
     },
     validation: {
       title: 'Validation Center',
-      description: 'Open issues for {monthLabel}: check blockers first, then jump to the right workspace page to fix them.',
+      description:
+        'Open issues for {monthLabel}: check blockers first, then jump to the right workspace page to fix them.',
       refresh: 'Refresh',
       resolveSelected: 'Resolve Selected ({count})',
       resolving: 'Resolving...',
@@ -544,7 +629,8 @@ export default {
       totalIssues: 'Total issues',
       totalIssuesHint: 'Across all validation sources for {monthLabel}.',
       blockingRisks: 'Blocking risks',
-      blockingRisksHint: 'Roster blockers that should drive the month warning state and release readiness.',
+      blockingRisksHint:
+        'Roster blockers that should drive the month warning state and release readiness.',
       autoFixable: 'Auto-fixable',
       autoFixableHint: 'Can be resolved directly from this page.',
       manualFollowUp: 'Manual follow-up',
@@ -565,13 +651,16 @@ export default {
       openRelatedArea: 'Open related area',
       issueList: 'Issue list',
       openIssues: 'Open issues',
-      issueListHint: '{blocking} blocker(s) and {followUp} follow-up item(s), sorted by handling priority.',
-      emptyListHint: 'There are no open issues right now, so no extra filtering or bulk actions are needed.',
+      issueListHint:
+        '{blocking} blocker(s) and {followUp} follow-up item(s), sorted by handling priority.',
+      emptyListHint:
+        'There are no open issues right now, so no extra filtering or bulk actions are needed.',
       severityQueue: 'Severity queue',
       needsAttentionNow: 'What needs attention now',
       importLinked: 'Import-linked',
       unresolvedImportIssues: '{count} unresolved import issue(s)',
-      importLinkedHint: 'These can usually be reviewed from Import / Export and auto-resolved if the data is no longer blocking.',
+      importLinkedHint:
+        'These can usually be reviewed from Import / Export and auto-resolved if the data is no longer blocking.',
       searchIssues: 'Search validation issues',
       searchPlaceholder: 'Search by type, description, team, date, or source...',
       allSeverities: 'All severities',
@@ -594,7 +683,8 @@ export default {
       autoFixableBadge: 'Auto-fixable',
       manualOnlyBadge: 'Manual only',
       noIssuesHeadline: 'Validation queue is currently clear',
-      noIssuesNarrative: 'Use this page to watch for new import problems, roster conflicts, and manual follow-up items.',
+      noIssuesNarrative:
+        'Use this page to watch for new import problems, roster conflicts, and manual follow-up items.',
       topBlocker: '{type} is the top blocker for {monthLabel}',
       reviewNext: '{type} should be reviewed next',
       noUrgentBlockers: 'No urgent blockers detected for {monthLabel}',
@@ -606,12 +696,15 @@ export default {
       remediation: {
         deleteInvalidTeamScope: {
           title: 'Delete invalid team scope',
-          summary: 'This removes the orphaned workspace account team scope record and leaves the account itself untouched.',
-          warning: 'The cleanup is permanent and should only be used for historical invalid scope rows.',
+          summary:
+            'This removes the orphaned workspace account team scope record and leaves the account itself untouched.',
+          warning:
+            'The cleanup is permanent and should only be used for historical invalid scope rows.',
         },
         deleteOrphanAssignment: {
           title: 'Delete orphan assignment',
-          summary: 'This removes the roster assignment whose staff, team, or shift definition reference is no longer valid.',
+          summary:
+            'This removes the roster assignment whose staff, team, or shift definition reference is no longer valid.',
           warning: 'The roster entry will be permanently deleted from the selected month.',
         },
       },
