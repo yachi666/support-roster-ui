@@ -3,6 +3,7 @@ import { api } from '@/api'
 import {
   createPlannerDays,
 } from '../lib/period'
+import { useWorkspacePageSearch } from './useWorkspacePageSearch'
 import { useWorkspacePeriod } from './useWorkspacePeriod'
 
 function cloneGroups(groups) {
@@ -24,15 +25,27 @@ function normalizeGroups(groups, totalDays) {
     teamId: group.teamId,
     team: group.teamName,
     color: group.color,
-    staff: (group.staff || []).map((person) => ({
-      id: person.staffId,
-      name: person.staffName,
-      avatar: person.avatar,
-      role: person.roleName || 'Unassigned',
-      teamId: person.teamId ? String(person.teamId) : '',
-      schedule: buildScheduleArray(person.schedule, totalDays),
-    })),
+    staff: (group.staff || [])
+      .map((person) => ({
+        id: person.staffId,
+        name: person.staffName,
+        avatar: person.avatar,
+        role: person.roleName || 'Unassigned',
+        teamId: person.teamId ? String(person.teamId) : '',
+        schedule: buildScheduleArray(person.schedule, totalDays),
+      }))
+      .sort((left, right) =>
+        String(left.name || '').localeCompare(String(right.name || ''), undefined, { sensitivity: 'base' })
+        || String(left.id || '').localeCompare(String(right.id || '')),
+      ),
   }))
+}
+
+function normalizeSearchValue(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
 }
 
 function buildStaffIndex(groups) {
@@ -121,7 +134,7 @@ export function useRosterPlanner() {
   const rosterStaffIndex = computed(() => buildStaffIndex(rosterGroups.value))
   const baseStaffIndex = computed(() => buildStaffIndex(baseGroups.value))
   const timezone = shallowRef('UTC')
-  const searchTerm = shallowRef('')
+  const searchTerm = useWorkspacePageSearch()
   const selectedCell = ref(null)
   const drawerOpen = shallowRef(false)
   const selectedShiftCode = shallowRef('')
@@ -162,7 +175,7 @@ export function useRosterPlanner() {
       result = result.filter(group => selectedTeamIds.value.includes(group.teamId))
     }
     
-    const query = searchTerm.value.trim().toLowerCase()
+    const query = normalizeSearchValue(searchTerm.value)
     if (!query) {
       return result
     }
@@ -170,7 +183,7 @@ export function useRosterPlanner() {
     return result
       .map((group) => ({
         ...group,
-        staff: group.staff.filter((person) => [person.name, person.role].join(' ').toLowerCase().includes(query)),
+        staff: group.staff.filter((person) => normalizeSearchValue(person.name).includes(query)),
       }))
       .filter((group) => group.staff.length > 0)
   })

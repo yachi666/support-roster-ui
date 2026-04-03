@@ -80,8 +80,8 @@ export default {
       logout: '退出登录',
       openViewer: '打开公共视图',
       topbar: {
-        searchLabel: '搜索员工、班次或编码',
-        searchPlaceholder: '搜索员工、班次或编码 (CMD+K)',
+        searchLabel: '搜索当前页面',
+        searchPlaceholder: '搜索当前页面...',
         month: '工作台月份',
         selectMonth: '选择工作台月份',
         selectYear: '选择工作台年份',

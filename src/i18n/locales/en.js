@@ -82,8 +82,8 @@ export default {
       logout: 'Logout',
       openViewer: 'Open Public Viewer',
       topbar: {
-        searchLabel: 'Search staff, shifts, or codes',
-        searchPlaceholder: 'Search staff, shifts, or codes (CMD+K)',
+        searchLabel: 'Search current page',
+        searchPlaceholder: 'Search current page...',
         month: 'Workspace Month',
         selectMonth: 'Select workspace month',
         selectYear: 'Select workspace year',

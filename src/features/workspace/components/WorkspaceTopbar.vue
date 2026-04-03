@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Globe, Search } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { SUPPORTED_LOCALES, currentLocale, setLocale } from '@/i18n'
 import { getLocalizedMonthOptions } from '@/i18n/format'
+import { useWorkspacePageSearch } from '../composables/useWorkspacePageSearch'
 import { useWorkspacePeriod } from '../composables/useWorkspacePeriod'
 import { WORKSPACE_TIMEZONE_OPTIONS } from '../config/timezones'
 
@@ -20,6 +21,7 @@ const {
   goToNextMonth,
 } = useWorkspacePeriod()
 const { t } = useI18n()
+const searchTerm = useWorkspacePageSearch()
 
 const monthOptions = computed(() => getLocalizedMonthOptions(currentLocale.value))
 const localeOptions = computed(() =>
@@ -62,6 +64,7 @@ function handleLocaleChange(event) {
         <input
           id="workspace-topbar-search"
           name="workspace-topbar-search"
+          v-model="searchTerm"
           type="text"
           :placeholder="t('workspace.shell.topbar.searchPlaceholder')"
           class="w-full rounded-md border border-slate-200 bg-slate-50 py-1.5 pl-9 pr-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
