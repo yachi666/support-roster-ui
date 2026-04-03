@@ -18,6 +18,7 @@ import {
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
+import { useWorkspacePageSearch } from '../composables/useWorkspacePageSearch'
 import {
   normalizeWorkspaceStaffTimezone,
   WORKSPACE_STAFF_TIMEZONE_OPTIONS,
@@ -38,7 +39,7 @@ const EMPTY_FORM = {
 
 const TIME_OPTIONS = createTimeOptions(30)
 
-const searchTerm = shallowRef('')
+const searchTerm = useWorkspacePageSearch()
 const selectedTeamFilter = shallowRef('')
 const shiftDefinitions = shallowRef([])
 const teams = shallowRef([])

@@ -19,9 +19,10 @@ import { useAuthStore } from '@/stores/auth'
 import WorkspaceModal from '../components/WorkspaceModal.vue'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
+import { useWorkspacePageSearch } from '../composables/useWorkspacePageSearch'
 import { useWorkspacePeriod } from '../composables/useWorkspacePeriod'
 
-const searchTerm = shallowRef('')
+const searchTerm = useWorkspacePageSearch()
 const selectedSeverity = shallowRef('all')
 const selectedSource = shallowRef('all')
 const selectedIssueIds = shallowRef([])
@@ -180,7 +181,6 @@ const visibleIssues = computed(() => {
 const totalIssueCount = computed(() => summary.value.total ?? normalizedIssues.value.length)
 const blockingIssueCount = computed(() => summary.value.blocking ?? normalizedIssues.value.filter((issue) => issue.blocking).length)
 const hasIssues = computed(() => totalIssueCount.value > 0)
-const expandedIssueMode = computed(() => totalIssueCount.value >= 4)
 const followUpIssueCount = computed(() => Math.max(0, totalIssueCount.value - blockingIssueCount.value))
 
 function canResolveImportIssue(issue) {
@@ -342,7 +342,7 @@ function isResolving(issueId) {
 }
 
 function showIssueId(issue) {
-  return expandedIssueMode.value || issue?.resolutionKind === 'system-cleanup'
+  return hasIssues.value || issue?.resolutionKind === 'system-cleanup'
 }
 
 function closeRemediationModal() {
@@ -493,7 +493,7 @@ watch([year, month], () => {
               {{ t('workspace.validation.refresh') }}
             </button>
             <button
-              v-if="authStore.canWriteWorkspace && expandedIssueMode"
+              v-if="authStore.canWriteWorkspace && hasIssues"
               class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
               :disabled="resolvableSelectedIssueIds.length === 0 || resolvePending"
               @click="resolveSelectedIssues"
@@ -650,7 +650,7 @@ watch([year, month], () => {
                   </p>
                 </div>
 
-                <div v-if="expandedIssueMode" class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <div v-if="hasIssues" class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   <span class="rounded-full border border-slate-200 bg-white px-3 py-1.5">
                     {{ t('workspace.validation.visibleCount', { count: visibleIssues.length }) }}
                   </span>
@@ -666,7 +666,7 @@ watch([year, month], () => {
                 </div>
               </div>
 
-              <div v-if="expandedIssueMode" class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div v-if="hasIssues" class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                 <div class="relative max-w-md flex-1">
                   <label for="workspace-validation-search" class="sr-only">{{ t('workspace.validation.searchIssues') }}</label>
                   <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -700,7 +700,7 @@ watch([year, month], () => {
                 </div>
               </div>
 
-              <div v-if="expandedIssueMode" class="flex flex-wrap items-center gap-2">
+              <div v-if="hasIssues" class="flex flex-wrap items-center gap-2">
                 <button
                   v-for="option in [
                     { value: 'all', label: t('workspace.validation.allSources') },
@@ -748,7 +748,6 @@ watch([year, month], () => {
                 <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                   <div class="flex items-start gap-4">
                     <input
-                      v-if="expandedIssueMode"
                       :id="`workspace-validation-issue-${issue.id}`"
                       :name="`workspace-validation-issue-${issue.id}`"
                       type="checkbox"

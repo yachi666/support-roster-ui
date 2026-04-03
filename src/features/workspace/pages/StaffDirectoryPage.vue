@@ -9,6 +9,7 @@ import AvatarImage from '../components/AvatarImage.vue'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
+import { useWorkspacePageSearch } from '../composables/useWorkspacePageSearch'
 import { normalizeWorkspaceStaffTimezone, WORKSPACE_STAFF_TIMEZONE_OPTIONS } from '../config/timezones'
 
 const EMPTY_FORM = {
@@ -26,7 +27,7 @@ const EMPTY_FORM = {
   notes: '',
 }
 
-const searchTerm = shallowRef('')
+const searchTerm = useWorkspacePageSearch()
 const staffIdFilter = shallowRef('')
 const selectedTeamFilter = shallowRef('')
 const selectedStaffId = shallowRef(null)

@@ -10,6 +10,7 @@ import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
 import WorkspaceModal from '../components/WorkspaceModal.vue'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
+import { useWorkspacePageSearch } from '../composables/useWorkspacePageSearch'
 
 const authStore = useAuthStore()
 const { t } = useI18n()
@@ -28,7 +29,7 @@ const roleOptions = [
   { value: 'readonly', label: 'Readonly' },
 ]
 
-const searchTerm = shallowRef('')
+const searchTerm = useWorkspacePageSearch()
 const accounts = shallowRef([])
 const staffOptions = shallowRef([])
 const teams = shallowRef([])
@@ -396,6 +397,10 @@ watch(() => formState.roleCode, (roleCode) => {
 onMounted(async () => {
   await Promise.all([loadAccounts(), loadStaff(), loadTeams()])
 })
+
+watch(searchTerm, () => {
+  void loadAccounts()
+})
 </script>
 
 <template>
@@ -416,7 +421,6 @@ onMounted(async () => {
                 type="text"
                 :placeholder="t('workspace.accounts.searchPlaceholder')"
                 class="w-64 rounded-md border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
-                @input="void loadAccounts()"
               />
             </div>
             <button class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50" @click="void loadAccounts()">
