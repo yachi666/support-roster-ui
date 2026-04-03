@@ -181,7 +181,6 @@ const visibleIssues = computed(() => {
 const totalIssueCount = computed(() => summary.value.total ?? normalizedIssues.value.length)
 const blockingIssueCount = computed(() => summary.value.blocking ?? normalizedIssues.value.filter((issue) => issue.blocking).length)
 const hasIssues = computed(() => totalIssueCount.value > 0)
-const expandedIssueMode = computed(() => totalIssueCount.value >= 4)
 const followUpIssueCount = computed(() => Math.max(0, totalIssueCount.value - blockingIssueCount.value))
 
 function canResolveImportIssue(issue) {
@@ -343,7 +342,7 @@ function isResolving(issueId) {
 }
 
 function showIssueId(issue) {
-  return expandedIssueMode.value || issue?.resolutionKind === 'system-cleanup'
+  return hasIssues.value || issue?.resolutionKind === 'system-cleanup'
 }
 
 function closeRemediationModal() {
