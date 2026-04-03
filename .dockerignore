@@ -5,8 +5,6 @@ dist
 npm-debug.log
 Dockerfile*
 build/
-figma-design/
-figma-design-workspace/
 .specs/
 .vscode/
 .idea/
