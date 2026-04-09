@@ -581,7 +581,10 @@ onBeforeUnmount(() => {
                   v-if="isPendingUpdate(row.person.id, index + 1)"
                   class="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-amber-500"
                 ></span>
-                <TooltipRoot v-if="code && isTooltipActive(row.person.id, index + 1)">
+                <TooltipRoot
+                  v-if="code"
+                  :open="isTooltipActive(row.person.id, index + 1)"
+                >
                   <TooltipTrigger as-child>
                     <div
                       :class="[
@@ -677,17 +680,6 @@ onBeforeUnmount(() => {
                     </TooltipContent>
                   </TooltipPortal>
                 </TooltipRoot>
-                <div
-                  v-else-if="code"
-                  :class="[
-                    'flex min-h-[28px] w-full items-center justify-center rounded-[3px] border outline-none transition-transform',
-                    !getShiftStyle(row.person.teamId, code) &&
-                      (colorMap[code] || 'border-slate-200 bg-white text-slate-700'),
-                  ]"
-                  :style="getShiftStyle(row.person.teamId, code)"
-                >
-                  {{ code }}
-                </div>
                 <div
                   v-else
                   :class="[

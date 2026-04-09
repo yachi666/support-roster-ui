@@ -6,7 +6,7 @@ import WorkspaceModal from './WorkspaceModal.vue'
 import AssignmentDrawer from './roster/AssignmentDrawer.vue'
 import RosterGrid from './roster/RosterGrid.vue'
 import { createPlannerDays } from '../lib/period'
-import { removePreviewTeams, restorePreviewTeam } from '../lib/previewTeams'
+import { removePreviewTeams, resolvePreviewTeamKey, restorePreviewTeam } from '../lib/previewTeams'
 import { useWorkspacePageSearch } from '../composables/useWorkspacePageSearch'
 
 const props = defineProps({
@@ -34,8 +34,9 @@ function buildScheduleArray(scheduleMap, totalDays) {
 }
 
 function normalizeGroups(groups, totalDays) {
-  return (groups || []).map((group) => ({
+  return (groups || []).map((group, index) => ({
     teamId: group.teamId,
+    previewTeamKey: resolvePreviewTeamKey(group, index),
     team: group.teamName,
     color: group.color,
     newTeam: Boolean(group.newTeam),
@@ -149,9 +150,9 @@ const activePreviewState = computed(() => removePreviewTeams(rosterGroups.value,
 const allTeams = computed(() => {
   const teamMap = new Map()
   activePreviewState.value.groups.forEach((group) => {
-    if (!teamMap.has(group.teamId)) {
-      teamMap.set(group.teamId, {
-        id: group.teamId,
+    if (!teamMap.has(group.previewTeamKey)) {
+      teamMap.set(group.previewTeamKey, {
+        id: group.previewTeamKey,
         name: group.team,
         newTeam: group.newTeam,
       })
@@ -165,7 +166,7 @@ const removedTeams = computed(() => activePreviewState.value.removedTeams)
 const filteredGroups = computed(() => {
   let result = activePreviewState.value.groups
   if (selectedTeamIds.value.length > 0) {
-    result = result.filter(group => selectedTeamIds.value.includes(group.teamId))
+    result = result.filter(group => selectedTeamIds.value.includes(group.previewTeamKey))
   }
 
   const query = searchTerm.value.trim().toLowerCase()
@@ -215,7 +216,6 @@ watch(
     selectedRange.value = null
     drawerOpen.value = false
     pendingUpdates.value = new Map()
-    searchTerm.value = ''
     selectedTeamIds.value = []
     removedTeamIds.value = []
   },
@@ -417,7 +417,7 @@ function removeTeam(teamId) {
   removedTeamIds.value = [...removedTeamIds.value, normalizedTeamId]
   selectedTeamIds.value = selectedTeamIds.value.filter((id) => String(id) !== normalizedTeamId)
 
-  if (selectedAssignment.value?.group?.teamId === normalizedTeamId) {
+  if (selectedAssignment.value?.group?.previewTeamKey === normalizedTeamId) {
     selectedCell.value = null
     selectedRange.value = null
     drawerOpen.value = false
@@ -567,10 +567,10 @@ function savePreview() {
           </span>
           <button
             v-for="team in removedTeams"
-            :key="`removed-${team.teamId}`"
+            :key="`removed-${team.previewTeamKey}`"
             type="button"
             class="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-white px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-50"
-            @click="restoreTeam(team.teamId)"
+            @click="restoreTeam(team.previewTeamKey)"
           >
             <Undo2 class="h-3.5 w-3.5" />
             {{ team.team }}
