@@ -169,6 +169,8 @@ export default {
       filterByTeam: 'Filter by Team',
       clear: 'Clear',
       import: 'Import',
+      copyPreviousMonth: 'Copy Previous Month',
+      copyingPreviousMonth: 'Copying...',
       export: 'Export',
       exporting: 'Exporting...',
       retry: 'Retry',
@@ -609,6 +611,8 @@ export default {
         search: 'Search imported staff',
         searchPlaceholder: 'Search by staff ID, name, or role...',
         newTag: 'new',
+        removeTeam: 'Remove team {name} from this import',
+        removedTeams: '{count} team(s) removed',
         issueTitle: 'Import warnings',
         issueHint:
           'Invalid shift codes were blanked, and first-time teams or employees are called out here.',

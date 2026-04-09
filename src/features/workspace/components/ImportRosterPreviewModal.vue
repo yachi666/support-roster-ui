@@ -1,11 +1,13 @@
 <script setup>
 import { computed, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AlertTriangle, Building2, Save, Search, Users } from 'lucide-vue-next'
+import { AlertTriangle, Building2, Save, Search, Undo2, Users, X } from 'lucide-vue-next'
 import WorkspaceModal from './WorkspaceModal.vue'
 import AssignmentDrawer from './roster/AssignmentDrawer.vue'
 import RosterGrid from './roster/RosterGrid.vue'
 import { createPlannerDays } from '../lib/period'
+import { removePreviewTeams, restorePreviewTeam } from '../lib/previewTeams'
+import { useWorkspacePageSearch } from '../composables/useWorkspacePageSearch'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -121,8 +123,9 @@ function applyScheduleUpdate({ rosterStaffIndex, baseStaffIndex, pendingUpdates,
 
 const rosterGroups = ref([])
 const baseGroups = ref([])
-const searchTerm = shallowRef('')
+const searchTerm = useWorkspacePageSearch()
 const selectedTeamIds = ref([])
+const removedTeamIds = ref([])
 const selectedCell = ref(null)
 const selectedRange = ref(null)
 const drawerOpen = shallowRef(false)
@@ -141,9 +144,11 @@ const pendingUpdateKeySet = computed(() => new Set(pendingUpdates.value.keys()))
 const hasUnsavedChanges = computed(() => pendingUpdates.value.size > 0)
 const pendingUpdateCount = computed(() => pendingUpdates.value.size)
 
+const activePreviewState = computed(() => removePreviewTeams(rosterGroups.value, removedTeamIds.value))
+
 const allTeams = computed(() => {
   const teamMap = new Map()
-  rosterGroups.value.forEach((group) => {
+  activePreviewState.value.groups.forEach((group) => {
     if (!teamMap.has(group.teamId)) {
       teamMap.set(group.teamId, {
         id: group.teamId,
@@ -155,8 +160,10 @@ const allTeams = computed(() => {
   return Array.from(teamMap.values())
 })
 
+const removedTeams = computed(() => activePreviewState.value.removedTeams)
+
 const filteredGroups = computed(() => {
-  let result = rosterGroups.value
+  let result = activePreviewState.value.groups
   if (selectedTeamIds.value.length > 0) {
     result = result.filter(group => selectedTeamIds.value.includes(group.teamId))
   }
@@ -210,6 +217,7 @@ watch(
     pendingUpdates.value = new Map()
     searchTerm.value = ''
     selectedTeamIds.value = []
+    removedTeamIds.value = []
   },
   { immediate: true },
 )
@@ -400,11 +408,31 @@ function toggleTeamFilter(teamId) {
     : [...selectedTeamIds.value, teamId]
 }
 
+function removeTeam(teamId) {
+  const normalizedTeamId = String(teamId)
+  if (removedTeamIds.value.includes(normalizedTeamId)) {
+    return
+  }
+
+  removedTeamIds.value = [...removedTeamIds.value, normalizedTeamId]
+  selectedTeamIds.value = selectedTeamIds.value.filter((id) => String(id) !== normalizedTeamId)
+
+  if (selectedAssignment.value?.group?.teamId === normalizedTeamId) {
+    selectedCell.value = null
+    selectedRange.value = null
+    drawerOpen.value = false
+  }
+}
+
+function restoreTeam(teamId) {
+  removedTeamIds.value = restorePreviewTeam(removedTeamIds.value, teamId)
+}
+
 function buildSavePayload() {
   return {
     year: props.preview.year,
     month: props.preview.month,
-    rows: rosterGroups.value.flatMap(group =>
+    rows: activePreviewState.value.groups.flatMap(group =>
       group.staff.map(person => ({
         staffCode: person.staffCode,
         teamName: group.team,
@@ -499,19 +527,53 @@ function savePreview() {
         </div>
 
         <div class="flex flex-wrap gap-2">
-          <button
+          <div
             v-for="team in allTeams"
             :key="team.id"
-            type="button"
             :class="[
-              'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+              'inline-flex items-center overflow-hidden rounded-full border bg-white text-xs font-medium transition-colors',
               selectedTeamIds.includes(team.id)
-                ? 'border-slate-900 bg-slate-900 text-white'
-                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900',
+                ? 'border-slate-900 text-white'
+                : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900',
             ]"
-            @click="toggleTeamFilter(team.id)"
           >
-            {{ team.name }}<span v-if="team.newTeam"> · {{ t('workspace.importExport.previewModal.newTag') }}</span>
+            <button
+              type="button"
+              :class="[
+                'px-3 py-1.5 transition-colors',
+                selectedTeamIds.includes(team.id)
+                  ? 'bg-slate-900 text-white'
+                  : 'bg-white',
+              ]"
+              @click="toggleTeamFilter(team.id)"
+            >
+              {{ team.name
+              }}<span v-if="team.newTeam"> · {{ t('workspace.importExport.previewModal.newTag') }}</span>
+            </button>
+            <button
+              type="button"
+              class="border-l border-slate-200/80 px-2 py-1.5 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
+              :aria-label="t('workspace.importExport.previewModal.removeTeam', { name: team.name })"
+              @click="removeTeam(team.id)"
+            >
+              <X class="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+
+        <div v-if="removedTeams.length" class="flex flex-wrap gap-2">
+          <span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700">
+            {{ t('workspace.importExport.previewModal.removedTeams', { count: removedTeams.length }) }}
+          </span>
+          <button
+            v-for="team in removedTeams"
+            :key="`removed-${team.teamId}`"
+            type="button"
+            class="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-white px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-50"
+            @click="restoreTeam(team.teamId)"
+          >
+            <Undo2 class="h-3.5 w-3.5" />
+            {{ team.team }}
           </button>
         </div>
       </div>

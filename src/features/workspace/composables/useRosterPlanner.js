@@ -3,6 +3,8 @@ import { api } from '@/api'
 import {
   createPlannerDays,
 } from '../lib/period'
+import { buildPreviousMonthCopyUpdates, getPreviousMonthPeriod } from '../lib/previousRoster'
+import { normalizeWorkspaceSearchValue } from '../lib/workspaceSearch'
 import { useWorkspacePageSearch } from './useWorkspacePageSearch'
 import { useWorkspacePeriod } from './useWorkspacePeriod'
 
@@ -39,13 +41,6 @@ function normalizeGroups(groups, totalDays) {
         || String(left.id || '').localeCompare(String(right.id || '')),
       ),
   }))
-}
-
-function normalizeSearchValue(value) {
-  return String(value || '')
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
 }
 
 function buildStaffIndex(groups) {
@@ -151,6 +146,7 @@ export function useRosterPlanner() {
   const pendingUpdates = ref(new Map())
   const selectedTeamIds = ref([])
   const importExportLoading = shallowRef(false)
+  const copyPreviousMonthPending = shallowRef(false)
   const importExportError = shallowRef('')
 
   const plannerDays = computed(() => createPlannerDays(year.value, month.value))
@@ -175,7 +171,7 @@ export function useRosterPlanner() {
       result = result.filter(group => selectedTeamIds.value.includes(group.teamId))
     }
     
-    const query = normalizeSearchValue(searchTerm.value)
+    const query = normalizeWorkspaceSearchValue(searchTerm.value)
     if (!query) {
       return result
     }
@@ -183,7 +179,9 @@ export function useRosterPlanner() {
     return result
       .map((group) => ({
         ...group,
-        staff: group.staff.filter((person) => normalizeSearchValue(person.name).includes(query)),
+        staff: group.staff.filter((person) =>
+          normalizeWorkspaceSearchValue(person.name).includes(query),
+        ),
       }))
       .filter((group) => group.staff.length > 0)
   })
@@ -481,6 +479,58 @@ export function useRosterPlanner() {
     }
   }
 
+  async function copyPreviousMonthIntoCurrent() {
+    if (copyPreviousMonthPending.value || loading.value) {
+      return null
+    }
+
+    copyPreviousMonthPending.value = true
+    importExportError.value = ''
+
+    try {
+      const previousPeriod = getPreviousMonthPeriod(year.value, month.value)
+      const previousPlannerDays = createPlannerDays(previousPeriod.year, previousPeriod.month)
+      const previousResponse = await api.workspace.getRoster(previousPeriod.year, previousPeriod.month)
+      const previousGroups = normalizeGroups(previousResponse.groups, previousPlannerDays.length)
+      const updates = buildPreviousMonthCopyUpdates({
+        currentGroups: rosterGroups.value,
+        previousGroups,
+        targetDayCount: plannerDays.value.length,
+      })
+
+      if (!updates.length) {
+        return {
+          copiedCount: 0,
+        }
+      }
+
+      for (const update of updates) {
+        applyScheduleUpdate({
+          rosterStaffIndex,
+          baseStaffIndex,
+          pendingUpdates,
+          staffId: update.staffId,
+          day: update.day,
+          shiftCode: update.shiftCode,
+        })
+      }
+
+      saveErrorMessage.value = ''
+      saveSuccessMessage.value = `Copied ${updates.length} empty slot(s) from ${previousPeriod.year}-${String(previousPeriod.month).padStart(2, '0')}.`
+
+      return {
+        copiedCount: updates.length,
+        sourceYear: previousPeriod.year,
+        sourceMonth: previousPeriod.month,
+      }
+    } catch (error) {
+      importExportError.value = error.message || 'Failed to copy previous month roster.'
+      return null
+    } finally {
+      copyPreviousMonthPending.value = false
+    }
+  }
+
   return {
     plannerDays,
     monthLabel,
@@ -509,6 +559,7 @@ export function useRosterPlanner() {
     allTeams,
     selectedTeamIds,
     importExportLoading,
+    copyPreviousMonthPending,
     importExportError,
     openCell,
     closeDrawer,
@@ -521,6 +572,7 @@ export function useRosterPlanner() {
     toggleTeamFilter,
     clearTeamFilter,
     exportRoster,
+    copyPreviousMonthIntoCurrent,
     goToPreviousMonth,
     goToNextMonth,
     reloadRoster: loadRoster,
