@@ -62,3 +62,35 @@ test('buildPreviousMonthCopyUpdates ignores non-matching staff and days outside 
     { staffId: 's-1', day: 2, shiftCode: 'B' },
   ])
 })
+
+test('buildPreviousMonthCopyUpdates skips teams that are not editable', () => {
+  const updates = buildPreviousMonthCopyUpdates({
+    currentGroups: [
+      {
+        teamId: 't-1',
+        staff: [{ id: 's-1', schedule: ['', ''] }],
+      },
+      {
+        teamId: 't-2',
+        staff: [{ id: 's-2', schedule: ['', ''] }],
+      },
+    ],
+    previousGroups: [
+      {
+        teamId: 't-1',
+        staff: [{ id: 's-1', schedule: ['A', 'B'] }],
+      },
+      {
+        teamId: 't-2',
+        staff: [{ id: 's-2', schedule: ['N', 'D'] }],
+      },
+    ],
+    targetDayCount: 2,
+    canCopyTeam: (teamId) => teamId === 't-1',
+  })
+
+  assert.deepEqual(updates, [
+    { staffId: 's-1', day: 1, shiftCode: 'A' },
+    { staffId: 's-1', day: 2, shiftCode: 'B' },
+  ])
+})

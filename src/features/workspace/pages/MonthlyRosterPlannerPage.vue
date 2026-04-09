@@ -35,6 +35,7 @@ const {
   shiftCodeColorMap,
   shiftDetailsByTeam,
   allTeams,
+  canCopyPreviousMonth,
   selectedTeamIds,
   importExportLoading,
   copyPreviousMonthPending,
@@ -335,6 +336,7 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
           {{ t('workspace.roster.import') }}
         </RouterLink>
         <button
+          v-if="canCopyPreviousMonth"
           class="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="copyPreviousMonthPending || loading"
           @click="copyPreviousMonth"

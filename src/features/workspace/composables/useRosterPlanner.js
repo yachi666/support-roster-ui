@@ -1,5 +1,6 @@
 import { computed, ref, shallowRef, watch } from 'vue'
 import { api } from '@/api'
+import { useAuthStore } from '@/stores/auth'
 import {
   createPlannerDays,
 } from '../lib/period'
@@ -123,6 +124,7 @@ function applyScheduleUpdate({ rosterStaffIndex, baseStaffIndex, pendingUpdates,
 }
 
 export function useRosterPlanner() {
+  const authStore = useAuthStore()
   const { year, month, monthLabel, goToPreviousMonth, goToNextMonth } = useWorkspacePeriod()
   const rosterGroups = ref([])
   const baseGroups = ref([])
@@ -163,6 +165,7 @@ export function useRosterPlanner() {
     })
     return Array.from(teamMap.values())
   })
+  const canCopyPreviousMonth = computed(() => authStore.canEditAnyTeam(allTeams.value.map((team) => team.id)))
 
   const filteredGroups = computed(() => {
     let result = rosterGroups.value
@@ -496,6 +499,7 @@ export function useRosterPlanner() {
         currentGroups: rosterGroups.value,
         previousGroups,
         targetDayCount: plannerDays.value.length,
+        canCopyTeam: (teamId) => authStore.canEditTeam(teamId),
       })
 
       if (!updates.length) {
@@ -557,6 +561,7 @@ export function useRosterPlanner() {
     shiftCodeColorMap,
     shiftDetailsByTeam,
     allTeams,
+    canCopyPreviousMonth,
     selectedTeamIds,
     importExportLoading,
     copyPreviousMonthPending,
