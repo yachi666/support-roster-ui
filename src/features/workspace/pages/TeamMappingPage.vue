@@ -9,6 +9,8 @@ import { normalizeHexColor, resolveWorkspaceColor } from '../lib/color'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
+import { filterTeamsByQuery, normalizeWorkspaceSearchValue } from '../lib/workspaceSearch'
+import { useWorkspacePageSearch } from '../composables/useWorkspacePageSearch'
 
 const EMPTY_FORM = {
   name: '',
@@ -33,6 +35,7 @@ const fieldErrors = reactive({})
 const formState = reactive({ ...EMPTY_FORM })
 const authStore = useAuthStore()
 const { t } = useI18n()
+const searchTerm = useWorkspacePageSearch()
 
 const teamErrorRules = [
   {
@@ -53,14 +56,18 @@ const sortedTeams = computed(() =>
   [...teams.value].sort((left, right) => (left.displayOrder ?? 0) - (right.displayOrder ?? 0)),
 )
 
-const visibleTeams = computed(() => sortedTeams.value.filter((team) => team.visible))
-const hiddenTeams = computed(() => sortedTeams.value.filter((team) => !team.visible))
-const totalTeamsCount = computed(() => sortedTeams.value.length)
+const filteredTeams = computed(() => filterTeamsByQuery(sortedTeams.value, searchTerm.value))
+const visibleTeams = computed(() => filteredTeams.value.filter((team) => team.visible))
+const hiddenTeams = computed(() => filteredTeams.value.filter((team) => !team.visible))
+const totalTeamsCount = computed(() => filteredTeams.value.length)
 const selectedTeam = computed(
   () => teams.value.find((team) => team.id === selectedTeamId.value) || null,
 )
 const drawerOpen = computed(() => Boolean(selectedTeam.value) || formVisible.value)
 const canManageTeams = computed(() => authStore.canManageTeams)
+const canReorderTeams = computed(
+  () => canManageTeams.value && !normalizeWorkspaceSearchValue(searchTerm.value),
+)
 
 async function loadTeams() {
   loading.value = true
@@ -98,7 +105,7 @@ async function persistTeamOrder(orderedTeams, fallbackTeams) {
 }
 
 function handleDragStart(teamId) {
-  if (reorderPending.value || !canManageTeams.value) {
+  if (reorderPending.value || !canReorderTeams.value) {
     return
   }
 
@@ -439,18 +446,18 @@ watch(
               t('workspace.teams.loading')
             }}</WorkspaceSurface>
             <WorkspaceSurface
-              v-for="team in sortedTeams"
+               v-for="team in filteredTeams"
               :key="team.id"
               :class="[
                 'group flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md',
                 reorderPending
                   ? 'cursor-wait'
-                  : canManageTeams
-                    ? 'cursor-pointer'
-                    : 'cursor-default',
+                   : canReorderTeams
+                     ? 'cursor-pointer'
+                     : 'cursor-default',
                 dragOverTeamId === team.id ? 'border-teal-300 bg-teal-50/70 shadow-teal-100' : '',
               ]"
-              :draggable="canManageTeams"
+               :draggable="canReorderTeams"
               @dragstart="handleDragStart(team.id)"
               @dragend="handleDragEnd"
               @dragenter.prevent="handleDragEnter(team.id)"

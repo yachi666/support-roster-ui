@@ -1,5 +1,5 @@
 <script setup>
-import { AlertTriangle, Download, Filter, Save, Search, Upload } from 'lucide-vue-next'
+import { AlertTriangle, Copy, Download, Filter, Save, Search, Upload } from 'lucide-vue-next'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { onBeforeRouteLeave, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -35,8 +35,10 @@ const {
   shiftCodeColorMap,
   shiftDetailsByTeam,
   allTeams,
+  canCopyPreviousMonth,
   selectedTeamIds,
   importExportLoading,
+  copyPreviousMonthPending,
   importExportError,
   openCell,
   closeDrawer,
@@ -49,6 +51,7 @@ const {
   toggleTeamFilter,
   clearTeamFilter,
   exportRoster,
+  copyPreviousMonthIntoCurrent,
   reloadRoster,
 } = useRosterPlanner()
 const authStore = useAuthStore()
@@ -206,6 +209,10 @@ function applyRangeForward(endDay) {
   openCell(result.staffId, result.endDay)
 }
 
+function copyPreviousMonth() {
+  void copyPreviousMonthIntoCurrent()
+}
+
 let unregisterPeriodGuard = null
 
 function handleBeforeUnload(event) {
@@ -328,6 +335,19 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
           <Upload class="h-3.5 w-3.5" />
           {{ t('workspace.roster.import') }}
         </RouterLink>
+        <button
+          v-if="canCopyPreviousMonth"
+          class="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="copyPreviousMonthPending || loading"
+          @click="copyPreviousMonth"
+        >
+          <Copy class="h-3.5 w-3.5" />
+          {{
+            copyPreviousMonthPending
+              ? t('workspace.roster.copyingPreviousMonth')
+              : t('workspace.roster.copyPreviousMonth')
+          }}
+        </button>
         <button
           class="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="importExportLoading"

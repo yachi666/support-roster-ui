@@ -57,6 +57,10 @@ function isPendingUpdate(staffId, day) {
   return props.pendingUpdateKeySet.has(`${staffId}:${day}`)
 }
 
+function cellKey(staffId, day) {
+  return `${staffId}:${day}`
+}
+
 function isRangeSelected(staffId, day) {
   if (!props.selectedRange || props.selectedRange.staffId !== staffId) {
     return false
@@ -72,6 +76,7 @@ const pointerState = ref({
   currentDay: null,
   dragged: false,
 })
+const activeTooltipKey = ref('')
 
 function emitRangeSelection(staffId, startDay, endDay, openEditor = false) {
   const normalizedStartDay = Math.min(startDay, endDay)
@@ -109,6 +114,30 @@ function updatePointerSelection(staffId, day) {
   }
 }
 
+function isTooltipActive(staffId, day) {
+  return activeTooltipKey.value === cellKey(staffId, day)
+}
+
+function setActiveTooltip(staffId, day) {
+  activeTooltipKey.value = cellKey(staffId, day)
+}
+
+function handleCellMouseenter(staffId, day, hasCode) {
+  updatePointerSelection(staffId, day)
+
+  if (!hasCode || pointerState.value.active) {
+    return
+  }
+
+  activeTooltipKey.value = cellKey(staffId, day)
+}
+
+function handleCellMouseleave(staffId, day) {
+  if (isTooltipActive(staffId, day)) {
+    activeTooltipKey.value = ''
+  }
+}
+
 function clearPointerState() {
   pointerState.value = {
     active: false,
@@ -117,6 +146,7 @@ function clearPointerState() {
     currentDay: null,
     dragged: false,
   }
+  activeTooltipKey.value = ''
 }
 
 function finishPointerSelection(staffId, day) {
@@ -176,6 +206,7 @@ function handleCellKeydown(event, staffId, day) {
     case 'Enter':
     case ' ':
       event.preventDefault()
+      setActiveTooltip(staffId, day)
       emit('open-selected-cell', { staffId, day })
       break
     default:
@@ -538,16 +569,22 @@ onBeforeUnmount(() => {
                   t('workspace.grid.rosterCell', { name: row.person.name, day: index + 1 })
                 "
                 @focus="emit('select-cell', { staffId: row.person.id, day: index + 1 })"
+                @focusin="code && setActiveTooltip(row.person.id, index + 1)"
+                @focusout="handleCellMouseleave(row.person.id, index + 1)"
                 @keydown="handleCellKeydown($event, row.person.id, index + 1)"
                 @mousedown.prevent="startPointerSelection(row.person.id, index + 1)"
-                @mouseenter="updatePointerSelection(row.person.id, index + 1)"
+                @mouseenter="handleCellMouseenter(row.person.id, index + 1, Boolean(code))"
+                @mouseleave="handleCellMouseleave(row.person.id, index + 1)"
                 @mouseup.prevent="finishPointerSelection(row.person.id, index + 1)"
               >
                 <span
                   v-if="isPendingUpdate(row.person.id, index + 1)"
                   class="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-amber-500"
                 ></span>
-                <TooltipRoot v-if="code">
+                <TooltipRoot
+                  v-if="code"
+                  :open="isTooltipActive(row.person.id, index + 1)"
+                >
                   <TooltipTrigger as-child>
                     <div
                       :class="[

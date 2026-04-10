@@ -20,6 +20,8 @@ import { api } from '@/api'
 import OverviewStatCard from '../components/OverviewStatCard.vue'
 import WorkspacePageHeader from '../components/WorkspacePageHeader.vue'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
+import { filterOverviewContent } from '../lib/workspaceSearch'
+import { useWorkspacePageSearch } from '../composables/useWorkspacePageSearch'
 import { useWorkspacePeriod } from '../composables/useWorkspacePeriod'
 import { WORKSPACE_OVERVIEW_PATH, getWorkspaceQuickActionTarget } from '../config/navigation'
 
@@ -31,6 +33,7 @@ const errorMessage = shallowRef('')
 
 const { year, month, monthLabel, timezone } = useWorkspacePeriod()
 const { t } = useI18n()
+const searchTerm = useWorkspacePageSearch()
 
 const STATUS_WEIGHT = {
   error: 0,
@@ -134,8 +137,19 @@ function getSignalCopy(stat, index) {
   }
 }
 
+const filteredOverviewContent = computed(() =>
+  filterOverviewContent(
+    {
+      stats: overviewStats.value,
+      quickActions: rawQuickActions.value,
+      activity: activityEntries.value,
+    },
+    searchTerm.value,
+  ),
+)
+
 const quickActions = computed(() =>
-  rawQuickActions.value.map((action) => {
+  filteredOverviewContent.value.quickActions.map((action) => {
     const normalizedKey = (action.actionKey || '').toLowerCase()
     let tone = 'teal'
 
@@ -154,7 +168,7 @@ const quickActions = computed(() =>
 )
 
 const normalizedStats = computed(() =>
-  overviewStats.value
+  filteredOverviewContent.value.stats
     .map((stat, index) => {
       const status = normalizeStatus(stat.status)
       const progress = Math.min(100, Math.max(0, Number(stat.progress ?? 0) || 0))
@@ -186,7 +200,7 @@ const monthlyStats = computed(() =>
 const leadStat = computed(() => monthlyStats.value[0] ?? validationStat.value ?? null)
 const primaryMonthlyStats = computed(() => monthlyStats.value.slice(0, 2))
 const remainingMonthlyStats = computed(() => monthlyStats.value.slice(2))
-const activityPreview = computed(() => activityEntries.value.slice(0, 5))
+const activityPreview = computed(() => filteredOverviewContent.value.activity.slice(0, 5))
 
 const monthlySignalCards = computed(() => {
   if (!primaryMonthlyStats.value.length) {
