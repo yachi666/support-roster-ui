@@ -350,6 +350,7 @@ const formatShiftTime = (iso) => {
 │ 🕐 08:00 - 17:00                                 │
 │ ──────────────────────────────────────────────── │
 │ 💬 @username                                     │
+│ Teams → 打开与该邮箱对应用户的 Microsoft Teams 对话 │
 │ ✉️ username@company.com                          │
 │ 📞 +1-555-0101                                   │
 │ ──────────────────────────────────────────────── │
@@ -371,6 +372,10 @@ const formatShiftTime = (iso) => {
   <div>{{ backup.name }} ({{ backup.contact }})</div>
 </div>
 ```
+
+- 若 `shift.contact.email` 存在，tooltip 内应提供 `Microsoft Teams` 行，并通过 `https://teams.microsoft.com/l/chat/0/0?users=<email>` 在新标签页打开对应会话。
+- `Microsoft Teams` 行属于可点击动作，应与纯文本联系方式区分视觉层级。
+- `slack / email / phone` 任一字段缺失时，对应行直接隐藏，不展示空占位。
 
 ---
 

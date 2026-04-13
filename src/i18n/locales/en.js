@@ -66,6 +66,16 @@ export default {
         'This first-time activation flow is temporarily accepted for intranet/testing only.',
     },
   },
+  viewer: {
+    timeline: {
+      teamsColumn: 'Teams',
+      activeShifts: '{count} active shifts',
+      primaryOnCall: 'Primary On-call',
+      secondarySupport: 'Secondary Support',
+      microsoftTeams: 'Microsoft Teams',
+      backup: 'Backup',
+    },
+  },
   workspace: {
     roles: {
       admin: 'Admin',

@@ -2,10 +2,12 @@
 import { ref, computed, onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { format, addHours, differenceInMinutes } from 'date-fns'
 import { fromZonedTime } from 'date-fns-tz'
-import { User, Mail, Phone, MessageSquare, Star, Clock } from 'lucide-vue-next'
+import { User, Mail, Phone, MessageSquare, MessagesSquare, Star, Clock, ExternalLink } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import { cn } from '@/lib/utils'
 import { toIanaTimezone } from '@/lib/timezones'
 import { hexToRgba } from '@/features/workspace/lib/color'
+import { buildMicrosoftTeamsChatUrl } from '@/lib/microsoftTeams'
 import {
   TooltipRoot,
   TooltipTrigger,
@@ -21,6 +23,7 @@ const props = defineProps({
   teams: { type: Array, required: true },
   shifts: { type: Array, required: true },
 })
+const { t } = useI18n()
 
 const HOUR_COUNT = 24
 const TEAM_COLUMN_WIDTH = 208
@@ -222,6 +225,13 @@ const getShiftStyle = (layoutShift) => ({
 const shouldShowShiftTime = (width) => width >= 88
 
 const getTeamShiftCount = (teamId) => props.shifts.filter((shift) => shift.teamId === teamId).length
+
+const getShiftContactValue = (shift, field) => {
+  const value = shift?.contact?.[field]
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+const getMicrosoftTeamsUrl = (shift) => buildMicrosoftTeamsChatUrl(getShiftContactValue(shift, 'email'))
 </script>
 
 <template>
@@ -233,7 +243,7 @@ const getTeamShiftCount = (teamId) => props.shifts.filter((shift) => shift.teamI
             class="sticky left-0 z-40 flex items-center border-r border-gray-200 bg-gray-50 px-4 text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[1px_0_0_0_rgba(229,231,235,1)]"
             :style="{ width: `${TEAM_COLUMN_WIDTH}px` }"
           >
-            Teams
+            {{ t('viewer.timeline.teamsColumn') }}
           </div>
 
           <div class="relative flex bg-gray-50" :style="{ width: `${timelineWidth}px` }">
@@ -299,7 +309,7 @@ const getTeamShiftCount = (teamId) => props.shifts.filter((shift) => shift.teamI
                 {{ team.name }}
               </div>
               <div class="mt-1 pl-4 text-xs text-gray-400">
-                {{ getTeamShiftCount(team.id) }} active shifts
+                {{ t('viewer.timeline.activeShifts', { count: getTeamShiftCount(team.id) }) }}
               </div>
             </div>
 
@@ -370,7 +380,9 @@ const getTeamShiftCount = (teamId) => props.shifts.filter((shift) => shift.teamI
                           </div>
                           <div class="mt-0.5 flex items-center text-xs text-gray-500">
                             {{
-                              layoutShift.shift.isPrimary ? 'Primary On-call' : 'Secondary Support'
+                              layoutShift.shift.isPrimary
+                                ? t('viewer.timeline.primaryOnCall')
+                                : t('viewer.timeline.secondarySupport')
                             }}
                           </div>
                         </div>
@@ -406,27 +418,52 @@ const getTeamShiftCount = (teamId) => props.shifts.filter((shift) => shift.teamI
                       </div>
                       <div class="my-2 h-px bg-gray-100"></div>
                       <div
+                        v-if="getShiftContactValue(layoutShift.shift, 'slack')"
                         class="flex cursor-pointer items-center transition-colors hover:text-gray-900"
                       >
                         <MessageSquare class="mr-2 h-3.5 w-3.5 text-gray-400" />
-                        <span class="select-all">{{ layoutShift.shift.contact.slack }}</span>
+                        <span class="select-all">{{ getShiftContactValue(layoutShift.shift, 'slack') }}</span>
                       </div>
+                      <a
+                        v-if="getMicrosoftTeamsUrl(layoutShift.shift)"
+                        :href="getMicrosoftTeamsUrl(layoutShift.shift)"
+                        target="_blank"
+                        rel="noreferrer"
+                        class="flex items-center justify-between gap-3 rounded-md border border-sky-200 bg-sky-50/80 px-2.5 py-2 text-sky-700 transition-colors hover:border-sky-300 hover:bg-sky-100 hover:text-sky-900"
+                      >
+                        <span class="flex min-w-0 items-center">
+                          <MessagesSquare class="mr-2 h-3.5 w-3.5 flex-shrink-0" />
+                          <span class="min-w-0">
+                            <span class="block text-xs font-semibold uppercase tracking-wide">
+                              {{ t('viewer.timeline.microsoftTeams') }}
+                            </span>
+                            <span class="block truncate text-xs text-sky-800/90">
+                              {{ getShiftContactValue(layoutShift.shift, 'email') }}
+                            </span>
+                          </span>
+                        </span>
+                        <ExternalLink class="h-3.5 w-3.5 flex-shrink-0" />
+                      </a>
                       <div
+                        v-if="getShiftContactValue(layoutShift.shift, 'email')"
                         class="flex cursor-pointer items-center transition-colors hover:text-gray-900"
                       >
                         <Mail class="mr-2 h-3.5 w-3.5 text-gray-400" />
-                        <span class="select-all">{{ layoutShift.shift.contact.email }}</span>
+                        <span class="select-all">{{ getShiftContactValue(layoutShift.shift, 'email') }}</span>
                       </div>
                       <div
+                        v-if="getShiftContactValue(layoutShift.shift, 'phone')"
                         class="flex cursor-pointer items-center transition-colors hover:text-gray-900"
                       >
                         <Phone class="mr-2 h-3.5 w-3.5 text-gray-400" />
-                        <span class="select-all">{{ layoutShift.shift.contact.phone }}</span>
+                        <span class="select-all">{{ getShiftContactValue(layoutShift.shift, 'phone') }}</span>
                       </div>
                     </div>
 
                     <div v-if="layoutShift.shift.backup" class="mt-3 border-t border-gray-100 pt-3">
-                      <div class="mb-1 text-xs font-semibold text-gray-500">Backup</div>
+                      <div class="mb-1 text-xs font-semibold text-gray-500">
+                        {{ t('viewer.timeline.backup') }}
+                      </div>
                       <div class="flex items-center text-sm">
                         <User class="mr-2 h-3.5 w-3.5 text-gray-400" />
                         {{ layoutShift.shift.backup.name }}
