@@ -232,6 +232,13 @@ const getShiftContactValue = (shift, field) => {
 }
 
 const getMicrosoftTeamsUrl = (shift) => buildMicrosoftTeamsChatUrl(getShiftContactValue(shift, 'email'))
+const hasShiftContactInfo = (shift) => {
+  return Boolean(
+    getShiftContactValue(shift, 'slack')
+    || getShiftContactValue(shift, 'email')
+    || getShiftContactValue(shift, 'phone'),
+  )
+}
 </script>
 
 <template>
@@ -321,10 +328,12 @@ const getMicrosoftTeamsUrl = (shift) => buildMicrosoftTeamsChatUrl(getShiftConta
 
               <TooltipRoot v-for="layoutShift in shifts" :key="layoutShift.shift.id">
                 <TooltipTrigger as-child>
-                  <div
+                  <button
+                    type="button"
+                    :aria-label="`${layoutShift.shift.userName} ${getShiftRole(layoutShift.shift)}`"
                     :class="
                       cn(
-                        'absolute z-10 flex cursor-pointer items-center justify-between overflow-hidden rounded-lg border px-2 shadow-sm transition-all select-none hover:z-20 hover:shadow-md',
+                        'absolute z-10 flex cursor-pointer items-center justify-between overflow-hidden rounded-lg border px-2 text-left shadow-sm transition-all select-none hover:z-20 hover:shadow-md focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/70 focus-visible:ring-offset-1',
                         !layoutShift.shift.colorHex &&
                           !team.color?.startsWith('#') &&
                           getShiftBgClass(team.color),
@@ -360,7 +369,7 @@ const getMicrosoftTeamsUrl = (shift) => buildMicrosoftTeamsChatUrl(getShiftConta
                       {{ formatShiftTimeInZone(layoutShift.shift.start) }} -
                       {{ formatShiftTimeInZone(layoutShift.shift.end) }}
                     </span>
-                  </div>
+                  </button>
                 </TooltipTrigger>
 
                 <TooltipPortal>
@@ -416,47 +425,49 @@ const getMicrosoftTeamsUrl = (shift) => buildMicrosoftTeamsChatUrl(getShiftConta
                           {{ formatShiftTimeInZone(layoutShift.shift.end) }}
                         </span>
                       </div>
-                      <div class="my-2 h-px bg-gray-100"></div>
-                      <div
-                        v-if="getShiftContactValue(layoutShift.shift, 'slack')"
-                        class="flex cursor-pointer items-center transition-colors hover:text-gray-900"
-                      >
-                        <MessageSquare class="mr-2 h-3.5 w-3.5 text-gray-400" />
-                        <span class="select-all">{{ getShiftContactValue(layoutShift.shift, 'slack') }}</span>
-                      </div>
-                      <a
-                        v-if="getMicrosoftTeamsUrl(layoutShift.shift)"
-                        :href="getMicrosoftTeamsUrl(layoutShift.shift)"
-                        target="_blank"
-                        rel="noreferrer"
-                        class="flex items-center justify-between gap-3 rounded-md border border-sky-200 bg-sky-50/80 px-2.5 py-2 text-sky-700 transition-colors hover:border-sky-300 hover:bg-sky-100 hover:text-sky-900"
-                      >
-                        <span class="flex min-w-0 items-center">
-                          <MessagesSquare class="mr-2 h-3.5 w-3.5 flex-shrink-0" />
-                          <span class="min-w-0">
-                            <span class="block text-xs font-semibold uppercase tracking-wide">
-                              {{ t('viewer.timeline.microsoftTeams') }}
-                            </span>
-                            <span class="block truncate text-xs text-sky-800/90">
-                              {{ getShiftContactValue(layoutShift.shift, 'email') }}
+                      <div v-if="hasShiftContactInfo(layoutShift.shift)" class="space-y-2">
+                        <div class="my-2 h-px bg-gray-100"></div>
+                        <div
+                          v-if="getShiftContactValue(layoutShift.shift, 'slack')"
+                          class="flex cursor-pointer items-center transition-colors hover:text-gray-900"
+                        >
+                          <MessageSquare class="mr-2 h-3.5 w-3.5 text-gray-400" />
+                          <span class="select-all">{{ getShiftContactValue(layoutShift.shift, 'slack') }}</span>
+                        </div>
+                        <a
+                          v-if="getMicrosoftTeamsUrl(layoutShift.shift)"
+                          :href="getMicrosoftTeamsUrl(layoutShift.shift)"
+                          target="_blank"
+                          rel="noreferrer"
+                          class="flex items-center justify-between gap-3 rounded-md border border-sky-200 bg-sky-50/80 px-2.5 py-2 text-sky-700 transition-colors hover:border-sky-300 hover:bg-sky-100 hover:text-sky-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/70 focus-visible:ring-offset-1"
+                        >
+                          <span class="flex min-w-0 items-center">
+                            <MessagesSquare class="mr-2 h-3.5 w-3.5 flex-shrink-0" />
+                            <span class="min-w-0">
+                              <span class="block text-xs font-semibold uppercase tracking-wide">
+                                {{ t('viewer.timeline.microsoftTeams') }}
+                              </span>
+                              <span class="block truncate text-xs text-sky-800/90">
+                                {{ getShiftContactValue(layoutShift.shift, 'email') }}
+                              </span>
                             </span>
                           </span>
-                        </span>
-                        <ExternalLink class="h-3.5 w-3.5 flex-shrink-0" />
-                      </a>
-                      <div
-                        v-if="getShiftContactValue(layoutShift.shift, 'email')"
-                        class="flex cursor-pointer items-center transition-colors hover:text-gray-900"
-                      >
-                        <Mail class="mr-2 h-3.5 w-3.5 text-gray-400" />
-                        <span class="select-all">{{ getShiftContactValue(layoutShift.shift, 'email') }}</span>
-                      </div>
-                      <div
-                        v-if="getShiftContactValue(layoutShift.shift, 'phone')"
-                        class="flex cursor-pointer items-center transition-colors hover:text-gray-900"
-                      >
-                        <Phone class="mr-2 h-3.5 w-3.5 text-gray-400" />
-                        <span class="select-all">{{ getShiftContactValue(layoutShift.shift, 'phone') }}</span>
+                          <ExternalLink class="h-3.5 w-3.5 flex-shrink-0" />
+                        </a>
+                        <div
+                          v-if="getShiftContactValue(layoutShift.shift, 'email')"
+                          class="flex cursor-pointer items-center transition-colors hover:text-gray-900"
+                        >
+                          <Mail class="mr-2 h-3.5 w-3.5 text-gray-400" />
+                          <span class="select-all">{{ getShiftContactValue(layoutShift.shift, 'email') }}</span>
+                        </div>
+                        <div
+                          v-if="getShiftContactValue(layoutShift.shift, 'phone')"
+                          class="flex cursor-pointer items-center transition-colors hover:text-gray-900"
+                        >
+                          <Phone class="mr-2 h-3.5 w-3.5 text-gray-400" />
+                          <span class="select-all">{{ getShiftContactValue(layoutShift.shift, 'phone') }}</span>
+                        </div>
                       </div>
                     </div>
 
