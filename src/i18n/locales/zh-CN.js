@@ -64,6 +64,16 @@ export default {
       intranetHint: '当前首次激活流程仅临时适用于内网/测试环境。',
     },
   },
+  viewer: {
+    timeline: {
+      teamsColumn: '团队',
+      activeShifts: '{count} 个生效班次',
+      primaryOnCall: '主值班',
+      secondarySupport: '辅助支持',
+      microsoftTeams: 'Microsoft Teams',
+      backup: '备援',
+    },
+  },
   workspace: {
     roles: {
       admin: '管理员',
