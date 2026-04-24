@@ -2,12 +2,13 @@
 import { ref, computed, onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { format, addHours, differenceInMinutes } from 'date-fns'
 import { fromZonedTime } from 'date-fns-tz'
-import { User, Mail, Phone, MessageSquare, MessagesSquare, Star, Clock, ExternalLink } from 'lucide-vue-next'
+import { User, Mail, Phone, MessageSquare, Star, Clock } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { cn } from '@/lib/utils'
 import { toIanaTimezone } from '@/lib/timezones'
 import { hexToRgba } from '@/features/workspace/lib/color'
 import { buildMicrosoftTeamsChatUrl } from '@/lib/microsoftTeams'
+import teamsContactIcon from '@/assets/teams-contact-icon.png'
 import {
   TooltipRoot,
   TooltipTrigger,
@@ -439,20 +440,16 @@ const hasShiftContactInfo = (shift) => {
                           :href="getMicrosoftTeamsUrl(layoutShift.shift)"
                           target="_blank"
                           rel="noreferrer"
-                          class="flex items-center justify-between gap-3 rounded-md border border-sky-200 bg-sky-50/80 px-2.5 py-2 text-sky-700 transition-colors hover:border-sky-300 hover:bg-sky-100 hover:text-sky-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/70 focus-visible:ring-offset-1"
+                          :aria-label="`Contact ${layoutShift.shift.userName} in Teams`"
+                          :title="`Contact ${layoutShift.shift.userName} in Teams`"
+                          class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#7b83eb]/25 bg-[#eef0ff] transition-transform transition-colors hover:scale-[1.02] hover:border-[#6264a7]/40 hover:bg-[#e3e6ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6264a7]/50 focus-visible:ring-offset-1"
                         >
-                          <span class="flex min-w-0 items-center">
-                            <MessagesSquare class="mr-2 h-3.5 w-3.5 flex-shrink-0" />
-                            <span class="min-w-0">
-                              <span class="block text-xs font-semibold uppercase tracking-wide">
-                                {{ t('viewer.timeline.microsoftTeams') }}
-                              </span>
-                              <span class="block truncate text-xs text-sky-800/90">
-                                {{ getShiftContactValue(layoutShift.shift, 'email') }}
-                              </span>
-                            </span>
-                          </span>
-                          <ExternalLink class="h-3.5 w-3.5 flex-shrink-0" />
+                          <img
+                            :src="teamsContactIcon"
+                            alt=""
+                            aria-hidden="true"
+                            class="h-7 w-7 rounded-full object-cover"
+                          />
                         </a>
                         <div
                           v-if="getShiftContactValue(layoutShift.shift, 'email')"
