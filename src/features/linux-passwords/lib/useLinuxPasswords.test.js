@@ -54,6 +54,16 @@ function createDependencies(overrides = {}) {
   }
 }
 
+function createDeferred() {
+  let resolve
+  let reject
+  const promise = new Promise((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+  return { promise, resolve, reject }
+}
+
 test('loadServers requests backend list and stores returned items and business units', async () => {
   const deps = createDependencies()
   const model = createLinuxPasswordsModel(deps)
@@ -103,6 +113,17 @@ test('submitCreate sends create payload, resets add mode, and reloads list', asy
   assert.match(model.statusMessage, /^linuxPasswords\.savedServer:/)
   assert.deepEqual(deps.calls[1], ['getLinuxPasswords', { search: '', businessUnit: null }])
   assert.deepEqual(deps.calls[2], ['getLinuxPasswordDirectories'])
+})
+
+test('openAddForm ignores non-admin users', () => {
+  const deps = createDependencies()
+  const model = createLinuxPasswordsModel(deps)
+
+  model.openAddForm()
+
+  assert.equal(model.view, 'list')
+  assert.equal(model.formMode, 'create')
+  assert.equal(model.editingServer, null)
 })
 
 test('submitEdit requires admin and sends status with update payload', async () => {
@@ -158,6 +179,52 @@ test('deleteServer refreshes directories after admin deletion', async () => {
   assert.deepEqual(deps.calls[0], ['deleteLinuxPassword', '1'])
   assert.deepEqual(deps.calls[1], ['getLinuxPasswords', { search: '', businessUnit: null }])
   assert.deepEqual(deps.calls[2], ['getLinuxPasswordDirectories'])
+})
+
+test('loadServers keeps the latest response when earlier requests resolve later', async () => {
+  const first = createDeferred()
+  const second = createDeferred()
+  const calls = []
+  let requestCount = 0
+  const model = createLinuxPasswordsModel({
+    api: {
+      workspace: {
+        getLinuxPasswords: async (params = {}) => {
+          calls.push(params)
+          requestCount += 1
+          return requestCount === 1 ? first.promise : second.promise
+        },
+        getLinuxPasswordDirectories: async () => [],
+        createLinuxPassword: async () => null,
+        updateLinuxPassword: async () => null,
+        deleteLinuxPassword: async () => null,
+      },
+    },
+    authStore: { isAdmin: true },
+    t: (key, params = {}) => `${key}:${JSON.stringify(params)}`,
+    confirmDelete: async () => true,
+  })
+
+  model.search = 'first'
+  const firstLoad = model.loadServers()
+  model.search = 'second'
+  const secondLoad = model.loadServers()
+
+  second.resolve({
+    items: [{ id: 'new', hostname: 'new-host' }],
+  })
+  await secondLoad
+
+  first.resolve({
+    items: [{ id: 'old', hostname: 'old-host' }],
+  })
+  await firstLoad
+
+  assert.deepEqual(calls, [
+    { search: 'first', businessUnit: null },
+    { search: 'second', businessUnit: null },
+  ])
+  assert.deepEqual(model.servers, [{ id: 'new', hostname: 'new-host' }])
 })
 
 test('model exposes template-friendly values and respects computed admin refs', () => {

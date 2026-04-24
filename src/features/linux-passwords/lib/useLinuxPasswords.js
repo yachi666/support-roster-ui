@@ -22,6 +22,7 @@ export function createLinuxPasswordsModel({
   t,
   confirmDelete,
 }) {
+  let latestLoadServersRequestId = 0
   const servers = ref([])
   const availableUnits = ref([])
   const visiblePasswords = ref({})
@@ -48,15 +49,20 @@ export function createLinuxPasswordsModel({
   })
 
   async function loadServers() {
+    const requestId = ++latestLoadServersRequestId
     isLoading.value = true
     try {
       const response = await api.workspace.getLinuxPasswords({
         search: search.value,
         businessUnit: selectedUnit.value === 'All' ? null : selectedUnit.value,
       })
-      servers.value = Array.isArray(response?.items) ? response.items : []
+      if (requestId === latestLoadServersRequestId) {
+        servers.value = Array.isArray(response?.items) ? response.items : []
+      }
     } finally {
-      isLoading.value = false
+      if (requestId === latestLoadServersRequestId) {
+        isLoading.value = false
+      }
     }
   }
 
@@ -66,6 +72,9 @@ export function createLinuxPasswordsModel({
   }
 
   function openAddForm() {
+    if (!canManageServers.value) {
+      return
+    }
     formMode.value = 'create'
     editingServer.value = null
     view.value = 'add'

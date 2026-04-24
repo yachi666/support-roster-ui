@@ -97,6 +97,7 @@ async function deleteServer(server) {
       </div>
 
       <LinuxPasswordToolbar
+        :can-manage-servers="model.canManageServers"
         :title="t('linuxPasswords.title')"
         :subtitle="model.subtitle"
         :search="model.search"

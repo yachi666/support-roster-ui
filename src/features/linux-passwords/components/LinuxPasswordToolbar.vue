@@ -3,6 +3,10 @@ import { ArrowLeft, Plus, Search } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 
 defineProps({
+  canManageServers: {
+    type: Boolean,
+    required: true,
+  },
   title: {
     type: String,
     required: true,
@@ -45,6 +49,7 @@ const { t } = useI18n()
         />
       </label>
       <button
+        v-if="canManageServers"
         type="button"
         class="flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
         @click="$emit('show-add')"
