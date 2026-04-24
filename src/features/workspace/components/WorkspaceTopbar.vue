@@ -30,6 +30,9 @@ const localeOptions = computed(() =>
     label: locale === 'zh-CN' ? t('common.chinese') : t('common.english'),
   })),
 )
+const topbarActionLinkBaseClass = 'inline-flex h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 text-sm font-medium transition-colors'
+const topbarActionSecondaryClass = 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+const topbarActionPrimaryClass = 'border border-teal-200 bg-teal-50 text-teal-700 hover:border-teal-300 hover:bg-teal-100'
 
 const yearOptions = computed(() => {
   const baseYear = new Date().getFullYear()
@@ -132,14 +135,14 @@ function handleLocaleChange(event) {
 
       <RouterLink
         to="/linux-passwords"
-        class="ml-auto inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50"
+        :class="['ml-auto', topbarActionLinkBaseClass, topbarActionSecondaryClass]"
       >
         {{ t('linuxPasswords.entryLabel') }}
       </RouterLink>
 
       <RouterLink
         to="/viewer"
-        class="hidden items-center rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-sm font-medium text-teal-700 transition-colors hover:border-teal-300 hover:bg-teal-100 lg:inline-flex"
+        :class="['hidden lg:inline-flex', topbarActionLinkBaseClass, topbarActionPrimaryClass]"
       >
         {{ t('workspace.shell.openViewer') }}
       </RouterLink>
