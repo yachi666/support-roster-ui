@@ -1,5 +1,16 @@
 const BASE_UNITS = ['Finance', 'Marketing', 'Infrastructure', 'Human Resources', 'Database', 'Web']
 
+export function mergeLinuxPasswordDirectories(selectedDirectories = [], typedDirectory = '') {
+  const merged = [
+    ...selectedDirectories,
+    typedDirectory,
+  ]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean)
+
+  return merged.length ? Array.from(new Set(merged)) : ['Uncategorized']
+}
+
 export function listLinuxPasswordUnits(servers = []) {
   return Array.from(new Set([
     ...BASE_UNITS,
@@ -27,7 +38,7 @@ export function createLinuxPasswordServer({ hostname, ip, username, password, fo
     ip: String(ip || '').trim(),
     username: String(username || '').trim(),
     passwordHash: String(password || ''),
-    businessUnits: Array.isArray(folders) && folders.length ? folders : ['Uncategorized'],
+    businessUnits: mergeLinuxPasswordDirectories(folders),
     status: 'online',
   }
 }

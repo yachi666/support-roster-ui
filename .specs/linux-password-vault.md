@@ -13,9 +13,9 @@
 
 ## 非目标
 
-- 本期不接入真实后端接口。
 - 本期不改造现有 workspace 左侧导航结构。
-- 本期不新增独立账号、角色或细粒度操作权限模型。
+- 本期不新增独立账号体系。
+- 本期不引入独立业务单元字典接口。
 
 ## 路由与访问策略
 
@@ -50,12 +50,11 @@
 | 组件 / 模块 | 单一职责 |
 |---|---|
 | `LinuxPasswordsPage` | 路由页，负责组合页面与挂接页面级状态 |
-| `LinuxPasswordsShell` | 页面整体布局，串联侧栏、工具栏与主内容区 |
 | `LinuxPasswordSidebar` | 左侧目录树、业务分类筛选、展开/折叠 |
 | `LinuxPasswordToolbar` | 标题、搜索、Add、Back to List 等顶部操作 |
 | `LinuxPasswordTable` | 列表态表格展示与行内交互 |
-| `LinuxPasswordForm` | 新增机器表单态与本地提交 |
-| `linuxPasswordMockData` | 页面示例数据与初始目录数据 |
+| `LinuxPasswordForm` | 新增 / 编辑共用表单 |
+| `useLinuxPasswords` | 页面级数据获取、CRUD 提交、权限显隐与状态反馈 |
 
 ### 当前实现文件
 
@@ -64,27 +63,60 @@
 - `src/features/linux-passwords/components/LinuxPasswordToolbar.vue`
 - `src/features/linux-passwords/components/LinuxPasswordTable.vue`
 - `src/features/linux-passwords/components/LinuxPasswordForm.vue`
-- `src/features/linux-passwords/data/mockServers.js`
-- `src/features/linux-passwords/lib/linuxPasswords.js`
+- `src/features/linux-passwords/lib/useLinuxPasswords.js`
+- `src/api/index.js`
 - `src/features/workspace/config/accessPolicyPages.js`
 
 ## 交互范围
 
-本期保留 Figma 页面中的前端交互感，但全部基于本地状态运行：
+当前实现保留 Figma 页面中的前端交互感，但数据已切换为真实接口：
 
-- 列表态 / 新增态切换
-- 左侧目录筛选
-- 搜索主机名 / IP
+- 列表态 / 新增态 / 编辑态切换
+- 左侧目录筛选（左侧目录来自独立接口，筛选仍通过 `businessUnit` 查询机器列表）
+- 搜索主机名 / IP（后端按 `search` 查询）
 - 密码显隐切换
 - 复制密码反馈
 - WinSCP 按钮反馈
-- 新增机器表单提交并更新本地数据
+- 新增机器表单提交
+- 管理员行内编辑 / 删除
+- 删除前二次确认
+- 编辑态支持修改 `status`
 
 ### 数据来源
 
-- 示例数据来源于 Figma 工程里的 `mockServers`
-- 数据迁移到 `support-roster-ui` 内部的 Vue 数据模块
-- 不发起真实 API 请求
+- 页面初次进入通过 `api.workspace.getLinuxPasswords()` 拉取真实列表。
+- 页面初次进入额外通过 `api.workspace.getLinuxPasswordDirectories()` 拉取左侧目录。
+- 列表接口当前仍返回 `items + businessUnits`，但前端目录树只使用独立目录接口结果。
+- 新增走 `POST /api/workspace/linux-passwords`
+- 编辑走 `PUT /api/workspace/linux-passwords/{id}`
+- 删除走 `DELETE /api/workspace/linux-passwords/{id}`
+- 左侧目录走 `GET /api/workspace/linux-password-directories`
+- 详情接口预留为 `GET /api/workspace/linux-passwords/{id}`，当前页面编辑直接复用列表行数据。
+
+## 前后端权限对齐
+
+| 操作 | 前端显隐 | 后端校验 |
+|---|---|---|
+| 列表 / 详情 | 受页面登录策略控制 | 已登录 |
+| 新增 | 登录即可进入页面后可操作 | 已登录 |
+| 编辑 | 仅 `authStore.isAdmin` 显示按钮 | workspace `admin` |
+| 删除 | 仅 `authStore.isAdmin` 显示按钮 | workspace `admin` |
+
+## 表单规则
+
+- 新增：
+  - 必填：`hostname`、`ip`、`username`、`password`
+  - 不显示状态字段
+  - 后端默认写入 `status=online`
+  - 提供“新增目录”输入框，可一次补充 1 个新目录
+  - 同时支持勾选已有目录
+- 编辑：
+  - 复用同一表单
+  - 额外显示 `status` 下拉框
+  - 可选值：`online` / `maintenance` / `offline`
+  - 同样支持“输入 1 个新目录 + 勾选已有目录”
+- 业务单元为空时，由后端归一化为 `Uncategorized`
+- 目录表由机器 CRUD 自动维护；不再存在前端预制目录常量。
 
 ## 文案与国际化
 
@@ -122,16 +154,22 @@
 ### 页面交互
 
 - 页面布局与 Figma 版本核心结构一致。
-- 列表、新增表单、筛选、搜索、密码显隐、复制等交互可用。
-- 本地状态更新后，页面行为连贯，无需刷新即可反映结果。
+- 列表、新增 / 编辑表单、筛选、搜索、密码显隐、复制等交互可用。
+- 新增目录后左侧目录立即出现；移除最后一个引用该目录的机器后，左侧目录立即消失。
+- 管理员可看到编辑 / 删除按钮；非管理员不可见。
+- 所有列表刷新由真实接口返回驱动，而不是本地 mock 数据更新。
 
 ## 验证命令
 
-- `cd support-roster-ui && node --test src/features/workspace/config/accessPolicyPages.test.js src/features/linux-passwords/lib/linuxPasswords.test.js`
+- `cd support-roster-ui && node --test src/features/workspace/config/accessPolicyPages.test.js src/features/linux-passwords/lib/linuxPasswords.test.js src/features/linux-passwords/lib/useLinuxPasswords.test.js`
 - `cd support-roster-ui && npm run build`
 - `cd automationtest && npm run test:raw -- specs/auth/linux-password-route-guard.spec.mjs`
 - `cd automationtest && npm run test:raw -- specs/workspace/linux-passwords-smoke.spec.mjs`
 
 ## 后续演进预留
 
-若后续需要接入真实后端，可在保持路由与组件边界不变的前提下，将本地示例数据替换为 API / composable 驱动的数据源，而不需要重做页面信息架构。
+若后续需要继续增强，可在保持当前页面结构不变的前提下继续扩展：
+
+- 详情接口独立加载
+- 更细的字段脱敏 / 审计
+- 业务单元独立字典接口

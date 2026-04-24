@@ -6,6 +6,7 @@ import {
   createLinuxPasswordServer,
   filterLinuxPasswordServers,
   listLinuxPasswordUnits,
+  mergeLinuxPasswordDirectories,
 } from './linuxPasswords.js'
 
 test('listLinuxPasswordUnits merges built-in folders and server business units', () => {
@@ -38,4 +39,18 @@ test('createLinuxPasswordServer normalizes form input into a new local record', 
   assert.deepEqual(next.businessUnits, ['Web', 'Infrastructure'])
   assert.equal(next.status, 'online')
   assert.match(next.id, /^srv-/)
+})
+
+test('mergeLinuxPasswordDirectories trims and deduplicates checked and typed directories', () => {
+  assert.deepEqual(
+    mergeLinuxPasswordDirectories([' Web ', 'Infrastructure', 'Web'], '  Database  '),
+    ['Web', 'Infrastructure', 'Database'],
+  )
+})
+
+test('mergeLinuxPasswordDirectories falls back to Uncategorized when nothing is selected', () => {
+  assert.deepEqual(
+    mergeLinuxPasswordDirectories([], '   '),
+    ['Uncategorized'],
+  )
 })
