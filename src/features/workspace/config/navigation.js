@@ -37,6 +37,20 @@ export function isSafeAppRedirectPath(path) {
   }
 
   const pathname = getWorkspacePathname(candidate)
+  const pathSegments = pathname.split('/').filter(Boolean)
+  const hasUnsafeTraversalSegment = pathSegments.some((segment) => {
+    try {
+      const decodedSegment = decodeURIComponent(segment)
+      return decodedSegment === '.' || decodedSegment === '..'
+    } catch {
+      return true
+    }
+  })
+
+  if (hasUnsafeTraversalSegment) {
+    return false
+  }
+
   return SAFE_APP_REDIRECT_PATHS.has(pathname) || isWorkspacePath(pathname)
 }
 

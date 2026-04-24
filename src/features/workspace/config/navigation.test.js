@@ -39,4 +39,12 @@ test('resolveSafeAppRedirectPath falls back for non-app redirect targets', () =>
     navigation.resolveSafeAppRedirectPath?.('/login', navigation.WORKSPACE_ENTRY_PATH),
     navigation.WORKSPACE_ENTRY_PATH,
   )
+  assert.equal(
+    navigation.resolveSafeAppRedirectPath?.('/workspace/../login', navigation.WORKSPACE_ENTRY_PATH),
+    navigation.WORKSPACE_ENTRY_PATH,
+  )
+  assert.equal(
+    navigation.resolveSafeAppRedirectPath?.('/workspace/%2E%2E/login', navigation.WORKSPACE_ENTRY_PATH),
+    navigation.WORKSPACE_ENTRY_PATH,
+  )
 })
