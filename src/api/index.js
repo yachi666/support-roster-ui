@@ -267,6 +267,38 @@ export const api = {
       return request(`/workspace/accounts${query ? `?${query}` : ''}`)
     },
 
+    getLinuxPasswords: ({ search = '', businessUnit = null } = {}) => {
+      const params = new URLSearchParams()
+
+      if (search.trim()) {
+        params.set('search', search.trim())
+      }
+      if (businessUnit && `${businessUnit}`.trim()) {
+        params.set('businessUnit', `${businessUnit}`.trim())
+      }
+
+      const query = params.toString()
+      return request(`/workspace/linux-passwords${query ? `?${query}` : ''}`)
+    },
+
+    getLinuxPasswordDirectories: () => request('/workspace/linux-password-directories'),
+
+    getLinuxPassword: (id) => request(`/workspace/linux-passwords/${id}`),
+
+    createLinuxPassword: (payload) => request('/workspace/linux-passwords', {
+      method: 'POST',
+      body: payload,
+    }),
+
+    updateLinuxPassword: (id, payload) => request(`/workspace/linux-passwords/${id}`, {
+      method: 'PUT',
+      body: payload,
+    }),
+
+    deleteLinuxPassword: (id) => request(`/workspace/linux-passwords/${id}`, {
+      method: 'DELETE',
+    }),
+
     getAccount: (id) => request(`/workspace/accounts/${id}`),
 
     createAccount: (payload) => request('/workspace/accounts', {

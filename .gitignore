@@ -27,6 +27,14 @@ coverage
 *.tsbuildinfo
 
 .eslintcache
+.playwright-cli/
+src/features/workspace/lib/previewTeams 2.js
+src/features/workspace/lib/previewTeams.test 2.js
+src/features/workspace/lib/previousRoster 2.js
+src/features/workspace/lib/previousRoster.test 2.js
+src/features/workspace/lib/workspaceSearch.test 2.js
+src/lib/microsoftTeams 2.js
+src/lib/microsoftTeams.test 2.js
 
 # Cypress
 /cypress/videos/

@@ -1,5 +1,5 @@
 <script setup>
-import { Copy, Eye, EyeOff, HardDrive, MoreHorizontal, Terminal } from 'lucide-vue-next'
+import { Copy, Eye, EyeOff, HardDrive, Pencil, Terminal, Trash2 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
@@ -15,15 +15,23 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  canManageServers: {
+    type: Boolean,
+    default: false,
+  },
 })
 
-const emit = defineEmits(['toggle-password', 'copy-password', 'launch-winscp'])
+const emit = defineEmits(['toggle-password', 'copy-password', 'launch-winscp', 'edit-server', 'delete-server'])
 const { t } = useI18n()
 
 function getStatusClass(status) {
   if (status === 'online') return 'bg-green-500'
   if (status === 'maintenance') return 'bg-amber-400'
   return 'bg-red-500'
+}
+
+function getStatusLabel(status) {
+  return t(`linuxPasswords.status.${status || 'offline'}`)
 }
 </script>
 
@@ -51,9 +59,12 @@ function getStatusClass(status) {
                 v-for="unit in server.businessUnits"
                 :key="unit"
                 class="rounded border border-gray-200 bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500"
-              >
-                {{ unit }}
-              </span>
+                >
+                  {{ unit }}
+                </span>
+                <span class="rounded border border-gray-200 bg-white px-1.5 py-0.5 text-[10px] text-gray-500">
+                  {{ getStatusLabel(server.status) }}
+                </span>
             </div>
           </td>
           <td class="px-4 py-3 align-top font-mono text-[13px] text-gray-600">{{ server.ip }}</td>
@@ -61,7 +72,7 @@ function getStatusClass(status) {
           <td class="px-4 py-3 align-top">
             <div class="flex max-w-[220px] items-center gap-2 rounded border border-gray-200 bg-gray-50 px-2 py-1.5">
               <span class="flex-1 truncate font-mono text-[13px] text-gray-700">
-                {{ props.visiblePasswords[server.id] ? server.passwordHash : '••••••••••••' }}
+                {{ props.visiblePasswords[server.id] ? server.password : '••••••••••••' }}
               </span>
               <div class="flex items-center gap-1">
                 <button
@@ -95,8 +106,23 @@ function getStatusClass(status) {
                 <Terminal class="h-3.5 w-3.5 text-blue-600" />
                 <span>{{ t('linuxPasswords.winscp') }}</span>
               </button>
-              <button type="button" class="rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700">
-                <MoreHorizontal class="h-4 w-4" />
+              <button
+                v-if="props.canManageServers"
+                type="button"
+                class="flex items-center gap-1.5 rounded border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition-colors hover:border-emerald-300 hover:bg-gray-50 hover:text-emerald-600"
+                @click="$emit('edit-server', server)"
+              >
+                <Pencil class="h-3.5 w-3.5 text-emerald-600" />
+                <span>{{ t('common.edit') }}</span>
+              </button>
+              <button
+                v-if="props.canManageServers"
+                type="button"
+                class="flex items-center gap-1.5 rounded border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition-colors hover:border-red-300 hover:bg-gray-50 hover:text-red-600"
+                @click="$emit('delete-server', server)"
+              >
+                <Trash2 class="h-3.5 w-3.5 text-red-600" />
+                <span>{{ t('common.delete') }}</span>
               </button>
             </div>
           </td>
