@@ -2,17 +2,9 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { api } from '@/api'
 import { clearAuthToken, getAuthToken, setAuthToken } from '@/lib/authToken'
+import { buildDefaultWorkspaceAccessPolicy } from '@/features/workspace/config/accessPolicyPages'
 
-const DEFAULT_WORKSPACE_ACCESS_POLICY = Object.freeze([
-  { pageCode: 'overview', authRequired: false, configurable: true },
-  { pageCode: 'roster', authRequired: false, configurable: true },
-  { pageCode: 'staff', authRequired: false, configurable: true },
-  { pageCode: 'shifts', authRequired: false, configurable: true },
-  { pageCode: 'teams', authRequired: false, configurable: true },
-  { pageCode: 'accounts', authRequired: true, configurable: false },
-  { pageCode: 'import-export', authRequired: false, configurable: true },
-  { pageCode: 'validation', authRequired: false, configurable: true },
-])
+const DEFAULT_WORKSPACE_ACCESS_POLICY = Object.freeze(buildDefaultWorkspaceAccessPolicy())
 
 const SECURE_WORKSPACE_ACCESS_POLICY = Object.freeze(
   DEFAULT_WORKSPACE_ACCESS_POLICY.map((page) => ({
@@ -223,9 +215,17 @@ export const useAuthStore = defineStore('auth', () => {
     return workspaceAccessPolicy.value.find((page) => page.pageCode === pageCode) || null
   }
 
-  function isWorkspacePageLoginRequired(pageCode) {
-    const policy = getWorkspacePagePolicy(pageCode)
+  function getProtectedPagePolicy(pageCode) {
+    return workspaceAccessPolicy.value.find((page) => page.pageCode === pageCode) || null
+  }
+
+  function isProtectedPageLoginRequired(pageCode) {
+    const policy = getProtectedPagePolicy(pageCode)
     return policy ? Boolean(policy.authRequired) : true
+  }
+
+  function isWorkspacePageLoginRequired(pageCode) {
+    return isProtectedPageLoginRequired(pageCode)
   }
 
   function canAccessWorkspacePage(pageCode) {
@@ -293,6 +293,7 @@ export const useAuthStore = defineStore('auth', () => {
     ensureWorkspaceAccessPolicy,
     updateWorkspaceAccessPolicy,
     hasAnyRole,
+    isProtectedPageLoginRequired,
     isWorkspacePageLoginRequired,
     canAccessWorkspacePage,
     canEditTeam,

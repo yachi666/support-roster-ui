@@ -131,8 +131,15 @@ function handleLocaleChange(event) {
       </div>
 
       <RouterLink
+        to="/linux-passwords"
+        class="ml-auto inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50"
+      >
+        {{ t('linuxPasswords.entryLabel') }}
+      </RouterLink>
+
+      <RouterLink
         to="/viewer"
-        class="ml-auto hidden items-center rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-sm font-medium text-teal-700 transition-colors hover:border-teal-300 hover:bg-teal-100 lg:inline-flex"
+        class="hidden items-center rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-sm font-medium text-teal-700 transition-colors hover:border-teal-300 hover:bg-teal-100 lg:inline-flex"
       >
         {{ t('workspace.shell.openViewer') }}
       </RouterLink>

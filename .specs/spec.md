@@ -21,6 +21,7 @@
 | 开发联调 | `./development.md` | 本地重启脚本、服务健康检查、日志定位与浏览器验证方法 |
 | 部署 | `./deployment.md` | 构建、容器化、Fargate 部署与发布约束 |
 | 视觉 | `./ui-design.md` | 全局视觉语言与 Public Viewer 设计约束 |
+| 独立受控页 | `./linux-password-vault.md` | Linux 密码库页面、跨入口跳转与受 workspace 策略约束的独立路由 |
 | Viewer 分册 | `./modules/index.md` | Public Viewer 模块目录与模块关系 |
 | Workspace 分册 | `./workspace/index.md` | Admin Workspace 的架构、路由、页面、组件与视觉规范 |
 | Workspace Auth 专题 | `./workspace/auth/index.md` | 登录、会话、权限与账号管理 |
@@ -34,6 +35,7 @@ graph TB
     ARCH[architecture.md 前端架构]
     DEPLOY[deployment.md 部署规范]
     UIDESIGN[ui-design.md 全局视觉规范]
+    LINUXPW[linux-password-vault.md Linux 密码库]
     MODULES[modules/index.md Viewer 分册]
     WORKSPACE[workspace/index.md Workspace 分册]
     CHANGELOG[CHANGELOG.md 变更记录]
@@ -42,6 +44,7 @@ graph TB
     ROOT --> DEV[development.md 本地联调]
     ROOT --> DEPLOY
     ROOT --> UIDESIGN
+    ROOT --> LINUXPW
     ROOT --> MODULES
     ROOT --> WORKSPACE
     ROOT --> CHANGELOG
@@ -86,5 +89,6 @@ graph TB
 - [开发联调与浏览器验证](./development.md)
 - [部署规范](./deployment.md)
 - [视觉规范](./ui-design.md)
+- [Linux 密码库设计规格](./linux-password-vault.md)
 - [Public Viewer 分册](./modules/index.md)
 - [Workspace 分册](./workspace/index.md)

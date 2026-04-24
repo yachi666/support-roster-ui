@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth'
 import PublicDashboardPage from '@/pages/PublicDashboardPage.vue'
 import LoginPage from '@/pages/LoginPage.vue'
 import WorkspaceLayout from '@/features/workspace/layout/WorkspaceLayout.vue'
+import LinuxPasswordsPage from '@/features/linux-passwords/pages/LinuxPasswordsPage.vue'
 import OverviewDashboardPage from '@/features/workspace/pages/OverviewDashboardPage.vue'
 import MonthlyRosterPlannerPage from '@/features/workspace/pages/MonthlyRosterPlannerPage.vue'
 import StaffDirectoryPage from '@/features/workspace/pages/StaffDirectoryPage.vue'
@@ -71,6 +72,12 @@ const router = createRouter({
       name: 'login',
       component: LoginPage,
       meta: { guestOnly: true },
+    },
+    {
+      path: '/linux-passwords',
+      name: 'linux-passwords',
+      component: LinuxPasswordsPage,
+      meta: { protectedPageCode: 'linux-passwords' },
     },
     {
       path: WORKSPACE_ENTRY_PATH,
@@ -150,13 +157,13 @@ router.beforeEach(async (to) => {
     return resolveWorkspaceRedirectTarget(authStore, to.query.redirect)
   }
 
-  const workspacePageCode = [...to.matched]
+  const protectedPageCode = [...to.matched]
     .reverse()
-    .map((record) => record.meta?.workspacePageCode)
+    .map((record) => record.meta?.protectedPageCode || record.meta?.workspacePageCode)
     .find((pageCode) => typeof pageCode === 'string')
 
   const requiresAuth = to.matched.some((record) => record.meta?.requiresAuth)
-    || (workspacePageCode ? authStore.isWorkspacePageLoginRequired(workspacePageCode) : false)
+    || (protectedPageCode ? authStore.isProtectedPageLoginRequired(protectedPageCode) : false)
   if (!requiresAuth) {
     return true
   }

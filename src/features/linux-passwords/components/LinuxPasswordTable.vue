@@ -1,0 +1,121 @@
+<script setup>
+import { Copy, Eye, EyeOff, HardDrive, MoreHorizontal, Terminal } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
+
+const props = defineProps({
+  servers: {
+    type: Array,
+    required: true,
+  },
+  visiblePasswords: {
+    type: Object,
+    required: true,
+  },
+  copiedServerId: {
+    type: String,
+    default: '',
+  },
+})
+
+const emit = defineEmits(['toggle-password', 'copy-password', 'launch-winscp'])
+const { t } = useI18n()
+
+function getStatusClass(status) {
+  if (status === 'online') return 'bg-green-500'
+  if (status === 'maintenance') return 'bg-amber-400'
+  return 'bg-red-500'
+}
+</script>
+
+<template>
+  <div class="rounded-lg border border-gray-200 bg-white shadow-sm">
+    <table class="w-full border-collapse text-left text-sm">
+      <thead>
+        <tr class="border-b border-gray-200 bg-[#fafafa] font-medium text-gray-600">
+          <th class="px-4 py-3">{{ t('linuxPasswords.columns.hostname') }}</th>
+          <th class="px-4 py-3">{{ t('linuxPasswords.columns.ipAddress') }}</th>
+          <th class="px-4 py-3">{{ t('linuxPasswords.columns.username') }}</th>
+          <th class="px-4 py-3">{{ t('linuxPasswords.columns.password') }}</th>
+          <th class="px-4 py-3 text-right">{{ t('linuxPasswords.columns.actions') }}</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <tr v-for="server in props.servers" :key="server.id" class="group transition-colors hover:bg-[#f8fcfd]">
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-2 font-medium text-gray-800">
+              <div class="h-2 w-2 rounded-full" :class="getStatusClass(server.status)"></div>
+              {{ server.hostname }}
+            </div>
+            <div class="ml-4 mt-1 flex flex-wrap gap-1">
+              <span
+                v-for="unit in server.businessUnits"
+                :key="unit"
+                class="rounded border border-gray-200 bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500"
+              >
+                {{ unit }}
+              </span>
+            </div>
+          </td>
+          <td class="px-4 py-3 align-top font-mono text-[13px] text-gray-600">{{ server.ip }}</td>
+          <td class="px-4 py-3 align-top text-gray-600">{{ server.username }}</td>
+          <td class="px-4 py-3 align-top">
+            <div class="flex max-w-[220px] items-center gap-2 rounded border border-gray-200 bg-gray-50 px-2 py-1.5">
+              <span class="flex-1 truncate font-mono text-[13px] text-gray-700">
+                {{ props.visiblePasswords[server.id] ? server.passwordHash : '••••••••••••' }}
+              </span>
+              <div class="flex items-center gap-1">
+                <button
+                  type="button"
+                  class="rounded p-1 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700"
+                  @click="$emit('toggle-password', server.id)"
+                >
+                  <EyeOff v-if="props.visiblePasswords[server.id]" class="h-3.5 w-3.5" />
+                  <Eye v-else class="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  class="rounded p-1 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
+                  @click="$emit('copy-password', server)"
+                >
+                  <Copy class="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+            <div v-if="props.copiedServerId === server.id" class="mt-1 text-[11px] text-blue-600">
+              {{ t('linuxPasswords.copied') }}
+            </div>
+          </td>
+          <td class="px-4 py-3 text-right align-top">
+            <div class="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                class="flex items-center gap-1.5 rounded border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition-colors hover:border-blue-300 hover:bg-gray-50 hover:text-blue-600"
+                @click="$emit('launch-winscp', server)"
+              >
+                <Terminal class="h-3.5 w-3.5 text-blue-600" />
+                <span>{{ t('linuxPasswords.winscp') }}</span>
+              </button>
+              <button type="button" class="rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700">
+                <MoreHorizontal class="h-4 w-4" />
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <tr v-if="!props.servers.length">
+          <td colspan="5" class="px-4 py-12 text-center text-gray-500">
+            <div class="flex flex-col items-center justify-center gap-2">
+              <HardDrive class="h-8 w-8 text-gray-300" />
+              <span>{{ t('linuxPasswords.emptyState') }}</span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div v-if="props.servers.length" class="flex justify-between border-t border-gray-100 bg-[#fafafa] px-4 py-3 text-xs text-gray-500">
+      <span>{{ t('linuxPasswords.showingServers', { count: props.servers.length }) }}</span>
+      <span>{{ t('linuxPasswords.systemActive') }}</span>
+    </div>
+  </div>
+</template>
