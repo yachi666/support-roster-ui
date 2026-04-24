@@ -1,5 +1,6 @@
 export const WORKSPACE_ENTRY_PATH = '/workspace'
 export const WORKSPACE_OVERVIEW_PATH = '/workspace/overview'
+const SAFE_APP_REDIRECT_PATHS = new Set(['/viewer', '/linux-passwords'])
 
 export const workspaceNavigation = [
   { pageCode: 'overview', labelKey: 'workspace.nav.overview', to: WORKSPACE_OVERVIEW_PATH, icon: 'LayoutDashboard' },
@@ -23,6 +24,38 @@ export function getWorkspacePathname(path) {
 export function isWorkspacePath(path) {
   const pathname = getWorkspacePathname(path)
   return pathname === WORKSPACE_ENTRY_PATH || pathname.startsWith(`${WORKSPACE_ENTRY_PATH}/`)
+}
+
+export function isSafeAppRedirectPath(path) {
+  if (typeof path !== 'string') {
+    return false
+  }
+
+  const candidate = path.trim()
+  if (!candidate.startsWith('/') || candidate.startsWith('//')) {
+    return false
+  }
+
+  const pathname = getWorkspacePathname(candidate)
+  const pathSegments = pathname.split('/').filter(Boolean)
+  const hasUnsafeTraversalSegment = pathSegments.some((segment) => {
+    try {
+      const decodedSegment = decodeURIComponent(segment)
+      return decodedSegment === '.' || decodedSegment === '..'
+    } catch {
+      return true
+    }
+  })
+
+  if (hasUnsafeTraversalSegment) {
+    return false
+  }
+
+  return SAFE_APP_REDIRECT_PATHS.has(pathname) || isWorkspacePath(pathname)
+}
+
+export function resolveSafeAppRedirectPath(path, fallbackPath = WORKSPACE_ENTRY_PATH) {
+  return isSafeAppRedirectPath(path) ? path.trim() : fallbackPath
 }
 
 export function resolveDefaultWorkspacePath(authStore) {

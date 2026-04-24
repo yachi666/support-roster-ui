@@ -4,6 +4,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { format } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
 import { ArrowRight, Calendar, Clock, Globe } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import { TIMEZONE_OPTIONS, normalizeTimezoneSelection, toIanaTimezone } from '@/lib/timezones'
 
 const props = defineProps({
@@ -12,6 +13,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:selectedDate', 'update:selectedTimezone'])
+const { t } = useI18n()
 
 const currentTime = ref(new Date())
 let timer = null
@@ -105,6 +107,13 @@ const formattedDate = computed(() => {
           </div>
         </div>
       </div>
+
+      <RouterLink
+        to="/linux-passwords"
+        class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900"
+      >
+        <span>{{ t('linuxPasswords.entryLabel') }}</span>
+      </RouterLink>
 
       <RouterLink
         to="/workspace"

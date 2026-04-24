@@ -4,7 +4,7 @@ import { KeyRound, Plus, RefreshCcw, Search, ShieldAlert, Trash2, UserCog, UserR
 import { useI18n } from 'vue-i18n'
 import { api } from '@/api'
 import { useAuthStore } from '@/stores/auth'
-import { workspaceNavigation } from '../config/navigation'
+import { ACCESS_POLICY_PAGES } from '../config/accessPolicyPages'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
 import WorkspaceDrawer from '../components/WorkspaceDrawer.vue'
 import WorkspaceModal from '../components/WorkspaceModal.vue'
@@ -85,7 +85,7 @@ const isEditorRole = computed(() => formState.roleCode === 'editor')
 const workspacePageOptions = computed(() => {
   const policyByCode = new Map((accessPolicy.value || []).map((page) => [page.pageCode, page]))
 
-  return workspaceNavigation
+  return ACCESS_POLICY_PAGES
     .filter((item) => item.pageCode)
     .map((item) => {
       const policy = policyByCode.get(item.pageCode)
