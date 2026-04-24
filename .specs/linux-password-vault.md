@@ -29,6 +29,7 @@
 
 - `src/components/Header.vue`：在 viewer 顶部已有 “Enter Workspace” 按钮旁新增 **Linux 密码库** 按钮。
 - `src/features/workspace/components/WorkspaceTopbar.vue`：在 workspace 顶部已有 “Open Viewer” 按钮旁新增 **Linux 密码库** 按钮。
+- workspace Topbar 中的 **Linux 密码库** 与 **Open Viewer** 入口允许保留主次层级，但需复用同一套胶囊按钮骨架，避免出现高度、圆角、内边距与字重不一致的割裂感。
 
 ### 访问控制
 
