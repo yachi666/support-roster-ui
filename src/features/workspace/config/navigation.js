@@ -1,5 +1,6 @@
 export const WORKSPACE_ENTRY_PATH = '/workspace'
 export const WORKSPACE_OVERVIEW_PATH = '/workspace/overview'
+const SAFE_APP_REDIRECT_PATHS = new Set(['/viewer', '/linux-passwords'])
 
 export const workspaceNavigation = [
   { pageCode: 'overview', labelKey: 'workspace.nav.overview', to: WORKSPACE_OVERVIEW_PATH, icon: 'LayoutDashboard' },
@@ -31,7 +32,12 @@ export function isSafeAppRedirectPath(path) {
   }
 
   const candidate = path.trim()
-  return candidate.startsWith('/') && !candidate.startsWith('//')
+  if (!candidate.startsWith('/') || candidate.startsWith('//')) {
+    return false
+  }
+
+  const pathname = getWorkspacePathname(candidate)
+  return SAFE_APP_REDIRECT_PATHS.has(pathname) || isWorkspacePath(pathname)
 }
 
 export function resolveSafeAppRedirectPath(path, fallbackPath = WORKSPACE_ENTRY_PATH) {
