@@ -39,7 +39,7 @@
 |---|---|---|
 | `linux-passwords` | `true` | `true` |
 
-- 若策略要求登录且用户未登录，访问 `/linux-passwords` 时跳转到 `/login?redirect=/linux-passwords`
+- 若策略要求登录且用户未登录，访问 `/linux-passwords` 时跳转到 `/login?redirect=/linux-passwords`，登录成功后需返回原目标页，而不是退回 workspace 默认页。
 - 若策略关闭登录要求，匿名用户也可访问该页面。
 - 新页面虽然复用 `workspace access policy`，但不加入 workspace 侧边导航默认入口计算。
 

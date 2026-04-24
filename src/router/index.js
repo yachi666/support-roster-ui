@@ -15,9 +15,8 @@ import ValidationCenterPage from '@/features/workspace/pages/ValidationCenterPag
 import AccountManagementPage from '@/features/workspace/pages/AccountManagementPage.vue'
 import {
   WORKSPACE_ENTRY_PATH,
-  getWorkspacePathname,
-  isWorkspacePath,
   resolveDefaultWorkspacePath,
+  resolveSafeAppRedirectPath,
 } from '@/features/workspace/config/navigation'
 
 function resolveWorkspaceRouteLocation(targetPath, requestedRoute) {
@@ -43,14 +42,7 @@ function resolveWorkspaceEntryLocation(authStore, requestedRoute) {
 }
 
 function resolveWorkspaceRedirectTarget(authStore, requestedPath) {
-  if (typeof requestedPath === 'string' && isWorkspacePath(requestedPath)) {
-    const pathname = getWorkspacePathname(requestedPath)
-    if (pathname !== WORKSPACE_ENTRY_PATH || requestedPath !== WORKSPACE_ENTRY_PATH) {
-      return requestedPath
-    }
-  }
-
-  return resolveDefaultWorkspacePath(authStore) || '/viewer'
+  return resolveSafeAppRedirectPath(requestedPath, resolveDefaultWorkspacePath(authStore) || '/viewer')
 }
 
 const router = createRouter({

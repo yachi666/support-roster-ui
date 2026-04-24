@@ -25,6 +25,19 @@ export function isWorkspacePath(path) {
   return pathname === WORKSPACE_ENTRY_PATH || pathname.startsWith(`${WORKSPACE_ENTRY_PATH}/`)
 }
 
+export function isSafeAppRedirectPath(path) {
+  if (typeof path !== 'string') {
+    return false
+  }
+
+  const candidate = path.trim()
+  return candidate.startsWith('/') && !candidate.startsWith('//')
+}
+
+export function resolveSafeAppRedirectPath(path, fallbackPath = WORKSPACE_ENTRY_PATH) {
+  return isSafeAppRedirectPath(path) ? path.trim() : fallbackPath
+}
+
 export function resolveDefaultWorkspacePath(authStore) {
   const firstAccessibleItem = workspaceNavigation.find((item) =>
     authStore.canAccessWorkspacePage(item.pageCode)

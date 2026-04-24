@@ -5,7 +5,7 @@
 | 路由 | 访问条件 |
 |---|---|
 | `/viewer` | 匿名可访问 |
-| `/login` | 匿名可访问；已登录访问时可跳回 `/workspace` |
+| `/login` | 匿名可访问；已登录访问时如携带合法站内 `redirect` 参数，应优先跳回对应目标页，否则回到默认 workspace 页面 |
 | `/workspace` | 已登录 |
 | `/workspace/accounts` | `admin` |
 | 其余 `/workspace/*` | 已登录，具体写操作再按角色和 team 范围判断 |
