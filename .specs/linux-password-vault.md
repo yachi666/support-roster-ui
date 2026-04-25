@@ -27,9 +27,10 @@
 
 ### 入口位置
 
-- `src/components/Header.vue`：在 viewer 顶部已有 “Enter Workspace” 按钮旁新增 **Linux 密码库** 按钮。
-- `src/features/workspace/components/WorkspaceTopbar.vue`：在 workspace 顶部已有 “Open Viewer” 按钮旁新增 **Linux 密码库** 按钮。
-- workspace Topbar 中的 **Linux 密码库** 与 **Open Viewer** 入口允许保留主次层级，但需复用同一套胶囊按钮骨架，避免出现高度、圆角、内边距与字重不一致的割裂感。
+- `src/components/Header.vue`：viewer 顶部将 **Linux 密码库** 与 **Contact Information** 作为同级工具入口，`Enter Workspace` 保持主动作层级。
+- `src/features/workspace/components/WorkspaceTopbar.vue`：workspace 顶部将 **Linux 密码库** 与 **Contact Information** 作为同级次级入口，`Open Public Viewer` 保持更高层级。
+- `src/features/linux-passwords/pages/LinuxPasswordsPage.vue`：当前页面顶部补充 **Contact Information** 与 **Open Public Viewer** 入口，并让 `Enter Workspace` 作为主动作保留。
+- 三处跨域跳转按钮都必须复用稳定的胶囊骨架，避免新增按钮后出现尺寸、圆角、横向内边距与字重不一致的割裂感。
 
 ### 访问控制
 
@@ -143,6 +144,7 @@
 
 - `viewer` 顶部可以进入 Linux 密码库。
 - `workspace` 顶部可以进入 Linux 密码库。
+- Linux 密码库页面顶部可以进入 Contact Information 与 Viewer / Workspace。
 - 直接访问 `/linux-passwords` 时，行为符合访问策略。
 
 ### 访问控制

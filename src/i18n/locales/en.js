@@ -28,6 +28,7 @@ export default {
     allTeams: 'All Teams',
     selectTeam: 'Select a team',
     readonlyMode: 'Readonly mode',
+    contactInformation: 'Contact Information',
   },
   locale: {
     switcherLabel: 'Language',

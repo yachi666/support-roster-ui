@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import { ChevronLeft, ChevronRight, Globe, Search } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, ContactRound, ExternalLink, Globe, KeyRound, Search } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { SUPPORTED_LOCALES, currentLocale, setLocale } from '@/i18n'
 import { getLocalizedMonthOptions } from '@/i18n/format'
@@ -30,8 +30,16 @@ const localeOptions = computed(() =>
     label: locale === 'zh-CN' ? t('common.chinese') : t('common.english'),
   })),
 )
-const topbarActionLinkBaseClass = 'inline-flex h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 text-sm font-medium transition-colors'
-const topbarActionSecondaryClass = 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+const topbarShellClass = 'flex h-16 min-w-[50rem] flex-1 items-center gap-3'
+const topbarSearchShellClass = 'group relative w-[16rem] shrink-0 transition-all duration-200 focus-within:w-[22rem] xl:w-[18rem] xl:focus-within:w-[24rem]'
+const topbarSearchInputClass = 'h-10 w-full rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm text-slate-700 shadow-sm outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15'
+const topbarPeriodShellClass = 'flex h-11 w-fit shrink-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-1.5 shadow-sm'
+const topbarMonthSelectClass = 'h-8 min-w-[9.5rem] rounded-lg border border-transparent bg-slate-50 px-3 text-center text-sm font-semibold text-slate-900 outline-none transition-colors hover:border-slate-200 focus:border-teal-300 focus:bg-white focus:ring-2 focus:ring-teal-500/15'
+const topbarYearSelectClass = 'h-8 w-[4.75rem] rounded-lg border border-transparent bg-slate-50 px-2 text-sm font-semibold text-slate-900 outline-none transition-colors hover:border-slate-200 focus:border-teal-300 focus:bg-white focus:ring-2 focus:ring-teal-500/15'
+const topbarMetaControlClass = 'flex h-8 min-w-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2'
+const topbarActionClusterClass = 'ml-auto flex h-11 shrink-0 items-center justify-end gap-1.5 rounded-xl border border-slate-200 bg-white px-1.5 shadow-sm'
+const topbarActionLinkBaseClass = 'inline-flex h-8 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-2.5 text-sm font-semibold transition-colors'
+const topbarActionSecondaryClass = 'border border-transparent bg-white text-slate-700 hover:border-slate-200 hover:bg-slate-50'
 const topbarActionPrimaryClass = 'border border-teal-200 bg-teal-50 text-teal-700 hover:border-teal-300 hover:bg-teal-100'
 
 const yearOptions = computed(() => {
@@ -59,9 +67,9 @@ function handleLocaleChange(event) {
 </script>
 
 <template>
-  <header class="flex h-16 flex-shrink-0 items-center border-b border-slate-200 bg-white px-6 shadow-sm">
-    <div class="flex min-w-0 flex-1 items-center gap-4">
-      <div class="relative w-full max-w-sm">
+  <header class="flex flex-shrink-0 overflow-x-auto border-b border-slate-200/80 bg-slate-50/90 px-5 backdrop-blur-sm lg:px-6">
+    <div :class="topbarShellClass">
+      <div :class="topbarSearchShellClass">
         <label for="workspace-topbar-search" class="sr-only">{{ t('workspace.shell.topbar.searchLabel') }}</label>
         <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <input
@@ -70,62 +78,69 @@ function handleLocaleChange(event) {
           v-model="searchTerm"
           type="text"
           :placeholder="t('workspace.shell.topbar.searchPlaceholder')"
-          class="w-full rounded-md border border-slate-200 bg-slate-50 py-1.5 pl-9 pr-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20"
+          :class="topbarSearchInputClass"
         />
       </div>
 
-      <div class="hidden items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-1 shadow-sm xl:flex">
-        <button class="rounded-md p-1.5 text-slate-500 transition-colors hover:bg-white hover:text-slate-800" @click="void goToPreviousMonth()">
+      <div :class="topbarPeriodShellClass">
+        <button
+          class="shrink-0 rounded-xl border border-transparent bg-white p-2 text-slate-500 transition-colors hover:border-slate-200 hover:text-slate-800"
+          @click="void goToPreviousMonth()"
+        >
           <ChevronLeft class="h-4 w-4" />
         </button>
-        <div class="min-w-[116px] text-center">
-          <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">{{ t('workspace.shell.topbar.month') }}</div>
-          <div class="text-sm font-semibold text-slate-800">{{ monthLabel }}</div>
-        </div>
+
         <label for="workspace-topbar-month" class="sr-only">{{ t('workspace.shell.topbar.selectMonth') }}</label>
         <select
           id="workspace-topbar-month"
           name="workspace-topbar-month"
           :value="month"
-          class="rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-slate-700 outline-none transition-colors hover:border-slate-300"
+          :class="topbarMonthSelectClass"
           @change="handleMonthChange"
         >
           <option v-for="option in monthOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
         </select>
+
         <label for="workspace-topbar-year" class="sr-only">{{ t('workspace.shell.topbar.selectYear') }}</label>
         <select
           id="workspace-topbar-year"
           name="workspace-topbar-year"
           :value="year"
-          class="rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-slate-700 outline-none transition-colors hover:border-slate-300"
+          :class="topbarYearSelectClass"
           @change="handleYearChange"
         >
           <option v-for="option in yearOptions" :key="option" :value="option">{{ option }}</option>
         </select>
-        <button class="rounded-md p-1.5 text-slate-500 transition-colors hover:bg-white hover:text-slate-800" @click="void goToNextMonth()">
+
+        <button
+          class="shrink-0 rounded-xl border border-transparent bg-white p-2 text-slate-500 transition-colors hover:border-slate-200 hover:text-slate-800"
+          @click="void goToNextMonth()"
+        >
           <ChevronRight class="h-4 w-4" />
         </button>
+
         <div class="mx-1 h-6 w-px bg-slate-200"></div>
+
         <label for="workspace-topbar-timezone" class="sr-only">{{ t('workspace.shell.topbar.selectTimezone') }}</label>
-        <div class="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1">
+        <div :class="topbarMetaControlClass">
           <Globe class="h-4 w-4 flex-shrink-0 text-slate-400" />
           <select
             id="workspace-topbar-timezone"
             name="workspace-topbar-timezone"
             :value="timezone"
-            class="min-w-[4.5rem] appearance-none bg-transparent py-1 pr-5 text-sm font-medium text-slate-700 outline-none"
+            class="min-w-[4.5rem] appearance-none bg-transparent pr-3 text-sm font-medium text-slate-700 outline-none"
             @change="handleTimezoneChange"
           >
             <option v-for="timezoneOption in WORKSPACE_TIMEZONE_OPTIONS" :key="timezoneOption.value" :value="timezoneOption.value">{{ timezoneOption.label }}</option>
           </select>
         </div>
         <label for="workspace-topbar-locale" class="sr-only">{{ t('locale.switcherLabel') }}</label>
-        <div class="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1">
+        <div :class="topbarMetaControlClass">
           <select
             id="workspace-topbar-locale"
             name="workspace-topbar-locale"
             :value="currentLocale"
-            class="appearance-none bg-transparent py-1 pr-5 text-sm font-medium text-slate-700 outline-none"
+            class="min-w-[3.5rem] appearance-none bg-transparent pr-3 text-sm font-medium text-slate-700 outline-none"
             @change="handleLocaleChange"
           >
             <option v-for="localeOption in localeOptions" :key="localeOption.value" :value="localeOption.value">{{ localeOption.label }}</option>
@@ -133,19 +148,39 @@ function handleLocaleChange(event) {
         </div>
       </div>
 
-      <RouterLink
-        to="/linux-passwords"
-        :class="['ml-auto', topbarActionLinkBaseClass, topbarActionSecondaryClass]"
-      >
-        {{ t('linuxPasswords.entryLabel') }}
-      </RouterLink>
+      <div :class="topbarActionClusterClass">
+        <RouterLink
+          to="/linux-passwords"
+          :class="[topbarActionLinkBaseClass, topbarActionSecondaryClass]"
+          :aria-label="t('linuxPasswords.entryLabel')"
+          :title="t('linuxPasswords.entryLabel')"
+        >
+          <KeyRound class="h-4 w-4 text-slate-500" />
+          <span class="hidden min-[1800px]:inline">{{ t('linuxPasswords.entryLabel') }}</span>
+        </RouterLink>
 
-      <RouterLink
-        to="/viewer"
-        :class="['hidden lg:inline-flex', topbarActionLinkBaseClass, topbarActionPrimaryClass]"
-      >
-        {{ t('workspace.shell.openViewer') }}
-      </RouterLink>
+        <RouterLink
+          to="/contact-information"
+          :class="[topbarActionLinkBaseClass, topbarActionSecondaryClass]"
+          :aria-label="t('common.contactInformation')"
+          :title="t('common.contactInformation')"
+        >
+          <ContactRound class="h-4 w-4 text-slate-500" />
+          <span class="hidden min-[1800px]:inline">{{ t('common.contactInformation') }}</span>
+        </RouterLink>
+
+        <div class="mx-1 h-6 w-px bg-slate-200"></div>
+
+        <RouterLink
+          to="/viewer"
+          :class="[topbarActionLinkBaseClass, topbarActionPrimaryClass]"
+          :aria-label="t('workspace.shell.openViewer')"
+          :title="t('workspace.shell.openViewer')"
+        >
+          <ExternalLink class="h-4 w-4 text-teal-600" />
+          <span class="hidden min-[1800px]:inline">{{ t('workspace.shell.openViewer') }}</span>
+        </RouterLink>
+      </div>
     </div>
   </header>
 </template>

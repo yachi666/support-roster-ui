@@ -28,6 +28,7 @@ export default {
     allTeams: '全部团队',
     selectTeam: '请选择团队',
     readonlyMode: '只读模式',
+    contactInformation: '联系信息',
   },
   locale: {
     switcherLabel: '语言',

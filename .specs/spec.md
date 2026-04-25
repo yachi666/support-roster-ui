@@ -21,6 +21,7 @@
 | 开发联调 | `./development.md` | 本地重启脚本、服务健康检查、日志定位与浏览器验证方法 |
 | 部署 | `./deployment.md` | 构建、容器化、Fargate 部署与发布约束 |
 | 视觉 | `./ui-design.md` | 全局视觉语言与 Public Viewer 设计约束 |
+| 独立公开页 | `./contact-information.md` | 支持团队联系信息页、Figma 转 Vue 与 mock 交互约束 |
 | 独立受控页 | `./linux-password-vault.md` | Linux 密码库页面、跨入口跳转与受 workspace 策略约束的独立路由 |
 | Viewer 分册 | `./modules/index.md` | Public Viewer 模块目录与模块关系 |
 | Workspace 分册 | `./workspace/index.md` | Admin Workspace 的架构、路由、页面、组件与视觉规范 |
@@ -44,6 +45,7 @@ graph TB
     ROOT --> DEV[development.md 本地联调]
     ROOT --> DEPLOY
     ROOT --> UIDESIGN
+    ROOT --> CONTACTINFO[contact-information.md 联系信息页]
     ROOT --> LINUXPW
     ROOT --> MODULES
     ROOT --> WORKSPACE
@@ -89,6 +91,7 @@ graph TB
 - [开发联调与浏览器验证](./development.md)
 - [部署规范](./deployment.md)
 - [视觉规范](./ui-design.md)
+- [支持团队联系信息页设计规格](./contact-information.md)
 - [Linux 密码库设计规格](./linux-password-vault.md)
 - [Public Viewer 分册](./modules/index.md)
 - [Workspace 分册](./workspace/index.md)
