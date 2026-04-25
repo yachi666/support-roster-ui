@@ -156,14 +156,14 @@ function roleBadgeClass(role) {
 
     <div class="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-500">
       <div>Showing 1 to {{ props.teams.length }} of {{ props.totalCount }} entries</div>
-      <div class="flex items-center gap-2">
-        <button class="cursor-not-allowed rounded border border-slate-200 bg-white px-2 py-1 text-slate-400" type="button">
-          Previous
-        </button>
-        <button class="cursor-not-allowed rounded border border-slate-200 bg-white px-2 py-1 text-slate-400" type="button">
-          Next
-        </button>
+        <div class="flex items-center gap-2">
+          <button class="cursor-not-allowed rounded border border-slate-200 bg-white px-2 py-1 text-slate-400 disabled:opacity-100" type="button" disabled>
+            Previous
+          </button>
+          <button class="cursor-not-allowed rounded border border-slate-200 bg-white px-2 py-1 text-slate-400 disabled:opacity-100" type="button" disabled>
+            Next
+          </button>
+        </div>
       </div>
-    </div>
   </div>
 </template>

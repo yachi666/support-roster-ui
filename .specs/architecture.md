@@ -36,7 +36,7 @@ graph TB
 
 | 路由 | 作用 | 入口组件 | 说明 |
 |------|------|----------|------|
-| `/` | 默认入口 | redirect | 统一重定向到 `/workspace` |
+| `/` | 默认入口 | redirect | 统一重定向到 `/viewer` |
 | `/viewer` | 公共排班看板 | `src/pages/PublicDashboardPage.vue` | 只读、展示优先 |
 | `/contact-information` | 支持团队联系信息页 | `src/features/contact-information/layout/ContactInformationLayout.vue` | 公开访问、独立全屏、当前使用 mock 数据 |
 | `/workspace` | 管理工作台 | `src/features/workspace/layout/WorkspaceLayout.vue` | 编辑、校验、导入导出优先 |

@@ -13,3 +13,8 @@ test('contact information table accepts a total count for filtered results', () 
   assert.match(tableSource, /totalCount:/)
   assert.match(tableSource, /Showing 1 to \{\{ props\.teams\.length \}\} of \{\{ props\.totalCount \}\} entries/)
 })
+
+test('contact information table marks pagination placeholders as disabled controls', () => {
+  assert.match(tableSource, /<button[^>]*type="button"[^>]*disabled[^>]*>\s*Previous/s)
+  assert.match(tableSource, /<button[^>]*type="button"[^>]*disabled[^>]*>\s*Next/s)
+})

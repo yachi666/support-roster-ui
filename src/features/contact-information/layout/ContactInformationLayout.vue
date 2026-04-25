@@ -36,6 +36,7 @@ provide(CONTACT_INFORMATION_LAYOUT_KEY, { searchTerm })
             <input
               v-model="searchTerm"
               type="text"
+              aria-label="Search teams, staff IDs, or links"
               placeholder="Search team or ID..."
               class="w-full rounded-md bg-transparent py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400"
             >

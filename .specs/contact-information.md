@@ -47,7 +47,7 @@
 | `ContactInformationTable` | 渲染 Figma 风格表格、粘性首列、复制按钮和空状态 |
 | `StaffIdHoverCard` | 展示 Staff ID 的 hover 信息卡 |
 | `SupportTeamContactCreatePage` | 组装新增页、处理返回与 mock 成功跳转 |
-| `SupportTeamContactForm` | 承载表单区块、token 输入、自定义链接与前端校验 |
+| `SupportTeamContactForm` | 承载表单区块、tag 输入、逗号分隔 Staff ID 输入、其他信息字段与前端校验 |
 | `contactInformationMock.js` | 存放团队、成员、角色与 Staff ID 的 mock 数据 |
 
 ### 当前实现文件
@@ -67,7 +67,7 @@
 - 视觉目标优先贴近 Figma：白色表面、浅灰背景、细边框、轻阴影、较高信息密度表格。
 - 跨页入口遵循两层层级：`Contact Information` 与 `Linux Password Vault` 为同级次级工具入口，`Enter Workspace` / `Open Viewer` 维持更高主动作辨识度。
 - 列表页保留表头、首列粘性、角色彩色标签、Staff ID hover 卡片、底部分页占位。
-- 新增页保留分段表单、token 风格角色与 Staff ID 输入、自定义链接动态增删、底部吸附操作区。
+- 新增页保留分段表单、token 风格 tag 输入、单个逗号分隔的 Staff ID 输入、单个 Other Information 字段，以及位于卡片顶部的保存 / 取消操作区。
 - 当前以桌面端优先；移动端只要求布局不炸裂和可浏览，不要求逐像素还原。
 
 ## 交互范围
@@ -83,9 +83,9 @@
 
 ### 新增页
 
-- 角色输入支持回车添加、退格删除与预设角色快捷补充。
-- Staff ID 输入支持回车添加、退格删除与快速补充候选值。
-- 自定义链接支持新增行与删除行。
+- Tag 输入支持回车添加、逗号确认、退格删除与预设标签快捷补充。
+- Staff ID 输入使用单个文本框，按逗号拆分为去重后的 Staff ID 列表。
+- 其他补充信息使用单个输入框收集，并在提交时映射为 `Other` 链接字段。
 - 表单提交前执行基础校验：团队名、团队邮箱、至少一个角色、至少一个 Staff ID。
 - 提交成功后返回列表页，并通过 query 触发一次性成功提示；不写入持久数据。
 
@@ -107,7 +107,7 @@
 ### 视觉与交互
 
 - 列表页整体布局、表格密度和新增页分区结构与 Figma 主体一致。
-- 搜索、hover 卡片、复制、返回、表单 token 输入和自定义链接增删可用。
+- 搜索、hover 卡片、复制、返回、表单 tag 输入与逗号分隔 Staff ID 输入可用。
 - mock 提交流程能够回到列表页并看到成功提示。
 
 ## 验证命令

@@ -21,3 +21,7 @@ test('contact information layout keeps add team as the local primary action', ()
   assert.match(source, /to="\/contact-information\/add"/)
   assert.match(source, /Add Team/)
 })
+
+test('contact information layout gives the shared search input an accessible name', () => {
+  assert.match(source, /aria-label="Search teams, staff IDs, or links"/)
+})
