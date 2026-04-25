@@ -23,6 +23,7 @@ function handleSubmit() {
     <div class="mb-4 flex w-full max-w-6xl items-center gap-2">
       <button
         type="button"
+        aria-label="Back to contact information list"
         class="-ml-2 inline-flex rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-900"
         @click="handleCancel"
       >

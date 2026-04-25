@@ -84,6 +84,7 @@ function handleLocaleChange(event) {
 
       <div :class="topbarPeriodShellClass">
         <button
+          :aria-label="t('workspace.shell.topbar.previousMonth')"
           class="shrink-0 rounded-xl border border-transparent bg-white p-2 text-slate-500 transition-colors hover:border-slate-200 hover:text-slate-800"
           @click="void goToPreviousMonth()"
         >
@@ -113,6 +114,7 @@ function handleLocaleChange(event) {
         </select>
 
         <button
+          :aria-label="t('workspace.shell.topbar.nextMonth')"
           class="shrink-0 rounded-xl border border-transparent bg-white p-2 text-slate-500 transition-colors hover:border-slate-200 hover:text-slate-800"
           @click="void goToNextMonth()"
         >

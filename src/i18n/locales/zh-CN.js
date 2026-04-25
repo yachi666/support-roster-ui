@@ -147,6 +147,8 @@ export default {
         searchLabel: '搜索当前页面',
         searchPlaceholder: '搜索当前页面...',
         month: '工作台月份',
+        previousMonth: '切换到上一个工作台月份',
+        nextMonth: '切换到下一个工作台月份',
         selectMonth: '选择工作台月份',
         selectYear: '选择工作台年份',
         selectTimezone: '选择工作台时区',

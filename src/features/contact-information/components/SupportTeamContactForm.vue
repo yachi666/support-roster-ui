@@ -147,10 +147,12 @@ function submitForm() {
               v-model="formState.teamName"
               type="text"
               placeholder="e.g. Payments Core"
+              :aria-invalid="Boolean(fieldErrors.teamName)"
+              :aria-describedby="fieldErrors.teamName ? 'teamName-error' : undefined"
               class="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
               @input="resetFieldError('teamName')"
             >
-            <p v-if="fieldErrors.teamName" class="text-xs text-red-600">{{ fieldErrors.teamName }}</p>
+            <p v-if="fieldErrors.teamName" id="teamName-error" role="alert" aria-live="polite" class="text-xs text-red-600">{{ fieldErrors.teamName }}</p>
           </div>
 
           <div class="space-y-1.5 sm:col-span-2">
@@ -160,10 +162,12 @@ function submitForm() {
               v-model="formState.teamEmail"
               type="email"
               placeholder="team@company.com"
+              :aria-invalid="Boolean(fieldErrors.teamEmail)"
+              :aria-describedby="fieldErrors.teamEmail ? 'teamEmail-error' : undefined"
               class="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
               @input="resetFieldError('teamEmail')"
             >
-            <p v-if="fieldErrors.teamEmail" class="text-xs text-red-600">{{ fieldErrors.teamEmail }}</p>
+            <p v-if="fieldErrors.teamEmail" id="teamEmail-error" role="alert" aria-live="polite" class="text-xs text-red-600">{{ fieldErrors.teamEmail }}</p>
           </div>
 
           <div class="space-y-1.5">
@@ -236,6 +240,8 @@ function submitForm() {
                 v-model="formState.tagInput"
                 type="text"
                 :placeholder="formState.selectedTags.length ? '' : 'Type tag and press Enter'"
+                :aria-invalid="Boolean(fieldErrors.selectedTags)"
+                :aria-describedby="fieldErrors.selectedTags ? 'tagInput-error' : undefined"
                 class="min-w-[10rem] flex-1 bg-transparent px-1 py-1 text-sm outline-none"
                 @keydown="handleTagKeydown"
               >
@@ -252,7 +258,7 @@ function submitForm() {
               + {{ preset }}
             </button>
           </div>
-          <p v-if="fieldErrors.selectedTags" class="text-xs text-red-600">{{ fieldErrors.selectedTags }}</p>
+          <p v-if="fieldErrors.selectedTags" id="tagInput-error" role="alert" aria-live="polite" class="text-xs text-red-600">{{ fieldErrors.selectedTags }}</p>
         </div>
 
         <div class="space-y-1.5">
@@ -262,6 +268,8 @@ function submitForm() {
             v-model="formState.staffInput"
             type="text"
             placeholder="S-10492, S-94281, S-55219"
+            :aria-invalid="Boolean(fieldErrors.selectedStaff)"
+            :aria-describedby="fieldErrors.selectedStaff ? 'staffIds-error' : undefined"
             class="h-10 w-full rounded-lg border border-slate-300 px-3 font-mono text-sm shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
             @input="resetFieldError('selectedStaff')"
           >
@@ -274,11 +282,11 @@ function submitForm() {
               {{ staffId }}
             </span>
           </div>
-          <p v-if="fieldErrors.selectedStaff" class="text-xs text-red-600">{{ fieldErrors.selectedStaff }}</p>
+          <p v-if="fieldErrors.selectedStaff" id="staffIds-error" role="alert" aria-live="polite" class="text-xs text-red-600">{{ fieldErrors.selectedStaff }}</p>
         </div>
 
         <div class="space-y-1.5">
-          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500" for="otherInfo">其他</label>
+            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500" for="otherInfo">Other Information</label>
           <input
             id="otherInfo"
             v-model="formState.otherInfo"

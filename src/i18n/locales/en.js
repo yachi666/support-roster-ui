@@ -149,6 +149,8 @@ export default {
         searchLabel: 'Search current page',
         searchPlaceholder: 'Search current page...',
         month: 'Workspace Month',
+        previousMonth: 'Go to previous workspace month',
+        nextMonth: 'Go to next workspace month',
         selectMonth: 'Select workspace month',
         selectYear: 'Select workspace year',
         selectTimezone: 'Select workspace timezone',

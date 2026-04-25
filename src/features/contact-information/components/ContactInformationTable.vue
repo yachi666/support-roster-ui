@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue'
 import { ExternalLink, Link as LinkIcon, Copy, Settings } from 'lucide-vue-next'
 import { cn } from '@/lib/utils'
 import StaffIdHoverCard from './StaffIdHoverCard.vue'
@@ -15,6 +16,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['copy'])
+
+const displayedEntryStart = computed(() => (props.teams.length ? 1 : 0))
 
 function emitCopy(text, label) {
   emit('copy', { text, label })
@@ -36,17 +39,17 @@ function roleBadgeClass(role) {
       <table class="min-w-full divide-y divide-slate-200 text-sm">
         <thead class="sticky top-0 z-20 bg-slate-50">
           <tr>
-            <th class="sticky left-0 z-30 bg-slate-50 px-4 py-3 text-left font-medium whitespace-nowrap text-slate-500 shadow-[1px_0_0_0_#e2e8f0]">
+            <th scope="col" class="sticky left-0 z-30 bg-slate-50 px-4 py-3 text-left font-medium whitespace-nowrap text-slate-500 shadow-[1px_0_0_0_#e2e8f0]">
               Team Name
             </th>
-            <th class="px-4 py-3 text-left font-medium whitespace-nowrap text-slate-500">Role</th>
-            <th class="min-w-[240px] px-4 py-3 text-left font-medium text-slate-500">Staff ID</th>
-            <th class="px-4 py-3 text-left font-medium whitespace-nowrap text-slate-500">Team Email</th>
-            <th class="px-4 py-3 text-left font-medium whitespace-nowrap text-slate-500">xMatter Group</th>
-            <th class="px-4 py-3 text-left font-medium whitespace-nowrap text-slate-500">GSD Group</th>
-            <th class="px-4 py-3 text-left font-medium whitespace-nowrap text-slate-500">EIM ID</th>
-            <th class="px-4 py-3 text-left font-medium whitespace-nowrap text-slate-500">其他</th>
-            <th class="px-4 py-3 text-right font-medium whitespace-nowrap text-slate-500">Actions</th>
+            <th scope="col" class="px-4 py-3 text-left font-medium whitespace-nowrap text-slate-500">Role</th>
+            <th scope="col" class="min-w-[240px] px-4 py-3 text-left font-medium text-slate-500">Staff ID</th>
+            <th scope="col" class="px-4 py-3 text-left font-medium whitespace-nowrap text-slate-500">Team Email</th>
+            <th scope="col" class="px-4 py-3 text-left font-medium whitespace-nowrap text-slate-500">xMatter Group</th>
+            <th scope="col" class="px-4 py-3 text-left font-medium whitespace-nowrap text-slate-500">GSD Group</th>
+            <th scope="col" class="px-4 py-3 text-left font-medium whitespace-nowrap text-slate-500">EIM ID</th>
+            <th scope="col" class="px-4 py-3 text-left font-medium whitespace-nowrap text-slate-500">Other</th>
+            <th scope="col" class="px-4 py-3 text-right font-medium whitespace-nowrap text-slate-500">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 bg-white">
@@ -94,6 +97,7 @@ function roleBadgeClass(role) {
                 <button
                   type="button"
                   class="text-slate-400 opacity-0 transition-all hover:text-blue-600 focus:opacity-100 group-hover/copy:opacity-100"
+                  aria-label="Copy xMatter Group ID"
                   title="Copy xMatter Group ID"
                   @click="emitCopy(team.xMatter, 'xMatter Group ID')"
                 >
@@ -109,6 +113,7 @@ function roleBadgeClass(role) {
                 <button
                   type="button"
                   class="text-slate-400 opacity-0 transition-all hover:text-blue-600 focus:opacity-100 group-hover/copy:opacity-100"
+                  aria-label="Copy GSD Group ID"
                   title="Copy GSD Group ID"
                   @click="emitCopy(team.gsd, 'GSD Group ID')"
                 >
@@ -155,7 +160,7 @@ function roleBadgeClass(role) {
     </div>
 
     <div class="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-500">
-      <div>Showing 1 to {{ props.teams.length }} of {{ props.totalCount }} entries</div>
+      <div>Showing {{ displayedEntryStart }} to {{ props.teams.length }} of {{ props.totalCount }} entries</div>
         <div class="flex items-center gap-2">
           <button class="cursor-not-allowed rounded border border-slate-200 bg-white px-2 py-1 text-slate-400 disabled:opacity-100" type="button" disabled>
             Previous

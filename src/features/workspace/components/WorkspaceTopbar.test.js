@@ -49,3 +49,8 @@ test('workspace topbar uses compact month, timezone, and locale controls before 
   assert.match(source, /const topbarYearSelectClass = 'h-8 w-\[4\.75rem\] rounded-lg border border-transparent bg-slate-50 px-2 text-sm font-semibold text-slate-900 outline-none transition-colors hover:border-slate-200 focus:border-teal-300 focus:bg-white focus:ring-2 focus:ring-teal-500\/15'/)
   assert.match(source, /const topbarMetaControlClass = 'flex h-8 min-w-0 items-center gap-1\.5 rounded-lg border border-slate-200 bg-slate-50 px-2'/)
 })
+
+test('workspace topbar labels chevron month navigation buttons for assistive tech', () => {
+  assert.match(source, /:aria-label="t\('workspace\.shell\.topbar\.previousMonth'\)"/)
+  assert.match(source, /:aria-label="t\('workspace\.shell\.topbar\.nextMonth'\)"/)
+})
