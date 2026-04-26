@@ -55,6 +55,8 @@ cd /Users/lzn/Documents/trae_projects/support
 - `DB_USERNAME=lzn`
 - `DB_PASSWORD=123456`
 
+若本次联调包含 `contact-information`，还需确保后端已执行包含 `V9__contact_information.sql` 的 Flyway migration。
+
 ### 单独启动前端
 
 ```bash
@@ -188,6 +190,7 @@ playwright-cli close-all
 ### 推荐验证页面
 
 - Public Viewer：`http://127.0.0.1:5173/viewer`
+- Contact Information：`http://127.0.0.1:5173/contact-information`
 - Monthly Roster：`http://127.0.0.1:5173/workspace/roster`
 - Validation Center：`http://127.0.0.1:5173/workspace/validation`
 

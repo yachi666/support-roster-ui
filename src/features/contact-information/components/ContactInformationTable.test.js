@@ -14,9 +14,12 @@ test('contact information table accepts a total count for filtered results', () 
   assert.match(tableSource, /of \{\{ props\.totalCount \}\} entries/)
 })
 
-test('contact information table marks pagination placeholders as disabled controls', () => {
-  assert.match(tableSource, /<button[^>]*type="button"[^>]*disabled[^>]*>\s*Previous/s)
-  assert.match(tableSource, /<button[^>]*type="button"[^>]*disabled[^>]*>\s*Next/s)
+test('contact information table exposes real pagination props and events', () => {
+  assert.match(tableSource, /currentPage:/)
+  assert.match(tableSource, /pageSize:/)
+  assert.match(tableSource, /defineEmits\(\['copy', 'change-page'\]\)/)
+  assert.match(tableSource, /@click="emit\('change-page', props\.currentPage - 1\)"/)
+  assert.match(tableSource, /@click="emit\('change-page', props\.currentPage \+ 1\)"/)
 })
 
 test('contact information table gives icon-only copy buttons accessible names', () => {
@@ -30,6 +33,7 @@ test('contact information table declares column header scope for screen readers'
 
 test('contact information table shows a zero-safe result range summary', () => {
   assert.match(tableSource, /import \{ computed \} from 'vue'/)
-  assert.match(tableSource, /const displayedEntryStart = computed\(\(\) => \(props\.teams\.length \? 1 : 0\)\)/)
-  assert.match(tableSource, /Showing \{\{ displayedEntryStart \}\} to \{\{ props\.teams\.length \}\}/)
+  assert.match(tableSource, /const displayedEntryStart = computed\(\(\) => \(props\.totalCount && props\.teams\.length/)
+  assert.match(tableSource, /const displayedEntryEnd = computed\(\(\) =>/)
+  assert.match(tableSource, /Showing \{\{ displayedEntryStart \}\} to \{\{ displayedEntryEnd \}\}/)
 })

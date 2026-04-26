@@ -7,3 +7,9 @@ const pageSource = readFileSync(new URL('./SupportTeamContactCreatePage.vue', im
 test('contact information create page gives the back button an accessible name', () => {
   assert.match(pageSource, /aria-label="Back to contact information list"/)
 })
+
+test('contact information create page submits through the real api client and surfaces errors', () => {
+  assert.match(pageSource, /createContactInformation/)
+  assert.match(pageSource, /submitError/)
+  assert.match(pageSource, /await createContactInformation\(payload\)/)
+})

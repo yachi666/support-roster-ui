@@ -28,7 +28,6 @@ coverage
 
 .eslintcache
 .playwright-cli/
-docs/
 src/features/workspace/lib/previewTeams 2.js
 src/features/workspace/lib/previewTeams.test 2.js
 src/features/workspace/lib/previousRoster 2.js
