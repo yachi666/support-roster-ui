@@ -142,7 +142,7 @@ export default {
       subtitle: '管理控制中心',
       menu: '菜单',
       logout: '退出登录',
-      openViewer: '打开公共视图',
+      openViewer: 'roster',
       topbar: {
         searchLabel: '搜索当前页面',
         searchPlaceholder: '搜索当前页面...',

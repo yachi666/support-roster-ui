@@ -9,10 +9,13 @@ test('linux passwords page exposes viewer, contact information, and workspace na
   assert.match(pageSource, /<RouterLink[\s\S]*to="\/viewer"/)
   assert.match(pageSource, /<RouterLink[\s\S]*to="\/contact-information"/)
   assert.match(pageSource, /<RouterLink[\s\S]*to="\/workspace"/)
+  assert.match(pageSource, /ContactRound class="h-4 w-4 text-slate-500"/)
+  assert.match(pageSource, /CalendarDays class="h-4 w-4 text-slate-500"/)
+  assert.match(pageSource, /LayoutDashboard class="h-4 w-4 text-teal-600"/)
 })
 
 test('linux passwords page defines shared top action button classes for cleaner hierarchy', () => {
-  assert.match(pageSource, /const topActionLinkBaseClass = 'inline-flex h-9 items-center justify-center rounded-full px-4 text-sm font-medium transition-colors'/)
+  assert.match(pageSource, /const topActionLinkBaseClass = 'inline-flex h-9 items-center justify-center gap-2 rounded-full px-4 text-sm font-medium transition-colors'/)
   assert.match(pageSource, /const topActionSecondaryClass = 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'/)
   assert.match(pageSource, /const topActionPrimaryClass = 'border border-teal-200 bg-teal-50 text-teal-700 hover:border-teal-300 hover:bg-teal-100'/)
 })

@@ -3,7 +3,7 @@ import { RouterLink } from 'vue-router'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { format } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
-import { ArrowRight, Calendar, Clock, Globe } from 'lucide-vue-next'
+import { Calendar, Clock, ContactRound, Globe, KeyRound, LayoutDashboard } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { TIMEZONE_OPTIONS, normalizeTimezoneSelection, toIanaTimezone } from '@/lib/timezones'
 
@@ -113,6 +113,7 @@ const formattedDate = computed(() => {
           to="/contact-information"
           class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900"
         >
+          <ContactRound class="h-4 w-4 text-gray-500" />
           <span>{{ t('common.contactInformation') }}</span>
         </RouterLink>
 
@@ -120,6 +121,7 @@ const formattedDate = computed(() => {
           to="/linux-passwords"
           class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900"
         >
+          <KeyRound class="h-4 w-4 text-gray-500" />
           <span>{{ t('linuxPasswords.entryLabel') }}</span>
         </RouterLink>
 
@@ -127,8 +129,8 @@ const formattedDate = computed(() => {
           to="/workspace"
           class="inline-flex items-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-3.5 py-1.5 text-sm font-medium text-teal-700 transition-colors hover:border-teal-300 hover:bg-teal-100 hover:text-teal-800"
         >
+          <LayoutDashboard class="h-4 w-4 text-teal-600" />
           <span>Enter Workspace</span>
-          <ArrowRight class="h-4 w-4" />
         </RouterLink>
       </div>
     </div>

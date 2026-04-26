@@ -1,14 +1,13 @@
 <script setup>
 import { computed, provide, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
-import { Building2, ExternalLink, KeyRound, LayoutDashboard, Plus, Search } from 'lucide-vue-next'
+import { Building2, CalendarDays, KeyRound, LayoutDashboard, Search } from 'lucide-vue-next'
 import { CONTACT_INFORMATION_LAYOUT_KEY } from '../lib/layoutContext'
 
 const route = useRoute()
 const router = useRouter()
 const normalizedKeyword = computed(() => String(route.query.keyword || '').trim())
 const searchTerm = ref(normalizedKeyword.value)
-const showAddAction = computed(() => route.name !== 'contact-information-add')
 const topActionLinkBaseClass = 'inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-full px-4 text-sm font-medium transition-colors'
 const topActionSecondaryClass = 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
 const topActionPrimaryClass = 'border border-teal-200 bg-teal-50 text-teal-700 hover:border-teal-300 hover:bg-teal-100'
@@ -84,8 +83,8 @@ provide(CONTACT_INFORMATION_LAYOUT_KEY, { searchTerm })
             to="/viewer"
             :class="[topActionLinkBaseClass, topActionSecondaryClass]"
           >
-            <ExternalLink class="h-4 w-4 text-slate-500" />
-            Public Viewer
+            <CalendarDays class="h-4 w-4 text-slate-500" />
+            roster
           </RouterLink>
 
           <RouterLink
@@ -94,15 +93,6 @@ provide(CONTACT_INFORMATION_LAYOUT_KEY, { searchTerm })
           >
             <LayoutDashboard class="h-4 w-4 text-teal-600" />
             Workspace
-          </RouterLink>
-
-          <RouterLink
-            v-if="showAddAction"
-            to="/contact-information/add"
-            class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-slate-900 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"
-          >
-            <Plus class="h-4 w-4" />
-            Add Team
           </RouterLink>
         </div>
       </div>
