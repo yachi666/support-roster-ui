@@ -114,7 +114,7 @@ function submitForm() {
 </script>
 
 <template>
-  <form class="w-full max-w-6xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm" @submit.prevent="submitForm">
+  <form class="w-full max-w-6xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm" novalidate @submit.prevent="submitForm">
     <div class="border-b border-slate-100 bg-white px-5 py-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>

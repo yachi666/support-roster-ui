@@ -3,6 +3,31 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
 const formSource = readFileSync(new URL('./SupportTeamContactForm.vue', import.meta.url), 'utf8')
+const validateFormSourceMatch = formSource.match(/function validateForm\(\) \{[\s\S]*?\n\}/)
+
+assert.ok(validateFormSourceMatch, 'validateForm() should exist in SupportTeamContactForm.vue')
+
+function runValidateForm({ teamName = '', teamEmail = '' } = {}) {
+  const formState = { teamName, teamEmail }
+  const fieldErrors = {
+    teamName: 'stale',
+    teamEmail: 'stale',
+    selectedTags: 'stale',
+    selectedStaff: 'stale',
+  }
+
+  const createValidateForm = new Function(
+    'formState',
+    'fieldErrors',
+    `${validateFormSourceMatch[0]}; return validateForm;`,
+  )
+  const validateForm = createValidateForm(formState, fieldErrors)
+
+  return {
+    isValid: validateForm(),
+    fieldErrors,
+  }
+}
 
 test('create contact form accepts comma-separated staff IDs through one input', () => {
   assert.match(formSource, /staffInput:\s*''/)
@@ -38,13 +63,50 @@ test('create contact form wires validation errors to inputs accessibly', () => {
   assert.match(formSource, /id="staffIds-error"[^>]*role="alert"[^>]*aria-live="polite"/)
 })
 
-test('create contact form only requires team name', () => {
-  assert.match(formSource, /fieldErrors\.teamName = formState\.teamName\.trim\(\) \? '' : 'Team name is required\.'/)
-  assert.match(
-    formSource,
-    /fieldErrors\.teamEmail = normalizedTeamEmail && !\/\\S\+@\\S\+\\.\\S\+\/\.test\(normalizedTeamEmail\) \? 'Enter a valid team email\.' : ''/,
-  )
-  assert.doesNotMatch(formSource, /A valid team email is required\./)
-  assert.doesNotMatch(formSource, /Add at least one tag\./)
-  assert.doesNotMatch(formSource, /Add at least one staff ID\./)
+test('create contact form disables native browser validation on submit', () => {
+  assert.match(formSource, /<form[^>]*novalidate[^>]*@submit\.prevent="submitForm"/)
+})
+
+test('create contact form validateForm only requires team name', () => {
+  assert.deepEqual(runValidateForm({ teamName: 'Payments Core' }), {
+    isValid: true,
+    fieldErrors: {
+      teamName: '',
+      teamEmail: '',
+      selectedTags: '',
+      selectedStaff: '',
+    },
+  })
+
+  assert.deepEqual(runValidateForm({}), {
+    isValid: false,
+    fieldErrors: {
+      teamName: 'Team name is required.',
+      teamEmail: '',
+      selectedTags: '',
+      selectedStaff: '',
+    },
+  })
+})
+
+test('create contact form validateForm only checks email when a value is present', () => {
+  assert.deepEqual(runValidateForm({ teamName: 'Payments Core', teamEmail: 'invalid-email' }), {
+    isValid: false,
+    fieldErrors: {
+      teamName: '',
+      teamEmail: 'Enter a valid team email.',
+      selectedTags: '',
+      selectedStaff: '',
+    },
+  })
+
+  assert.deepEqual(runValidateForm({ teamName: 'Payments Core', teamEmail: ' team@company.com ' }), {
+    isValid: true,
+    fieldErrors: {
+      teamName: '',
+      teamEmail: '',
+      selectedTags: '',
+      selectedStaff: '',
+    },
+  })
 })
