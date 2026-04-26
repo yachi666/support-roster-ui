@@ -4,8 +4,10 @@ import { readFileSync } from 'node:fs'
 
 const formSource = readFileSync(new URL('./SupportTeamContactForm.vue', import.meta.url), 'utf8')
 const validateFormSourceMatch = formSource.match(/function validateForm\(\) \{[\s\S]*?\n\}/)
+const submitFormSourceMatch = formSource.match(/function submitForm\(\) \{[\s\S]*?\n\}/)
 
 assert.ok(validateFormSourceMatch, 'validateForm() should exist in SupportTeamContactForm.vue')
+assert.ok(submitFormSourceMatch, 'submitForm() should exist in SupportTeamContactForm.vue')
 
 function runValidateForm({ teamName = '', teamEmail = '' } = {}) {
   const formState = { teamName, teamEmail }
@@ -27,6 +29,48 @@ function runValidateForm({ teamName = '', teamEmail = '' } = {}) {
     isValid: validateForm(),
     fieldErrors,
   }
+}
+
+function runSubmitForm({
+  teamName = '',
+  teamEmail = '',
+  eimId = '',
+  xMatter = '',
+  gsd = '',
+  selectedTags = [],
+  otherInfo = '',
+  staffIdPreview = [],
+} = {}) {
+  const formState = {
+    teamName,
+    teamEmail,
+    eimId,
+    xMatter,
+    gsd,
+    selectedTags,
+    otherInfo,
+  }
+  const fieldErrors = {
+    teamName: 'stale',
+    teamEmail: 'stale',
+    selectedTags: 'stale',
+    selectedStaff: 'stale',
+  }
+  const emittedEvents = []
+  const emit = (...args) => emittedEvents.push(args)
+
+  const createFormHandlers = new Function(
+    'formState',
+    'fieldErrors',
+    'staffIdPreview',
+    'emit',
+    `${validateFormSourceMatch[0]}; ${submitFormSourceMatch[0]}; return { validateForm, submitForm };`,
+  )
+  const { submitForm } = createFormHandlers(formState, fieldErrors, { value: staffIdPreview }, emit)
+
+  submitForm()
+
+  return emittedEvents
 }
 
 test('create contact form accepts comma-separated staff IDs through one input', () => {
@@ -109,4 +153,21 @@ test('create contact form validateForm only checks email when a value is present
       selectedStaff: '',
     },
   })
+})
+
+test('create contact form submitForm emits sparse payload when only team name is provided', () => {
+  const emittedEvents = runSubmitForm({ teamName: '  Payments Core  ' })
+
+  assert.deepEqual(emittedEvents, [
+    ['submit', {
+      name: 'Payments Core',
+      email: '',
+      eim: '',
+      xMatter: '',
+      gsd: '',
+      roles: [],
+      staffIds: [],
+      links: [],
+    }],
+  ])
 })
