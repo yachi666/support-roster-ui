@@ -83,12 +83,14 @@ function handleTagKeydown(event) {
 }
 
 function validateForm() {
-  fieldErrors.teamName = formState.teamName.trim() ? '' : 'Team name is required.'
-  fieldErrors.teamEmail = /\S+@\S+\.\S+/.test(formState.teamEmail.trim()) ? '' : 'A valid team email is required.'
-  fieldErrors.selectedTags = formState.selectedTags.length ? '' : 'Add at least one tag.'
-  fieldErrors.selectedStaff = staffIdPreview.value.length ? '' : 'Add at least one staff ID.'
+  const normalizedTeamEmail = formState.teamEmail.trim()
 
-  return !fieldErrors.teamName && !fieldErrors.teamEmail && !fieldErrors.selectedTags && !fieldErrors.selectedStaff
+  fieldErrors.teamName = formState.teamName.trim() ? '' : 'Team name is required.'
+  fieldErrors.teamEmail = normalizedTeamEmail && !/\S+@\S+\.\S+/.test(normalizedTeamEmail) ? 'Enter a valid team email.' : ''
+  fieldErrors.selectedTags = ''
+  fieldErrors.selectedStaff = ''
+
+  return !fieldErrors.teamName && !fieldErrors.teamEmail
 }
 
 function submitForm() {

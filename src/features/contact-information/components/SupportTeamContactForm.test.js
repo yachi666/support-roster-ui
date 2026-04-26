@@ -37,3 +37,14 @@ test('create contact form wires validation errors to inputs accessibly', () => {
   assert.match(formSource, /:aria-describedby="fieldErrors\.selectedStaff \? 'staffIds-error' : undefined"/)
   assert.match(formSource, /id="staffIds-error"[^>]*role="alert"[^>]*aria-live="polite"/)
 })
+
+test('create contact form only requires team name', () => {
+  assert.match(formSource, /fieldErrors\.teamName = formState\.teamName\.trim\(\) \? '' : 'Team name is required\.'/)
+  assert.match(
+    formSource,
+    /fieldErrors\.teamEmail = normalizedTeamEmail && !\/\\S\+@\\S\+\\.\\S\+\/\.test\(normalizedTeamEmail\) \? 'Enter a valid team email\.' : ''/,
+  )
+  assert.doesNotMatch(formSource, /A valid team email is required\./)
+  assert.doesNotMatch(formSource, /Add at least one tag\./)
+  assert.doesNotMatch(formSource, /Add at least one staff ID\./)
+})
