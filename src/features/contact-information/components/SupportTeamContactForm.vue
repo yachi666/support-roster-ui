@@ -83,12 +83,14 @@ function handleTagKeydown(event) {
 }
 
 function validateForm() {
-  fieldErrors.teamName = formState.teamName.trim() ? '' : 'Team name is required.'
-  fieldErrors.teamEmail = /\S+@\S+\.\S+/.test(formState.teamEmail.trim()) ? '' : 'A valid team email is required.'
-  fieldErrors.selectedTags = formState.selectedTags.length ? '' : 'Add at least one tag.'
-  fieldErrors.selectedStaff = staffIdPreview.value.length ? '' : 'Add at least one staff ID.'
+  const normalizedTeamEmail = formState.teamEmail.trim()
 
-  return !fieldErrors.teamName && !fieldErrors.teamEmail && !fieldErrors.selectedTags && !fieldErrors.selectedStaff
+  fieldErrors.teamName = formState.teamName.trim() ? '' : 'Team name is required.'
+  fieldErrors.teamEmail = normalizedTeamEmail && !/\S+@\S+\.\S+/.test(normalizedTeamEmail) ? 'Enter a valid team email.' : ''
+  fieldErrors.selectedTags = ''
+  fieldErrors.selectedStaff = ''
+
+  return !fieldErrors.teamName && !fieldErrors.teamEmail
 }
 
 function submitForm() {
@@ -112,7 +114,7 @@ function submitForm() {
 </script>
 
 <template>
-  <form class="w-full max-w-6xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm" @submit.prevent="submitForm">
+  <form class="w-full max-w-6xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm" novalidate @submit.prevent="submitForm">
     <div class="border-b border-slate-100 bg-white px-5 py-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
