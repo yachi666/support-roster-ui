@@ -37,3 +37,10 @@ test('contact information table shows a zero-safe result range summary', () => {
   assert.match(tableSource, /const displayedEntryEnd = computed\(\(\) =>/)
   assert.match(tableSource, /Showing \{\{ displayedEntryStart \}\} to \{\{ displayedEntryEnd \}\}/)
 })
+
+test('contact information table only renders a mailto link when a team email exists', () => {
+  assert.match(
+    tableSource,
+    /<a\s+v-if="team\.email"[\s\S]*:href="`mailto:\$\{team\.email\}`"/,
+  )
+})

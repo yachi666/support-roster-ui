@@ -97,6 +97,7 @@ function roleBadgeClass(role) {
             </td>
             <td class="px-4 py-3 whitespace-nowrap">
               <a
+                v-if="team.email"
                 :href="`mailto:${team.email}`"
                 class="text-sm text-blue-600 transition-colors hover:text-blue-800 hover:underline"
               >
