@@ -2,6 +2,7 @@
 import { onMounted, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
+import { CalendarDays, ContactRound, LayoutDashboard } from 'lucide-vue-next'
 import { api } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import LinuxPasswordForm from '../components/LinuxPasswordForm.vue'
@@ -13,7 +14,7 @@ import { createLinuxPasswordsModel } from '../lib/useLinuxPasswords'
 const { t } = useI18n()
 const authStore = useAuthStore()
 const modulesExpanded = shallowRef(true)
-const topActionLinkBaseClass = 'inline-flex h-9 items-center justify-center rounded-full px-4 text-sm font-medium transition-colors'
+const topActionLinkBaseClass = 'inline-flex h-9 items-center justify-center gap-2 rounded-full px-4 text-sm font-medium transition-colors'
 const topActionSecondaryClass = 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
 const topActionPrimaryClass = 'border border-teal-200 bg-teal-50 text-teal-700 hover:border-teal-300 hover:bg-teal-100'
 const model = createLinuxPasswordsModel({
@@ -88,6 +89,7 @@ async function deleteServer(server) {
           to="/contact-information"
           :class="[topActionLinkBaseClass, topActionSecondaryClass]"
         >
+          <ContactRound class="h-4 w-4 text-slate-500" />
           {{ t('common.contactInformation') }}
         </RouterLink>
 
@@ -95,6 +97,7 @@ async function deleteServer(server) {
           to="/viewer"
           :class="[topActionLinkBaseClass, topActionSecondaryClass]"
         >
+          <CalendarDays class="h-4 w-4 text-slate-500" />
           {{ t('workspace.shell.openViewer') }}
         </RouterLink>
 
@@ -102,6 +105,7 @@ async function deleteServer(server) {
           to="/workspace"
           :class="[topActionLinkBaseClass, topActionPrimaryClass]"
         >
+          <LayoutDashboard class="h-4 w-4 text-teal-600" />
           {{ t('linuxPasswords.enterWorkspace') }}
         </RouterLink>
       </div>

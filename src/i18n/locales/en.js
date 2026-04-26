@@ -144,7 +144,7 @@ export default {
       subtitle: 'Admin control center',
       menu: 'Menu',
       logout: 'Logout',
-      openViewer: 'Open Public Viewer',
+      openViewer: 'roster',
       topbar: {
         searchLabel: 'Search current page',
         searchPlaceholder: 'Search current page...',

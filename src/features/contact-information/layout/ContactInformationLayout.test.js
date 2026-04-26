@@ -16,10 +16,10 @@ test('contact information layout mirrors the shared top action hierarchy', () =>
   assert.match(source, /const topActionPrimaryClass = 'border border-teal-200 bg-teal-50 text-teal-700 hover:border-teal-300 hover:bg-teal-100'/)
 })
 
-test('contact information layout keeps add team as the local primary action', () => {
-  assert.match(source, /v-if="showAddAction"/)
-  assert.match(source, /to="\/contact-information\/add"/)
-  assert.match(source, /Add Team/)
+test('contact information layout does not duplicate the local add action in the global header', () => {
+  assert.doesNotMatch(source, /showAddAction/)
+  assert.doesNotMatch(source, /to="\/contact-information\/add"/)
+  assert.doesNotMatch(source, /Add Team/)
 })
 
 test('contact information layout gives the shared search input an accessible name', () => {
