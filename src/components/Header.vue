@@ -108,20 +108,29 @@ const formattedDate = computed(() => {
         </div>
       </div>
 
-      <RouterLink
-        to="/linux-passwords"
-        class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900"
-      >
-        <span>{{ t('linuxPasswords.entryLabel') }}</span>
-      </RouterLink>
+      <div class="ml-2 flex items-center gap-2">
+        <RouterLink
+          to="/contact-information"
+          class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900"
+        >
+          <span>{{ t('common.contactInformation') }}</span>
+        </RouterLink>
 
-      <RouterLink
-        to="/workspace"
-        class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900"
-      >
-        <span>Enter Workspace</span>
-        <ArrowRight class="h-4 w-4" />
-      </RouterLink>
+        <RouterLink
+          to="/linux-passwords"
+          class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900"
+        >
+          <span>{{ t('linuxPasswords.entryLabel') }}</span>
+        </RouterLink>
+
+        <RouterLink
+          to="/workspace"
+          class="inline-flex items-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-3.5 py-1.5 text-sm font-medium text-teal-700 transition-colors hover:border-teal-300 hover:bg-teal-100 hover:text-teal-800"
+        >
+          <span>Enter Workspace</span>
+          <ArrowRight class="h-4 w-4" />
+        </RouterLink>
+      </div>
     </div>
   </header>
 </template>

@@ -3,6 +3,9 @@ import { h } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import PublicDashboardPage from '@/pages/PublicDashboardPage.vue'
 import LoginPage from '@/pages/LoginPage.vue'
+import ContactInformationLayout from '@/features/contact-information/layout/ContactInformationLayout.vue'
+import SupportTeamContactsPage from '@/features/contact-information/pages/SupportTeamContactsPage.vue'
+import SupportTeamContactCreatePage from '@/features/contact-information/pages/SupportTeamContactCreatePage.vue'
 import WorkspaceLayout from '@/features/workspace/layout/WorkspaceLayout.vue'
 import LinuxPasswordsPage from '@/features/linux-passwords/pages/LinuxPasswordsPage.vue'
 import OverviewDashboardPage from '@/features/workspace/pages/OverviewDashboardPage.vue'
@@ -64,6 +67,22 @@ const router = createRouter({
       name: 'login',
       component: LoginPage,
       meta: { guestOnly: true },
+    },
+    {
+      path: '/contact-information',
+      component: ContactInformationLayout,
+      children: [
+        {
+          path: '',
+          name: 'contact-information',
+          component: SupportTeamContactsPage,
+        },
+        {
+          path: 'add',
+          name: 'contact-information-add',
+          component: SupportTeamContactCreatePage,
+        },
+      ],
     },
     {
       path: '/linux-passwords',

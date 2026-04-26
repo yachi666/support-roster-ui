@@ -13,6 +13,9 @@ import { createLinuxPasswordsModel } from '../lib/useLinuxPasswords'
 const { t } = useI18n()
 const authStore = useAuthStore()
 const modulesExpanded = shallowRef(true)
+const topActionLinkBaseClass = 'inline-flex h-9 items-center justify-center rounded-full px-4 text-sm font-medium transition-colors'
+const topActionSecondaryClass = 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+const topActionPrimaryClass = 'border border-teal-200 bg-teal-50 text-teal-700 hover:border-teal-300 hover:bg-teal-100'
 const model = createLinuxPasswordsModel({
   api,
   authStore,
@@ -82,15 +85,22 @@ async function deleteServer(server) {
     <main class="flex flex-1 flex-col overflow-hidden">
       <div class="flex items-center justify-end gap-3 border-b border-[#e5e7eb] bg-white px-6 py-3">
         <RouterLink
+          to="/contact-information"
+          :class="[topActionLinkBaseClass, topActionSecondaryClass]"
+        >
+          {{ t('common.contactInformation') }}
+        </RouterLink>
+
+        <RouterLink
           to="/viewer"
-          class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50"
+          :class="[topActionLinkBaseClass, topActionSecondaryClass]"
         >
           {{ t('workspace.shell.openViewer') }}
         </RouterLink>
 
         <RouterLink
           to="/workspace"
-          class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50"
+          :class="[topActionLinkBaseClass, topActionPrimaryClass]"
         >
           {{ t('linuxPasswords.enterWorkspace') }}
         </RouterLink>

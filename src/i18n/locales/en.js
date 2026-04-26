@@ -28,6 +28,7 @@ export default {
     allTeams: 'All Teams',
     selectTeam: 'Select a team',
     readonlyMode: 'Readonly mode',
+    contactInformation: 'Contact Information',
   },
   locale: {
     switcherLabel: 'Language',
@@ -148,6 +149,8 @@ export default {
         searchLabel: 'Search current page',
         searchPlaceholder: 'Search current page...',
         month: 'Workspace Month',
+        previousMonth: 'Go to previous workspace month',
+        nextMonth: 'Go to next workspace month',
         selectMonth: 'Select workspace month',
         selectYear: 'Select workspace year',
         selectTimezone: 'Select workspace timezone',
