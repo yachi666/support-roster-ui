@@ -1,5 +1,5 @@
 <script setup>
-import { inject, onUnmounted, ref, watch } from 'vue'
+import { computed, inject, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ArrowRight, CheckCircle2, CircleAlert } from 'lucide-vue-next'
 import ContactInformationTable from '../components/ContactInformationTable.vue'
@@ -15,6 +15,10 @@ const contactsResponse = ref({
   page: 1,
   pageSize: 20,
   total: 0,
+})
+const normalizedPage = computed(() => {
+  const numericPage = Number(route.query.page || 1)
+  return Number.isInteger(numericPage) && numericPage > 0 ? numericPage : 1
 })
 let noticeTimer = null
 let latestRequestId = 0
@@ -34,26 +38,13 @@ watch(
 )
 
 watch(
-  () => layoutState.searchTerm.value,
-  (next, previous) => {
-    if (next === previous) {
-      return
-    }
-
-    if (String(route.query.page || '') && String(route.query.page) !== '1') {
-      router.replace({ path: route.path, query: { ...route.query, page: undefined } })
-    }
-  },
-)
-
-watch(
-  () => [layoutState.searchTerm.value, route.query.page],
+  () => [layoutState.searchTerm.value, normalizedPage.value],
   async () => {
     const requestId = ++latestRequestId
     try {
       const response = await listContactInformation({
         keyword: layoutState.searchTerm.value,
-        page: Number(route.query.page || 1),
+        page: normalizedPage.value,
         pageSize: contactsResponse.value.pageSize,
       })
 

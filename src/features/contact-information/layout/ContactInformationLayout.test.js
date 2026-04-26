@@ -25,3 +25,10 @@ test('contact information layout keeps add team as the local primary action', ()
 test('contact information layout gives the shared search input an accessible name', () => {
   assert.match(source, /aria-label="Search teams, staff IDs, or links"/)
 })
+
+test('contact information layout syncs the shared search term with the keyword query parameter', () => {
+  assert.match(source, /const normalizedKeyword = computed\(\(\) => String\(route\.query\.keyword \|\| ''\)\.trim\(\)\)/)
+  assert.match(source, /searchTerm = ref\(normalizedKeyword\.value\)/)
+  assert.match(source, /const normalizedNext = String\(next \|\| ''\)\.trim\(\)/)
+  assert.match(source, /router\.replace\(\{[\s\S]*keyword: normalizedNext \|\| undefined[\s\S]*page: undefined[\s\S]*\}\)/)
+})
