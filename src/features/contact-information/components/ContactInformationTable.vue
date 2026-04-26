@@ -13,11 +13,25 @@ const props = defineProps({
     type: Number,
     required: true,
   },
+  currentPage: {
+    type: Number,
+    default: 1,
+  },
+  pageSize: {
+    type: Number,
+    default: 20,
+  },
 })
 
-const emit = defineEmits(['copy'])
+const emit = defineEmits(['copy', 'change-page'])
 
-const displayedEntryStart = computed(() => (props.teams.length ? 1 : 0))
+const totalPages = computed(() => Math.max(1, Math.ceil(props.totalCount / props.pageSize)))
+const displayedEntryStart = computed(() => (props.totalCount && props.teams.length
+  ? ((props.currentPage - 1) * props.pageSize) + 1
+  : 0))
+const displayedEntryEnd = computed(() => (props.teams.length
+  ? displayedEntryStart.value + props.teams.length - 1
+  : 0))
 
 function emitCopy(text, label) {
   emit('copy', { text, label })
@@ -160,12 +174,22 @@ function roleBadgeClass(role) {
     </div>
 
     <div class="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-500">
-      <div>Showing {{ displayedEntryStart }} to {{ props.teams.length }} of {{ props.totalCount }} entries</div>
+      <div>Showing {{ displayedEntryStart }} to {{ displayedEntryEnd }} of {{ props.totalCount }} entries</div>
         <div class="flex items-center gap-2">
-          <button class="cursor-not-allowed rounded border border-slate-200 bg-white px-2 py-1 text-slate-400 disabled:opacity-100" type="button" disabled>
+          <button
+            class="rounded border border-slate-200 bg-white px-2 py-1 disabled:cursor-not-allowed disabled:text-slate-400 disabled:opacity-100"
+            type="button"
+            :disabled="props.currentPage <= 1"
+            @click="emit('change-page', props.currentPage - 1)"
+          >
             Previous
           </button>
-          <button class="cursor-not-allowed rounded border border-slate-200 bg-white px-2 py-1 text-slate-400 disabled:opacity-100" type="button" disabled>
+          <button
+            class="rounded border border-slate-200 bg-white px-2 py-1 disabled:cursor-not-allowed disabled:text-slate-400 disabled:opacity-100"
+            type="button"
+            :disabled="props.currentPage >= totalPages"
+            @click="emit('change-page', props.currentPage + 1)"
+          >
             Next
           </button>
         </div>

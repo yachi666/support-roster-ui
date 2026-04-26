@@ -1,20 +1,28 @@
 <script setup>
 import { useRouter } from 'vue-router'
+import { ref } from 'vue'
 import { ArrowLeft, Building2 } from 'lucide-vue-next'
 import SupportTeamContactForm from '../components/SupportTeamContactForm.vue'
-import {
-  contactInformationAvailableStaffIds,
-  contactInformationPresetRoles,
-} from '../data/contactInformationMock'
+import { createContactInformation } from '@/api/contactInformation'
+import { getApiErrorMessage } from '@/features/workspace/lib/formErrors'
+import { contactInformationPresetRoles } from '../data/contactInformationOptions'
 
 const router = useRouter()
+const submitError = ref('')
 
 function handleCancel() {
   router.push('/contact-information')
 }
 
-function handleSubmit() {
-  router.push({ path: '/contact-information', query: { created: '1' } })
+async function handleSubmit(payload) {
+  submitError.value = ''
+
+  try {
+    await createContactInformation(payload)
+    router.push({ path: '/contact-information', query: { created: '1' } })
+  } catch (error) {
+    submitError.value = getApiErrorMessage(error, 'Failed to save team.')
+  }
 }
 </script>
 
@@ -35,8 +43,16 @@ function handleSubmit() {
       </h1>
     </div>
 
+    <div
+      v-if="submitError"
+      class="mb-4 w-full max-w-6xl rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+      role="alert"
+      aria-live="polite"
+    >
+      {{ submitError }}
+    </div>
+
     <SupportTeamContactForm
-      :available-staff-ids="contactInformationAvailableStaffIds"
       :preset-roles="contactInformationPresetRoles"
       @cancel="handleCancel"
       @submit="handleSubmit"

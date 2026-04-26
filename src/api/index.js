@@ -70,7 +70,7 @@ async function parseErrorResponse(response) {
   }
 }
 
-async function request(endpoint, options = {}) {
+export async function request(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`
   const { responseType = 'json', headers = {}, body, ...restOptions } = options
   const normalizedBody = isFormDataBody(body) || typeof body === 'string' || body == null

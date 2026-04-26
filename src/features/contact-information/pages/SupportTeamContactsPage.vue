@@ -1,40 +1,23 @@
 <script setup>
-import { computed, inject, onUnmounted, ref, watch } from 'vue'
+import { inject, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ArrowRight, CheckCircle2, CircleAlert } from 'lucide-vue-next'
 import ContactInformationTable from '../components/ContactInformationTable.vue'
-import { contactInformationMockTeams } from '../data/contactInformationMock'
 import { CONTACT_INFORMATION_LAYOUT_KEY } from '../lib/layoutContext'
+import { listContactInformation } from '@/api/contactInformation'
 
 const route = useRoute()
 const router = useRouter()
 const layoutState = inject(CONTACT_INFORMATION_LAYOUT_KEY, { searchTerm: ref('') })
 const notice = ref({ tone: '', message: '' })
-let noticeTimer = null
-
-const filteredTeams = computed(() => {
-  const normalizedQuery = layoutState.searchTerm.value.trim().toLowerCase()
-  if (!normalizedQuery) {
-    return contactInformationMockTeams
-  }
-
-  return contactInformationMockTeams.filter((team) => {
-    const haystack = [
-      team.name,
-      team.email,
-      team.xMatter,
-      team.gsd,
-      team.eim,
-      ...team.roles,
-      ...team.staff.flatMap((member) => [member.id, member.name, member.email]),
-      ...team.links.flatMap((link) => [link.label, link.url]),
-    ]
-      .join(' ')
-      .toLowerCase()
-
-    return haystack.includes(normalizedQuery)
-  })
+const contactsResponse = ref({
+  items: [],
+  page: 1,
+  pageSize: 20,
+  total: 0,
 })
+let noticeTimer = null
+let latestRequestId = 0
 
 watch(
   () => route.query.created,
@@ -42,9 +25,59 @@ watch(
     if (created === '1') {
       setNotice(
         'success',
-        'Mock team saved. The list still uses local demo data, so the new record is not persisted.',
+        'Team saved successfully.',
       )
       router.replace({ path: route.path, query: { ...route.query, created: undefined } })
+    }
+  },
+  { immediate: true },
+)
+
+watch(
+  () => layoutState.searchTerm.value,
+  (next, previous) => {
+    if (next === previous) {
+      return
+    }
+
+    if (String(route.query.page || '') && String(route.query.page) !== '1') {
+      router.replace({ path: route.path, query: { ...route.query, page: undefined } })
+    }
+  },
+)
+
+watch(
+  () => [layoutState.searchTerm.value, route.query.page],
+  async () => {
+    const requestId = ++latestRequestId
+    try {
+      const response = await listContactInformation({
+        keyword: layoutState.searchTerm.value,
+        page: Number(route.query.page || 1),
+        pageSize: contactsResponse.value.pageSize,
+      })
+
+      if (requestId !== latestRequestId) {
+        return
+      }
+
+      contactsResponse.value = {
+        items: response.items || [],
+        page: response.page || 1,
+        pageSize: response.pageSize || contactsResponse.value.pageSize,
+        total: response.total || 0,
+      }
+    } catch (error) {
+      if (requestId !== latestRequestId) {
+        return
+      }
+      setNotice('error', error?.message || 'Failed to load contact information.')
+      contactsResponse.value = {
+        items: [],
+        page: 1,
+        pageSize: contactsResponse.value.pageSize,
+        total: 0,
+      }
     }
   },
   { immediate: true },
@@ -78,6 +111,20 @@ function clearNotice() {
   }
 
   notice.value = { tone: '', message: '' }
+}
+
+function handlePageChange(page) {
+  if (page < 1 || page === contactsResponse.value.page) {
+    return
+  }
+
+  router.replace({
+    path: route.path,
+    query: {
+      ...route.query,
+      page: String(page),
+    },
+  })
 }
 
 onUnmounted(() => {
@@ -125,9 +172,12 @@ onUnmounted(() => {
     </div>
 
     <ContactInformationTable
-      :teams="filteredTeams"
-      :total-count="contactInformationMockTeams.length"
+      :teams="contactsResponse.items"
+      :total-count="contactsResponse.total"
+      :current-page="contactsResponse.page"
+      :page-size="contactsResponse.pageSize"
       @copy="handleCopy"
+      @change-page="handlePageChange"
     />
   </section>
 </template>
