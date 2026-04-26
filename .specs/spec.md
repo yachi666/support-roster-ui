@@ -2,7 +2,7 @@
 
 ## 文档定位
 
-本目录是 `support-roster-ui` 的正式规格入口，用于沉淀 Public Viewer 与 Admin Workspace 两套前端体验的边界、结构、交互与视觉规范。整套文档按“总目录 -> 分册目录 -> 专题页”的方式组织，目标是让阅读路径更像一本可持续维护的技术手册。
+本目录是 `support-roster-ui` 的正式规格入口，用于沉淀 Public Viewer、Admin Workspace 与独立工具页面的边界、结构、交互与视觉规范。整套文档按“总目录 -> 分册目录 -> 专题页”的方式组织，目标是让阅读路径更像一本可持续维护的技术手册。
 
 ## 推荐阅读顺序
 
@@ -23,6 +23,7 @@
 | 视觉 | `./ui-design.md` | 全局视觉语言与 Public Viewer 设计约束 |
 | 独立公开页 | `./contact-information.md` | 支持团队联系信息页、Figma 转 Vue 与 mock 交互约束 |
 | 独立受控页 | `./linux-password-vault.md` | Linux 密码库页面、跨入口跳转与受 workspace 策略约束的独立路由 |
+| 独立产品页 | `./product-updates.md` | 产品更新日志页面、当前版本、时间线与详情展示 |
 | Viewer 分册 | `./modules/index.md` | Public Viewer 模块目录与模块关系 |
 | Workspace 分册 | `./workspace/index.md` | Admin Workspace 的架构、路由、页面、组件与视觉规范 |
 | Workspace Auth 专题 | `./workspace/auth/index.md` | 登录、会话、权限与账号管理 |
@@ -37,6 +38,7 @@ graph TB
     DEPLOY[deployment.md 部署规范]
     UIDESIGN[ui-design.md 全局视觉规范]
     LINUXPW[linux-password-vault.md Linux 密码库]
+    PRODUCTUPDATES[product-updates.md 产品更新日志]
     MODULES[modules/index.md Viewer 分册]
     WORKSPACE[workspace/index.md Workspace 分册]
     CHANGELOG[CHANGELOG.md 变更记录]
@@ -47,6 +49,7 @@ graph TB
     ROOT --> UIDESIGN
     ROOT --> CONTACTINFO[contact-information.md 联系信息页]
     ROOT --> LINUXPW
+    ROOT --> PRODUCTUPDATES
     ROOT --> MODULES
     ROOT --> WORKSPACE
     ROOT --> CHANGELOG
@@ -93,5 +96,6 @@ graph TB
 - [视觉规范](./ui-design.md)
 - [支持团队联系信息页设计规格](./contact-information.md)
 - [Linux 密码库设计规格](./linux-password-vault.md)
+- [产品更新日志设计规格](./product-updates.md)
 - [Public Viewer 分册](./modules/index.md)
 - [Workspace 分册](./workspace/index.md)

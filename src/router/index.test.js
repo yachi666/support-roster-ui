@@ -19,3 +19,12 @@ test('router exposes public contact information list and add pages', () => {
   assert.match(routerSource, /path:\s*'add'/)
   assert.match(routerSource, /name:\s*'contact-information-add'/)
 })
+
+test('router exposes standalone product updates page', () => {
+  assert.match(
+    routerSource,
+    /import ProductUpdatesPage from ['"]@\/features\/product-updates\/pages\/ProductUpdatesPage\.vue['"]/,
+  )
+  assert.match(routerSource, /path:\s*'\/product-updates'/)
+  assert.match(routerSource, /name:\s*'product-updates'/)
+})

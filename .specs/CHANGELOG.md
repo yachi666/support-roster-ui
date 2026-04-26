@@ -1,5 +1,44 @@
 # Spec Change Log
 
+## 2026-04-26
+
+### Summary
+
+新增独立产品更新日志页面规格，并同步根目录与前端架构文档。
+
+后续补充：按界面反馈移除顶部大标题、说明、概览卡片、筛选统计区和“新建日志”入口；当前版本改为工具条状态；新增 AI 随 PR 同步维护产品更新日志的流程约束。
+
+国际化补充：产品更新日志支持中文和英文两种语言，页面固定文案接入 `vue-i18n`，更新日志数据同时维护 `zh-CN` 与 `en` 文案，日期和月份按当前语言格式化。
+
+PR 生成补充：根据 2026-03-26 到 2026-04-26 合并的 PR 生成最近一个月产品更新日志内容，并在详情页展示关联 PR 编号。
+
+响应式补充：优化产品更新日志移动端密度，压缩工具条、列表项和详情页间距，让小屏首屏可以看到更多更新时间线内容。
+
+桌面密度补充：为 13 寸笔记本等低高度桌面视口增加紧凑布局，减少右侧详情区标题、日期卡、重点更新卡和内容分组占用的纵向空间。
+
+交互补充：移除详情页“适用对象”展示行，并将关联 PR 胶囊改为可点击 GitHub PR 链接。
+
+### Files Changed
+
+- `.specs/spec.md`
+- `.specs/architecture.md`
+- `.specs/product-updates.md`
+- `.specs/CHANGELOG.md`
+
+### Detailed Changes
+
+| File | Section | Change Type | Before | After | Why |
+|---|---|---|---|---|---|
+| `.specs/product-updates.md` | 新文件 | Add | 无产品更新日志专题规格 | 新增路由、组件、交互、数据模型、视觉与后续 API 边界 | 为 `/product-updates` 独立页面提供稳定维护入口 |
+| `.specs/spec.md` | 章节目录 / 快速链接 / 架构图 | Update | 独立页面仅包含联系信息页与 Linux 密码库 | 增加产品更新日志入口 | 保持根级导航与新增页面一致 |
+| `.specs/architecture.md` | 应用总览 / 顶层路由 / 分层 / 产品域职责 | Update | 未描述 `/product-updates` | 增加 Product Updates 路由、页面层和本地状态边界 | 反映新增独立页面的运行时结构 |
+| `.specs/product-updates.md` | 核心交互 / 视觉规范 / 后续接入边界 | Update | 页面包含顶部说明、概览和筛选区，未规定 PR 同步维护 | 移除这些区域并记录 AI 随 PR 维护规则 | 与当前产品方向和界面反馈一致 |
+| `.specs/product-updates.md` | 国际化要求 | Update | 仅中文日志内容 | 新增中英文日志与日期本地化约束 | 保证 `/product-updates` 可随全局语言切换 |
+| `.specs/product-updates.md` | 数据模型 / 核心交互 | Update | 日志内容为示例数据，详情页无来源追踪 | 改为最近一个月 PR 生成内容，并展示关联 PR 编号 | 让更新日志与真实合并记录一致 |
+| `.specs/product-updates.md` | 视觉规范 | Update | 小屏密度要求不明确 | 增加移动端压缩工具条、列表和详情内容的响应式约束 | 防止小屏首屏被低密度内容占满 |
+| `.specs/product-updates.md` | 视觉规范 | Update | 低高度桌面视口没有单独密度规则 | 增加 13 寸笔记本紧凑布局约束 | 让双栏详情页在有限高度里展示更多内容 |
+| `.specs/product-updates.md` | 核心交互 / 数据模型 | Update | 详情页展示适用对象，关联 PR 仅静态展示 | 移除适用对象展示，并要求关联 PR 跳转 GitHub PR | 减少纵向占用并提升来源追溯效率 |
+
 ## 2026-03-21
 
 ### 摘要

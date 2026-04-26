@@ -6,6 +6,7 @@ import LoginPage from '@/pages/LoginPage.vue'
 import ContactInformationLayout from '@/features/contact-information/layout/ContactInformationLayout.vue'
 import SupportTeamContactsPage from '@/features/contact-information/pages/SupportTeamContactsPage.vue'
 import SupportTeamContactCreatePage from '@/features/contact-information/pages/SupportTeamContactCreatePage.vue'
+import ProductUpdatesPage from '@/features/product-updates/pages/ProductUpdatesPage.vue'
 import WorkspaceLayout from '@/features/workspace/layout/WorkspaceLayout.vue'
 import LinuxPasswordsPage from '@/features/linux-passwords/pages/LinuxPasswordsPage.vue'
 import OverviewDashboardPage from '@/features/workspace/pages/OverviewDashboardPage.vue'
@@ -45,7 +46,10 @@ function resolveWorkspaceEntryLocation(authStore, requestedRoute) {
 }
 
 function resolveWorkspaceRedirectTarget(authStore, requestedPath) {
-  return resolveSafeAppRedirectPath(requestedPath, resolveDefaultWorkspacePath(authStore) || '/viewer')
+  return resolveSafeAppRedirectPath(
+    requestedPath,
+    resolveDefaultWorkspacePath(authStore) || '/viewer',
+  )
 }
 
 const router = createRouter({
@@ -89,6 +93,11 @@ const router = createRouter({
       name: 'linux-passwords',
       component: LinuxPasswordsPage,
       meta: { protectedPageCode: 'linux-passwords' },
+    },
+    {
+      path: '/product-updates',
+      name: 'product-updates',
+      component: ProductUpdatesPage,
     },
     {
       path: WORKSPACE_ENTRY_PATH,
@@ -173,8 +182,9 @@ router.beforeEach(async (to) => {
     .map((record) => record.meta?.protectedPageCode || record.meta?.workspacePageCode)
     .find((pageCode) => typeof pageCode === 'string')
 
-  const requiresAuth = to.matched.some((record) => record.meta?.requiresAuth)
-    || (protectedPageCode ? authStore.isProtectedPageLoginRequired(protectedPageCode) : false)
+  const requiresAuth =
+    to.matched.some((record) => record.meta?.requiresAuth) ||
+    (protectedPageCode ? authStore.isProtectedPageLoginRequired(protectedPageCode) : false)
   if (!requiresAuth) {
     return true
   }
