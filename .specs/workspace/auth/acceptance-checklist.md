@@ -4,7 +4,7 @@
 
 - 首次上线后，建议由产品/研发/运维共同走查一次。
 - 每一项都应记录结果：通过 / 不通过 / 备注。
-- 若环境启用了 `SUPPORT_BOOTSTRAP_ADMIN_STAFF_CODE`，应在“管理员接管完成”后再次回归一次关键路径。
+- 若环境启用了 `SUPPORT_BOOTSTRAP_ADMIN_STAFF_ID`，应在“管理员接管完成”后再次回归一次关键路径。
 
 ## A. 公共访问与登录入口
 
@@ -15,12 +15,12 @@
 
 ## B. 首个管理员激活
 
-- [ ] 使用 `SUPPORT_BOOTSTRAP_ADMIN_STAFF_CODE` 对应的 `staffid` 可以进入首登设密流程。
+- [ ] 使用 `SUPPORT_BOOTSTRAP_ADMIN_STAFF_ID` 对应的 `staffid` 可以进入首登设密流程。
 - [ ] 首登设密成功后，能够进入 workspace 主界面。
 - [ ] 已激活账号再次尝试首登设密时，会提示“密码已初始化，请直接登录”。
 - [ ] 当前用户信息展示为 `admin`。
 - [ ] 可以访问 `/workspace/accounts`。
-- [ ] 管理员接管后，移除 `SUPPORT_BOOTSTRAP_ADMIN_STAFF_CODE` 并重启，原管理员仍能正常登录。
+- [ ] 管理员接管后，移除 `SUPPORT_BOOTSTRAP_ADMIN_STAFF_ID` 并重启，原管理员仍能正常登录。
 
 ## C. 管理员能力
 
@@ -64,6 +64,6 @@
 ## H. 验收收尾
 
 - [ ] 至少保留两个 `admin` 账号，避免单点人员风险。
-- [ ] 已移除 `SUPPORT_BOOTSTRAP_ADMIN_STAFF_CODE`。
+- [ ] 已移除 `SUPPORT_BOOTSTRAP_ADMIN_STAFF_ID`。
 - [ ] 已记录首个管理员 `staffid` 与接管人信息。
 - [ ] 已确认后续 SSO 接入前，当前密码首登方案仅限内网/测试环境使用。

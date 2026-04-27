@@ -52,6 +52,14 @@ async function copyPassword(server) {
   }
 }
 
+async function togglePassword(credential) {
+  try {
+    await model.togglePassword(credential)
+  } catch (error) {
+    model.statusMessage = error?.message || t('linuxPasswords.revealFailed')
+  }
+}
+
 function launchWinSCP(server) {
   model.statusMessage = t('linuxPasswords.launchingWinScp', { hostname: server.hostname })
 }
@@ -79,6 +87,7 @@ async function deleteServer(server) {
       :units="model.availableUnits"
       :selected-unit="model.selectedUnit"
       :modules-expanded="modulesExpanded"
+      :can-view-audits="authStore.isAdmin"
       @toggle-modules="modulesExpanded = !modulesExpanded"
       @select-unit="model.selectedUnit = $event"
     />
@@ -130,9 +139,10 @@ async function deleteServer(server) {
           v-if="model.view === 'list'"
           :servers="model.servers"
           :visible-passwords="model.visiblePasswords"
+          :revealed-passwords="model.revealedPasswords"
           :copied-server-id="model.copiedServerId"
           :can-manage-servers="model.canManageServers"
-          @toggle-password="model.togglePassword"
+          @toggle-password="togglePassword"
           @copy-password="copyPassword"
           @launch-winscp="launchWinSCP"
           @edit-server="model.openEditForm"

@@ -47,7 +47,7 @@ const topbarPeriodShellClass =
 const topbarMonthSelectClass =
   'h-7 w-[4.75rem] rounded-lg border border-transparent bg-slate-50 pl-2 pr-6 text-sm font-semibold text-slate-900 outline-none transition-colors hover:border-slate-200 focus:border-teal-300 focus:bg-white focus:ring-2 focus:ring-teal-500/15'
 const topbarYearSelectClass =
-  'h-7 w-[5.5rem] rounded-lg border border-transparent bg-slate-50 pl-3 pr-8 text-center text-sm font-semibold tabular-nums text-slate-900 outline-none transition-colors hover:border-slate-200 focus:border-teal-300 focus:bg-white focus:ring-2 focus:ring-teal-500/15'
+  'h-7 w-[6.5rem] min-w-[6.5rem] rounded-lg border border-transparent bg-slate-50 pl-3 pr-9 text-center text-sm font-semibold tabular-nums text-slate-900 outline-none transition-colors hover:border-slate-200 focus:border-teal-300 focus:bg-white focus:ring-2 focus:ring-teal-500/15'
 const topbarMetaControlClass =
   'flex h-7 min-w-0 items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 pl-1.5 pr-1'
 const topbarActionClusterClass = 'ml-auto flex h-11 shrink-0 items-center justify-end gap-2'

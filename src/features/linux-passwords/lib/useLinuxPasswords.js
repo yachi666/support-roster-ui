@@ -6,12 +6,25 @@ function normalizeServerPayload(formData = {}) {
     : Array.isArray(formData.folders)
       ? formData.folders
       : []
+  const credentials = Array.isArray(formData.credentials)
+    ? formData.credentials
+    : [{
+        username: formData.username,
+        password: formData.password,
+        notes: formData.notes,
+      }]
 
   return {
     hostname: String(formData.hostname || '').trim(),
     ip: String(formData.ip || '').trim(),
-    username: String(formData.username || '').trim(),
-    password: String(formData.password || ''),
+    credentials: credentials
+      .map((credential) => ({
+        id: credential?.id,
+        username: String(credential?.username || '').trim(),
+        password: String(credential?.password || ''),
+        notes: String(credential?.notes || '').trim(),
+      }))
+      .filter((credential) => credential.username || credential.password || credential.notes),
     businessUnits,
   }
 }
@@ -26,6 +39,7 @@ export function createLinuxPasswordsModel({
   const servers = ref([])
   const availableUnits = ref([])
   const visiblePasswords = ref({})
+  const revealedPasswords = ref({})
   const view = shallowRef('list')
   const selectedUnit = shallowRef('All')
   const search = shallowRef('')
@@ -125,19 +139,51 @@ export function createLinuxPasswordsModel({
     return true
   }
 
-  function togglePassword(serverId) {
+  async function revealCredentialPassword(credentialId, action = 'VIEW') {
+    const response = await api.workspace.revealLinuxPasswordCredential(credentialId, action)
+    const password = String(response?.password || '')
+    revealedPasswords.value = {
+      ...revealedPasswords.value,
+      [credentialId]: password,
+    }
+    return password
+  }
+
+  async function togglePassword(credential) {
+    const credentialId = credential?.id
+    if (!credentialId) {
+      return
+    }
+    if (visiblePasswords.value[credentialId]) {
+      visiblePasswords.value = {
+        ...visiblePasswords.value,
+        [credentialId]: false,
+      }
+      return
+    }
+    if (!Object.prototype.hasOwnProperty.call(revealedPasswords.value, credentialId)) {
+      await revealCredentialPassword(credentialId, 'VIEW')
+    }
     visiblePasswords.value = {
       ...visiblePasswords.value,
-      [serverId]: !visiblePasswords.value[serverId],
+      [credentialId]: true,
     }
   }
 
   async function copyPassword(server, clipboard = navigator?.clipboard) {
-    await clipboard.writeText(server.password)
-    copiedServerId.value = server.id
-    statusMessage.value = t('linuxPasswords.copiedServer', { hostname: server.hostname })
-    window.setTimeout(() => {
-      if (copiedServerId.value === server.id) {
+    const credential = server?.credential || server?.credentials?.[0]
+    if (!credential?.id) {
+      return
+    }
+    const password = await revealCredentialPassword(credential.id, 'COPY')
+    await clipboard.writeText(password)
+    copiedServerId.value = credential.id
+    statusMessage.value = t('linuxPasswords.copiedServer', {
+      hostname: server.hostname,
+      username: credential.username,
+    })
+    globalThis.setTimeout?.(() => {
+      if (copiedServerId.value === credential.id) {
         copiedServerId.value = ''
       }
     }, 1500)
@@ -169,6 +215,7 @@ export function createLinuxPasswordsModel({
     togglePassword,
     view,
     visiblePasswords,
+    revealedPasswords,
     copyPassword,
   })
 }

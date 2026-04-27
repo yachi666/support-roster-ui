@@ -72,7 +72,7 @@ test('workspace topbar uses compact month, timezone, and locale controls before 
   )
   assert.match(
     source,
-    /const topbarYearSelectClass =\s*'h-7 w-\[5\.5rem\] rounded-lg border border-transparent bg-slate-50 pl-3 pr-8 text-center text-sm font-semibold tabular-nums text-slate-900 outline-none transition-colors hover:border-slate-200 focus:border-teal-300 focus:bg-white focus:ring-2 focus:ring-teal-500\/15'/,
+    /const topbarYearSelectClass =\s*'h-7 w-\[6\.5rem\] min-w-\[6\.5rem\] rounded-lg border border-transparent bg-slate-50 pl-3 pr-9 text-center text-sm font-semibold tabular-nums text-slate-900 outline-none transition-colors hover:border-slate-200 focus:border-teal-300 focus:bg-white focus:ring-2 focus:ring-teal-500\/15'/,
   )
   assert.match(
     source,

@@ -16,8 +16,7 @@ function createDependencies(overrides = {}) {
               id: '1',
               hostname: 'infra-proxy-01',
               ip: '10.0.1.2',
-              username: 'admin',
-              password: 'Proxy@Infra99',
+              credentials: [{ id: 'cred-1', username: 'admin', hasPassword: true }],
               businessUnits: ['Infrastructure', 'Web'],
               status: 'online',
             },
@@ -40,6 +39,10 @@ function createDependencies(overrides = {}) {
       deleteLinuxPassword: async (id) => {
         calls.push(['deleteLinuxPassword', id])
         return null
+      },
+      revealLinuxPasswordCredential: async (credentialId, action) => {
+        calls.push(['revealLinuxPasswordCredential', credentialId, action])
+        return { password: 'Proxy@Infra99' }
       },
     },
   }
@@ -74,7 +77,7 @@ test('loadServers requests backend list and stores returned items and business u
   await model.loadServers()
 
   assert.deepEqual(deps.calls[0], ['getLinuxPasswords', { search: 'proxy', businessUnit: 'Infrastructure' }])
-  assert.equal(model.servers[0].password, 'Proxy@Infra99')
+  assert.deepEqual(model.servers[0].credentials, [{ id: 'cred-1', username: 'admin', hasPassword: true }])
   assert.deepEqual(model.availableUnits, [])
 })
 
@@ -97,16 +100,14 @@ test('submitCreate sends create payload, resets add mode, and reloads list', asy
   await model.submitForm({
     hostname: ' prod-web-99 ',
     ip: '10.9.9.9',
-    username: 'root',
-    password: 'TopSecret!23',
+    credentials: [{ username: 'root', password: 'TopSecret!23' }],
     businessUnits: ['Web', 'Infrastructure'],
   })
 
   assert.deepEqual(deps.calls[0], ['createLinuxPassword', {
     hostname: 'prod-web-99',
     ip: '10.9.9.9',
-    username: 'root',
-    password: 'TopSecret!23',
+    credentials: [{ id: undefined, username: 'root', password: 'TopSecret!23', notes: '' }],
     businessUnits: ['Web', 'Infrastructure'],
   }])
   assert.equal(model.view, 'list')
@@ -134,8 +135,7 @@ test('submitEdit requires admin and sends status with update payload', async () 
     id: '1',
     hostname: 'infra-proxy-01',
     ip: '10.0.1.2',
-    username: 'admin',
-    password: 'Proxy@Infra99',
+    credentials: [{ id: 'cred-1', username: 'admin', hasPassword: true }],
     businessUnits: ['Infrastructure'],
     status: 'online',
   })
@@ -143,8 +143,7 @@ test('submitEdit requires admin and sends status with update payload', async () 
   await model.submitForm({
     hostname: 'infra-proxy-01',
     ip: '10.0.1.2',
-    username: 'admin',
-    password: 'Proxy@Infra99',
+    credentials: [{ id: 'cred-1', username: 'admin', password: '' }],
     businessUnits: ['Infrastructure'],
     status: 'offline',
   })
@@ -152,8 +151,7 @@ test('submitEdit requires admin and sends status with update payload', async () 
   assert.deepEqual(deps.calls[0], ['updateLinuxPassword', '1', {
     hostname: 'infra-proxy-01',
     ip: '10.0.1.2',
-    username: 'admin',
-    password: 'Proxy@Infra99',
+    credentials: [{ id: 'cred-1', username: 'admin', password: '', notes: '' }],
     businessUnits: ['Infrastructure'],
     status: 'offline',
   }])
@@ -198,6 +196,7 @@ test('loadServers keeps the latest response when earlier requests resolve later'
         createLinuxPassword: async () => null,
         updateLinuxPassword: async () => null,
         deleteLinuxPassword: async () => null,
+        revealLinuxPasswordCredential: async () => ({ password: '' }),
       },
     },
     authStore: { isAdmin: true },
@@ -239,4 +238,38 @@ test('model exposes template-friendly values and respects computed admin refs', 
   assert.equal(model.view, 'list')
   assert.deepEqual(model.availableUnits, [])
   assert.equal(model.canManageServers, false)
+})
+
+test('togglePassword reveals secret on demand and hides without refetching', async () => {
+  const deps = createDependencies()
+  const model = createLinuxPasswordsModel(deps)
+
+  await model.togglePassword({ id: 'cred-1', username: 'admin' })
+
+  assert.deepEqual(deps.calls[0], ['revealLinuxPasswordCredential', 'cred-1', 'VIEW'])
+  assert.equal(model.revealedPasswords['cred-1'], 'Proxy@Infra99')
+  assert.equal(model.visiblePasswords['cred-1'], true)
+
+  await model.togglePassword({ id: 'cred-1', username: 'admin' })
+
+  assert.equal(deps.calls.length, 1)
+  assert.equal(model.visiblePasswords['cred-1'], false)
+})
+
+test('copyPassword requests copy audit action before writing clipboard', async () => {
+  const deps = createDependencies()
+  const model = createLinuxPasswordsModel(deps)
+  const writes = []
+
+  await model.copyPassword({
+    id: '1',
+    hostname: 'infra-proxy-01',
+    credential: { id: 'cred-1', username: 'admin' },
+  }, {
+    writeText: async (value) => writes.push(value),
+  })
+
+  assert.deepEqual(deps.calls[0], ['revealLinuxPasswordCredential', 'cred-1', 'COPY'])
+  assert.deepEqual(writes, ['Proxy@Infra99'])
+  assert.equal(model.copiedServerId, 'cred-1')
 })

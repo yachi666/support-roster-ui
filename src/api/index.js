@@ -285,6 +285,25 @@ export const api = {
 
     getLinuxPassword: (id) => request(`/workspace/linux-passwords/${id}`),
 
+    revealLinuxPasswordCredential: (credentialId, action) => request(`/workspace/linux-passwords/credentials/${credentialId}/secret`, {
+      method: 'POST',
+      body: { action },
+    }),
+
+    getLinuxPasswordAccessAudits: (filters = {}) => {
+      const params = new URLSearchParams()
+
+      Object.entries(filters).forEach(([key, value]) => {
+        const normalizedValue = String(value ?? '').trim()
+        if (normalizedValue) {
+          params.set(key, normalizedValue)
+        }
+      })
+
+      const query = params.toString()
+      return request(`/workspace/linux-passwords/access-audits${query ? `?${query}` : ''}`)
+    },
+
     createLinuxPassword: (payload) => request('/workspace/linux-passwords', {
       method: 'POST',
       body: payload,

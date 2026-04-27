@@ -531,7 +531,7 @@ watch(searchTerm, () => {
           <select v-model="formState.staffRecordId" :disabled="Boolean(selectedAccount) || (isCreateMode && !formState.createTeamId)" :class="['bg-white', ...inputClass('staffRecordId')]">
             <option value="">{{ isCreateMode && !formState.createTeamId ? t('workspace.accounts.selectTeamFirst') : t('workspace.accounts.selectStaff') }}</option>
             <option v-for="staff in availableStaffOptions" :key="staff.id" :value="String(staff.id)">
-              {{ staff.staffCode }} · {{ staff.name }}
+              {{ staff.staffId }} · {{ staff.name }}
             </option>
           </select>
           <p v-if="isCreateMode && selectedCreateTeam" class="mt-2 text-xs text-slate-500">

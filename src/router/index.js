@@ -9,6 +9,7 @@ import SupportTeamContactCreatePage from '@/features/contact-information/pages/S
 import ProductUpdatesPage from '@/features/product-updates/pages/ProductUpdatesPage.vue'
 import WorkspaceLayout from '@/features/workspace/layout/WorkspaceLayout.vue'
 import LinuxPasswordsPage from '@/features/linux-passwords/pages/LinuxPasswordsPage.vue'
+import LinuxPasswordAuditPage from '@/features/linux-passwords/pages/LinuxPasswordAuditPage.vue'
 import OverviewDashboardPage from '@/features/workspace/pages/OverviewDashboardPage.vue'
 import MonthlyRosterPlannerPage from '@/features/workspace/pages/MonthlyRosterPlannerPage.vue'
 import StaffDirectoryPage from '@/features/workspace/pages/StaffDirectoryPage.vue'
@@ -93,6 +94,12 @@ const router = createRouter({
       name: 'linux-passwords',
       component: LinuxPasswordsPage,
       meta: { protectedPageCode: 'linux-passwords' },
+    },
+    {
+      path: '/linux-passwords/audits',
+      name: 'linux-password-audits',
+      component: LinuxPasswordAuditPage,
+      meta: { protectedPageCode: 'linux-passwords', requiresAuth: true, roles: ['admin'] },
     },
     {
       path: '/product-updates',
