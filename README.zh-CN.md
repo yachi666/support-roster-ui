@@ -1,6 +1,6 @@
 # Support Roster UI
 
-[English](./README.md)
+[English](./README.md) · [总仓库](https://github.com/yachi666/support-platform)
 
 ![Vue 3](https://img.shields.io/badge/Vue-3.5-42b883?style=flat-square)
 ![Vite](https://img.shields.io/badge/Vite-7.x-646cff?style=flat-square)
@@ -9,6 +9,18 @@
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 `support-roster-ui` 是支持排班平台的 Vue 3 前端。它以单个 Vite SPA 承载公开排班看板、认证后的管理工作台、联系信息、产品更新和受保护的运营工具。
+
+本仓库作为 [`support-platform`](https://github.com/yachi666/support-platform) 的子模块运行，后端、自动化测试、本地脚本和精选截图资源都在总仓库中统一协调。
+
+## 效果截图
+
+| 公开看板 | 工作台总览 |
+|---|---|
+| ![公开排班看板](https://raw.githubusercontent.com/yachi666/support-platform/main/docs/assets/screenshots/public-viewer.png) | ![工作台总览](https://raw.githubusercontent.com/yachi666/support-platform/main/docs/assets/screenshots/workspace-overview.png) |
+
+| 月排班 | 校验中心 |
+|---|---|
+| ![月排班页面](https://raw.githubusercontent.com/yachi666/support-platform/main/docs/assets/screenshots/workspace-roster.png) | ![校验中心](https://raw.githubusercontent.com/yachi666/support-platform/main/docs/assets/screenshots/workspace-validation.png) |
 
 ## 产品页面
 

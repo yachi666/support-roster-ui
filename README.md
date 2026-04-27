@@ -1,6 +1,6 @@
 # Support Roster UI
 
-[中文](./README.zh-CN.md)
+[中文](./README.zh-CN.md) · [Parent workspace](https://github.com/yachi666/support-platform)
 
 ![Vue 3](https://img.shields.io/badge/Vue-3.5-42b883?style=flat-square)
 ![Vite](https://img.shields.io/badge/Vite-7.x-646cff?style=flat-square)
@@ -9,6 +9,18 @@
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
 `support-roster-ui` is the Vue 3 frontend for the support roster platform. It ships a single Vite SPA with a public roster viewer, authenticated admin workspace, contact information pages, product update notes, and protected operational tools.
+
+This repository is designed to run as a submodule of [`support-platform`](https://github.com/yachi666/support-platform), where the backend, automation tests, local scripts, and curated screenshots are coordinated.
+
+## Screenshots
+
+| Public viewer | Workspace overview |
+|---|---|
+| ![Public roster viewer](https://raw.githubusercontent.com/yachi666/support-platform/main/docs/assets/screenshots/public-viewer.png) | ![Workspace overview](https://raw.githubusercontent.com/yachi666/support-platform/main/docs/assets/screenshots/workspace-overview.png) |
+
+| Monthly roster | Validation center |
+|---|---|
+| ![Monthly roster planner](https://raw.githubusercontent.com/yachi666/support-platform/main/docs/assets/screenshots/workspace-roster.png) | ![Workspace validation center](https://raw.githubusercontent.com/yachi666/support-platform/main/docs/assets/screenshots/workspace-validation.png) |
 
 ## Product Surfaces
 
