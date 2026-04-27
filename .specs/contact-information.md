@@ -66,7 +66,7 @@
 
 - 页面采用 **独立全屏浅色工作台** 风格，顶部固定导航、内容区居中最大宽度 `1600px`。
 - 视觉目标优先贴近 Figma：白色表面、浅灰背景、细边框、轻阴影、较高信息密度表格。
-- 跨页入口遵循两层层级：`Contact Information` 与 `Linux Password Vault` 为同级次级工具入口，`Enter Workspace` / `Open Viewer` 维持更高主动作辨识度。
+- 跨页入口遵循两层层级：`Contact Information` 与 `Linux Password Vault` 为同级次级工具入口，`Workspace` / `Open Viewer` 维持更高主动作辨识度。
 - 列表页保留表头、首列粘性、角色彩色标签、Staff ID hover 卡片、底部真实分页动作。
 - 新增页保留分段表单、token 风格 tag 输入、单个逗号分隔的 Staff ID 输入、单个 Other Information 字段，以及位于卡片顶部的保存 / 取消操作区。
 - 当前以桌面端优先；移动端只要求布局不炸裂和可浏览，不要求逐像素还原。

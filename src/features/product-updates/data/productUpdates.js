@@ -23,6 +23,15 @@ export const productUpdateModules = [
 
 export const productUpdates = [
   {
+    id: '2026-04-27-viewer-product-updates-entry',
+    version: '2026.04.27',
+    date: '2026-04-27',
+    type: 'improvement',
+    modules: ['viewer', 'system'],
+    prNumbers: [],
+    sectionTypes: ['improvement'],
+  },
+  {
     id: '2026-04-26-contact-information',
     version: '2026.04.26',
     date: '2026-04-26',
@@ -88,6 +97,62 @@ export const productUpdates = [
 ]
 
 const PRODUCT_UPDATE_TRANSLATIONS = {
+  '2026-04-27-viewer-product-updates-entry': {
+    'zh-CN': {
+      title: '顶部导航入口与 Workspace 顶栏优化',
+      summary: 'Public Viewer 顶部新增产品更新图标按钮，并优化 Workspace 顶栏年份选择器显示。',
+      status: '已发布',
+      importance: '常规更新',
+      audience: ['排班查看者', '工作台用户'],
+      impact: '用户在查看排班时可以更快打开产品更新日志，了解近期功能变化和修复内容。',
+      highlights: [
+        '看板顶部新增产品更新图标按钮',
+        'Workspace 顶栏年份选择器不再遮挡 4 位年份',
+        '跨页面 Workspace 跳转按钮文案统一为 `Workspace`',
+        '按钮直接跳转 `/product-updates` 独立页面',
+      ],
+      sections: [
+        {
+          title: '体验优化',
+          items: [
+            '在 Public Viewer Header 工具区加入产品更新入口。',
+            '入口采用紧凑图标按钮，保持顶部栏密度并减少文字占用。',
+            '为图标按钮提供中英文 aria-label 和 title，兼顾键盘与辅助技术使用。',
+            '加宽 Workspace 顶栏年份选择器并增加右侧留白，避免大屏或字体缩放下年份被原生下拉箭头遮挡。',
+            '将顶部 Workspace 跳转按钮显示文案从 `Enter Workspace` 统一为 `Workspace`。',
+          ],
+        },
+      ],
+    },
+    en: {
+      title: 'Navigation entry and Workspace topbar polish',
+      summary:
+        'Added a product updates icon button in the Public Viewer header and refined the Workspace year selector.',
+      status: 'Published',
+      importance: 'Standard update',
+      audience: ['Roster viewers', 'Workspace users'],
+      impact:
+        'Users can open the product update log directly while reviewing the roster, making recent changes and fixes easier to discover.',
+      highlights: [
+        'Added a product updates icon button to the viewer header',
+        'Prevented the Workspace topbar year selector from clipping four-digit years',
+        'Renamed top-level Workspace jump buttons to `Workspace`',
+        'The button opens the standalone `/product-updates` page',
+      ],
+      sections: [
+        {
+          title: 'Experience improvements',
+          items: [
+            'Added the product updates entry to the Public Viewer Header utility area.',
+            'Used a compact icon-only button to preserve header density and reduce text width.',
+            'Added English and Chinese aria-label and title text for the icon action.',
+            'Widened the Workspace topbar year selector and increased right-side padding so native select arrows do not cover the year on large displays or scaled fonts.',
+            'Changed top-level Workspace jump button copy from `Enter Workspace` to `Workspace`.',
+          ],
+        },
+      ],
+    },
+  },
   '2026-04-26-contact-information': {
     'zh-CN': {
       title: '联系信息页与导航完善',

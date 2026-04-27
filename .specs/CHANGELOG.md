@@ -1,5 +1,28 @@
 # Spec Change Log
 
+## 2026-04-27
+
+### Summary
+
+Public Viewer 顶部新增产品更新图标入口；同时优化 Workspace 顶栏年份选择器宽度，并统一跨页面 Workspace 跳转按钮文案。
+
+### Files Changed
+
+- `.specs/modules/header.md`
+- `.specs/workspace/ui-design.md`
+- `.specs/linux-password-vault.md`
+- `.specs/contact-information.md`
+- `.specs/CHANGELOG.md`
+
+### Detailed Changes
+
+| File | Section | Change Type | Before | After | Why |
+|---|---|---|---|---|---|
+| `.specs/modules/header.md` | 模块概述 / 布局结构 / 工具入口 / 依赖 | Update | Header 仅描述日期、时区、时钟和既有工具入口 | 增加 Product Updates 图标按钮的路由、视觉层级、可访问名称和 `Newspaper` 图标依赖 | 保持 viewer 顶部入口实现与规范一致 |
+| `.specs/modules/header.md` | 工具入口 | Update | Workspace 跳转按钮文案为 `Enter Workspace` | 统一为 `Workspace` | 降低顶部动作文字长度并与其他页面一致 |
+| `.specs/workspace/ui-design.md` | WorkspaceTopbar | Update | 未明确年份 select 对原生箭头和大屏字体缩放的空间要求 | 增加 4 位年份不能被下拉箭头遮挡的响应式约束 | 防止 27 寸大屏或系统字体缩放下年份显示不完整 |
+| `.specs/linux-password-vault.md` / `.specs/contact-information.md` | 跨页入口 | Update | 仍描述 `Enter Workspace` | 改为 `Workspace` | 保持跨页面跳转按钮文案一致 |
+
 ## 2026-04-26
 
 ### Summary

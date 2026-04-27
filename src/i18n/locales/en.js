@@ -29,6 +29,7 @@ export default {
     selectTeam: 'Select a team',
     readonlyMode: 'Readonly mode',
     contactInformation: 'Contact Information',
+    productUpdates: 'Product Updates',
   },
   locale: {
     switcherLabel: 'Language',
@@ -99,7 +100,7 @@ export default {
     systemDirectory: 'System Directory',
     businessModules: 'Business Modules',
     allServers: 'All Servers',
-    enterWorkspace: 'Enter Workspace',
+    enterWorkspace: 'Workspace',
     addNewServer: 'Add New Server',
     addAction: 'Add',
     backToList: 'Back to List',

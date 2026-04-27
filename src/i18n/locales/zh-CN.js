@@ -29,6 +29,7 @@ export default {
     selectTeam: '请选择团队',
     readonlyMode: '只读模式',
     contactInformation: '联系信息',
+    productUpdates: '产品更新',
   },
   locale: {
     switcherLabel: '语言',
@@ -97,7 +98,7 @@ export default {
     systemDirectory: '系统目录',
     businessModules: '业务模块',
     allServers: '全部服务器',
-    enterWorkspace: '进入工作台',
+    enterWorkspace: 'Workspace',
     addNewServer: '新增服务器',
     addAction: '新增',
     backToList: '返回列表',

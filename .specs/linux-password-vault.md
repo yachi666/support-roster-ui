@@ -27,9 +27,9 @@
 
 ### 入口位置
 
-- `src/components/Header.vue`：viewer 顶部将 **Linux 密码库** 与 **Contact Information** 作为同级工具入口，`Enter Workspace` 保持主动作层级。
+- `src/components/Header.vue`：viewer 顶部将 **Linux 密码库** 与 **Contact Information** 作为同级工具入口，`Workspace` 保持主动作层级。
 - `src/features/workspace/components/WorkspaceTopbar.vue`：workspace 顶部将 **Linux 密码库** 与 **Contact Information** 作为同级次级入口，`Open Public Viewer` 保持更高层级。
-- `src/features/linux-passwords/pages/LinuxPasswordsPage.vue`：当前页面顶部补充 **Contact Information** 与 **Open Public Viewer** 入口，并让 `Enter Workspace` 作为主动作保留。
+- `src/features/linux-passwords/pages/LinuxPasswordsPage.vue`：当前页面顶部补充 **Contact Information** 与 **Open Public Viewer** 入口，并让 `Workspace` 作为主动作保留。
 - 三处跨域跳转按钮都必须复用稳定的胶囊骨架，避免新增按钮后出现尺寸、圆角、横向内边距与字重不一致的割裂感。
 
 ### 访问控制
