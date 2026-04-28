@@ -13,8 +13,8 @@ import { useWorkspacePageSearch } from '../composables/useWorkspacePageSearch'
 import { normalizeWorkspaceStaffTimezone, WORKSPACE_STAFF_TIMEZONE_OPTIONS } from '../config/timezones'
 
 const EMPTY_FORM = {
-  staffCodesText: '',
-  staffCode: '',
+  staffIdsText: '',
+  staffId: '',
   name: '',
   email: '',
   phone: '',
@@ -49,7 +49,7 @@ const { t } = useI18n()
 const createStaffErrorRules = [
   {
     match: /staff\s*id|staff\s*code/i,
-    field: 'staffCodesText',
+    field: 'staffIdsText',
   },
   {
     match: /team/i,
@@ -65,7 +65,7 @@ const createStaffErrorRules = [
 const updateStaffErrorRules = [
   {
     match: /staff\s*code/i,
-    field: 'staffCode',
+    field: 'staffId',
     message: 'Staff ID is required.',
   },
   {
@@ -110,11 +110,11 @@ const filteredStaff = computed(() => {
   const teamId = selectedTeamFilter.value
 
   return staffList.value.filter((staff) => {
-    const matchesSearch = !query || [staff.name, staff.email, staff.teamName, staff.roleName, staff.staffCode, staff.id]
+    const matchesSearch = !query || [staff.name, staff.email, staff.teamName, staff.roleName, staff.staffId, staff.id]
       .join(' ')
       .toLowerCase()
       .includes(query)
-    const visibleStaffId = String(staff.staffCode || staff.id || '').toLowerCase()
+    const visibleStaffId = String(staff.staffId || staff.id || '').toLowerCase()
     const matchesStaffId = !exactStaffId || visibleStaffId === exactStaffId
     const matchesTeam = !teamId || String(staff.teamId || '') === teamId
     return matchesSearch && matchesStaffId && matchesTeam
@@ -173,8 +173,8 @@ function resetForm() {
 
 function fillForm(staff) {
   Object.assign(formState, {
-    staffCodesText: '',
-    staffCode: staff?.staffCode || '',
+    staffIdsText: '',
+    staffId: staff?.staffId || '',
     name: staff?.name || '',
     email: staff?.email || '',
     phone: staff?.phone || '',
@@ -190,7 +190,7 @@ function fillForm(staff) {
 
 function buildPayload() {
   return {
-    staffCode: formState.staffCode.trim(),
+    staffId: formState.staffId.trim(),
     name: formState.name.trim(),
     email: formState.email.trim(),
     phone: formState.phone.trim(),
@@ -206,7 +206,7 @@ function buildPayload() {
 
 function buildCreatePayload() {
   return {
-    staffCodes: parseStaffCodes(),
+    staffIds: parseStaffIds(),
     teamId: formState.teamId,
     timezone: formState.timezone.trim(),
     status: formState.status,
@@ -214,8 +214,8 @@ function buildCreatePayload() {
   }
 }
 
-function parseStaffCodes() {
-  return formState.staffCodesText
+function parseStaffIds() {
+  return formState.staffIdsText
     .split(/\r?\n/)
     .map((value) => value.trim())
     .filter(Boolean)
@@ -240,11 +240,11 @@ function findDuplicateValues(values) {
 function validateCreateForm() {
   clearFieldErrors(fieldErrors)
 
-  const staffCodes = parseStaffCodes()
-  const duplicateStaffCodes = findDuplicateValues(staffCodes)
+  const staffIds = parseStaffIds()
+  const duplicateStaffIds = findDuplicateValues(staffIds)
 
-  if (!staffCodes.length) fieldErrors.staffCodesText = 'Enter at least one Staff ID.'
-  if (duplicateStaffCodes.length) fieldErrors.staffCodesText = `Duplicate Staff ID: ${duplicateStaffCodes.join(', ')}.`
+  if (!staffIds.length) fieldErrors.staffIdsText = 'Enter at least one Staff ID.'
+  if (duplicateStaffIds.length) fieldErrors.staffIdsText = `Duplicate Staff ID: ${duplicateStaffIds.join(', ')}.`
   if (!formState.teamId) fieldErrors.teamId = 'Team is required.'
   if (!formState.timezone.trim()) fieldErrors.timezone = 'Timezone is required.'
   if (formState.timezone.trim().length > 64) fieldErrors.timezone = 'Timezone must be 64 characters or fewer.'
@@ -256,7 +256,7 @@ function validateCreateForm() {
 function validateUpdateForm() {
   clearFieldErrors(fieldErrors)
 
-  if (!formState.staffCode.trim()) fieldErrors.staffCode = 'Staff ID is required.'
+  if (!formState.staffId.trim()) fieldErrors.staffId = 'Staff ID is required.'
   if (!formState.teamId) fieldErrors.teamId = 'Team is required.'
   if (formState.phone.trim() && formState.phone.trim().length > 32) fieldErrors.phone = 'Phone must be 32 characters or fewer.'
   if (formState.slack.trim() && formState.slack.trim().length > 64) fieldErrors.slack = 'Slack handle must be 64 characters or fewer.'
@@ -470,7 +470,7 @@ onMounted(() => {
                       </div>
                     </div>
                   </td>
-                  <td class="px-6 py-4 font-mono text-xs text-slate-500">{{ staff.staffCode || staff.id }}</td>
+                  <td class="px-6 py-4 font-mono text-xs text-slate-500">{{ staff.staffId || staff.id }}</td>
                   <td class="px-6 py-4">{{ staff.roleName || '-' }}</td>
                   <td class="px-6 py-4">
                     <span class="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
@@ -601,9 +601,9 @@ onMounted(() => {
           <div v-if="isCreateDrawer" class="space-y-5">
             <label class="space-y-2 text-sm text-slate-700">
               <span class="font-medium">{{ t('workspace.staff.fields.staffIds') }}</span>
-              <textarea id="staff-staffCodesText" v-model="formState.staffCodesText" name="staffCodesText" rows="8" :class="inputClass('staffCodesText')"></textarea>
+              <textarea id="staff-staffIdsText" v-model="formState.staffIdsText" name="staffIdsText" rows="8" :class="inputClass('staffIdsText')"></textarea>
               <p class="text-xs text-slate-500">{{ t('workspace.staff.batchStaffHint') }}</p>
-              <p v-if="fieldErrors.staffCodesText" class="text-xs text-rose-600">{{ fieldErrors.staffCodesText }}</p>
+              <p v-if="fieldErrors.staffIdsText" class="text-xs text-rose-600">{{ fieldErrors.staffIdsText }}</p>
             </label>
 
             <WorkspaceSurface tone="muted" class="border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
@@ -646,8 +646,8 @@ onMounted(() => {
           <div v-else class="grid gap-4 md:grid-cols-2">
             <label class="space-y-2 text-sm text-slate-700">
               <span class="font-medium">{{ t('workspace.staff.fields.staffId') }}</span>
-              <input id="staff-staffCode" v-model="formState.staffCode" name="staffCode" type="text" :class="inputClass('staffCode')" />
-              <p v-if="fieldErrors.staffCode" class="text-xs text-rose-600">{{ fieldErrors.staffCode }}</p>
+              <input id="staff-staffId" v-model="formState.staffId" name="staffId" type="text" :class="inputClass('staffId')" />
+              <p v-if="fieldErrors.staffId" class="text-xs text-rose-600">{{ fieldErrors.staffId }}</p>
             </label>
             <label class="space-y-2 text-sm text-slate-700">
               <span class="font-medium">{{ t('workspace.staff.fields.fullName') }}</span>

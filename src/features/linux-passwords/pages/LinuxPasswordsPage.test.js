@@ -7,6 +7,10 @@ const toolbarSource = readFileSync(
   new URL('../components/LinuxPasswordToolbar.vue', import.meta.url),
   'utf8',
 )
+const sidebarSource = readFileSync(
+  new URL('../components/LinuxPasswordSidebar.vue', import.meta.url),
+  'utf8',
+)
 
 test('linux passwords page exposes viewer, contact information, and workspace navigation links', () => {
   assert.match(pageSource, /<RouterLink[\s\S]*to="\/viewer"/)
@@ -37,4 +41,11 @@ test('linux passwords page passes management state to the toolbar and gates add 
   assert.match(pageSource, /:can-manage-servers="model\.canManageServers"/)
   assert.match(toolbarSource, /canManageServers/)
   assert.match(toolbarSource, /v-if="canManageServers"/)
+})
+
+test('linux passwords sidebar exposes admin-only audit entry', () => {
+  assert.match(pageSource, /:can-view-audits="authStore\.isAdmin"/)
+  assert.match(sidebarSource, /canViewAudits/)
+  assert.match(sidebarSource, /v-if="props\.canViewAudits"/)
+  assert.match(sidebarSource, /to="\/linux-passwords\/audits"/)
 })

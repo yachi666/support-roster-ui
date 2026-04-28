@@ -23,6 +23,15 @@ export const productUpdateModules = [
 
 export const productUpdates = [
   {
+    id: '2026-04-27-linux-password-audit',
+    version: '2026.04.27',
+    date: '2026-04-27',
+    type: 'permission',
+    modules: ['linux', 'permission', 'system'],
+    prNumbers: [],
+    sectionTypes: ['permission', 'improvement', 'data'],
+  },
+  {
     id: '2026-04-27-viewer-product-updates-entry',
     version: '2026.04.27',
     date: '2026-04-27',
@@ -97,6 +106,80 @@ export const productUpdates = [
 ]
 
 const PRODUCT_UPDATE_TRANSLATIONS = {
+  '2026-04-27-linux-password-audit': {
+    'zh-CN': {
+      title: 'Linux 密码库多账户与查看审计',
+      summary: 'Linux 密码库支持同一机器维护多个登录账户，密码改为点击查看或复制时按需解密并记录审计。',
+      status: '已发布',
+      importance: '重点更新',
+      audience: ['工作台用户', 'Linux 密码库维护者', '审计负责人'],
+      impact: '用户可以按机器管理多套 Linux 登录账户；每次查看或复制密码都会绑定当前员工 ID 写入审计记录。',
+      highlights: [
+        '同一台 Linux 机器可维护多个登录账户',
+        '列表不再返回密码明文或密文',
+        '查看与复制密码都会由后端解密并记录审计',
+        '管理员可以从 Linux 密码库左侧栏进入审计记录页面并多维搜索',
+        'Workspace 登录账户、员工目录和审计字段统一使用员工 ID',
+      ],
+      sections: [
+        {
+          title: '权限与审计',
+          items: [
+            '密码查看和复制统一调用后端解密接口，审计记录从当前登录 token 对应的员工身份生成。',
+            '审计信息包含员工 ID、员工姓名、机器、登录账户、动作类型和请求来源。',
+            'Linux 密码库新增管理员专用审计记录界面，支持按员工、机器、账户、动作、结果和时间范围组合过滤。',
+            '后端数据模型将账号绑定记录 ID 与登录员工 ID 分开，避免把员工主键误认为登录账号。',
+            '前端不再接收列表中的密码明文或密文，降低页面数据暴露范围。',
+          ],
+        },
+        {
+          title: '体验优化',
+          items: [
+            'Linux 密码库表格改为按机器展示多个登录账户。',
+            '新增和编辑表单支持添加、删除多条登录账户。',
+            '编辑已有账户时密码可留空，表示保留原密码。',
+          ],
+        },
+      ],
+    },
+    en: {
+      title: 'Linux vault multi-account access audit',
+      summary:
+        'Linux Password Vault now supports multiple login accounts per machine, with passwords revealed on demand and audited on every view or copy.',
+      status: 'Published',
+      importance: 'Major update',
+      audience: ['Workspace users', 'Linux vault maintainers', 'Audit owners'],
+      impact:
+        'Users can manage several Linux login accounts on one machine, while every password view or copy is tied to the current staff ID in audit records.',
+      highlights: [
+        'Multiple Linux login accounts can be stored on one machine',
+        'List responses no longer include plaintext or ciphertext passwords',
+        'View and copy actions decrypt on the backend and write audit records',
+        'Admins can open an audit record page from the Linux vault sidebar and search across multiple dimensions',
+        'Workspace sign-in, staff directory, and audit fields consistently use staff ID',
+      ],
+      sections: [
+        {
+          title: 'Access and audit',
+          items: [
+            'Password view and copy actions now call a backend secret endpoint, and audit identity is resolved from the current token-backed staff account.',
+            'Audit records capture staff ID, staff name, machine, login account, action type, and request source.',
+            'The Linux vault now includes an admin-only audit record page with filters for staff, machine, account, action, result, and time range.',
+            'The backend data model now separates the staff record ID from the login staff ID, avoiding ambiguity around the sign-in account.',
+            'The frontend no longer receives passwords in list responses, reducing page-level data exposure.',
+          ],
+        },
+        {
+          title: 'Experience improvements',
+          items: [
+            'The Linux vault table now groups multiple login accounts under each machine.',
+            'The add and edit form can manage multiple login accounts.',
+            'Existing account passwords can be left blank during edit to keep the current password.',
+          ],
+        },
+      ],
+    },
+  },
   '2026-04-27-viewer-product-updates-entry': {
     'zh-CN': {
       title: '顶部导航入口与 Workspace 顶栏优化',

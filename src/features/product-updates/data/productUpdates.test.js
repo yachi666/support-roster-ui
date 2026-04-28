@@ -16,6 +16,7 @@ test('groups product updates by release month', () => {
   assert.deepEqual(
     groups[0].items.map((item) => item.id),
     [
+      '2026-04-27-linux-password-audit',
       '2026-04-27-viewer-product-updates-entry',
       '2026-04-26-contact-information',
       '2026-04-24-linux-passwords',
@@ -31,8 +32,8 @@ test('localizes product updates and labels for English', () => {
   const updates = localizeProductUpdates(productUpdates, 'en')
   const groups = groupProductUpdatesByMonth(updates, 'en')
 
-  assert.equal(updates[0].title, 'Navigation entry and Workspace topbar polish')
-  assert.equal(updates[0].sections[0].title, 'Experience improvements')
+  assert.equal(updates[0].title, 'Linux vault multi-account access audit')
+  assert.equal(updates[0].sections[0].title, 'Access and audit')
   assert.equal(getProductUpdateTypeLabel('feature', 'en'), 'New')
   assert.equal(
     formatProductUpdateModuleList(['contact', 'viewer'], 'en'),

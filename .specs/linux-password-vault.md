@@ -16,6 +16,7 @@
 - 本期不改造现有 workspace 左侧导航结构。
 - 本期不新增独立账号体系。
 - 本期不引入独立业务单元字典接口。
+- Workspace 登录账户即员工 ID（staff_id），不在前端新增第二套用户名概念。
 
 ## 路由与访问策略
 
@@ -56,7 +57,11 @@
 | `LinuxPasswordToolbar` | 标题、搜索、Add、Back to List 等顶部操作 |
 | `LinuxPasswordTable` | 列表态表格展示与行内交互 |
 | `LinuxPasswordForm` | 新增 / 编辑共用表单 |
+| `LinuxPasswordAuditPage` | 管理员审计记录路由页，负责组合筛选与列表 |
+| `LinuxPasswordAuditFilters` | 审计记录多维搜索条件 |
+| `LinuxPasswordAuditTable` | 审计记录表格、空状态与分页 |
 | `useLinuxPasswords` | 页面级数据获取、CRUD 提交、权限显隐与状态反馈 |
+| `useLinuxPasswordAudits` | 审计记录查询、分页、筛选状态与加载反馈 |
 
 ### 当前实现文件
 
@@ -65,7 +70,11 @@
 - `src/features/linux-passwords/components/LinuxPasswordToolbar.vue`
 - `src/features/linux-passwords/components/LinuxPasswordTable.vue`
 - `src/features/linux-passwords/components/LinuxPasswordForm.vue`
+- `src/features/linux-passwords/components/LinuxPasswordAuditFilters.vue`
+- `src/features/linux-passwords/components/LinuxPasswordAuditTable.vue`
 - `src/features/linux-passwords/lib/useLinuxPasswords.js`
+- `src/features/linux-passwords/lib/useLinuxPasswordAudits.js`
+- `src/features/linux-passwords/pages/LinuxPasswordAuditPage.vue`
 - `src/api/index.js`
 - `src/features/workspace/config/accessPolicyPages.js`
 
@@ -78,6 +87,10 @@
 - 搜索主机名 / IP（后端按 `search` 查询）
 - 密码显隐切换
 - 复制密码反馈
+- 同一机器展示多个登录账户
+- 点击显隐或复制时调用后端按需解密接口，前端不从列表接口接收明文或密文
+- 左侧栏左下角向管理员展示“审计记录”入口，非 admin 不显示
+- 审计记录页面仅 admin 可进入，支持按全局关键词、员工 ID、员工姓名、主机名、IP、登录账户、动作、结果、开始日期、结束日期组合搜索
 - WinSCP 按钮反馈
 - 新增机器表单提交
 - 管理员行内编辑 / 删除
@@ -88,7 +101,10 @@
 
 - 页面初次进入通过 `api.workspace.getLinuxPasswords()` 拉取真实列表。
 - 页面初次进入额外通过 `api.workspace.getLinuxPasswordDirectories()` 拉取左侧目录。
-- 列表接口当前仍返回 `items + businessUnits`，但前端目录树只使用独立目录接口结果。
+- 列表接口当前仍返回 `items + businessUnits`，但 `items[].credentials` 只包含 `id`、`username`、`notes`、`hasPassword` 等元信息。
+- 列表接口不返回密码明文，也不返回密码密文。
+- 查看/复制密码走 `POST /api/workspace/linux-passwords/credentials/{credentialId}/secret`，请求体 `action` 为 `VIEW` 或 `COPY`。
+- 审计记录走 `GET /api/workspace/linux-passwords/access-audits`，返回 `items + page + pageSize + total`；页面只展示审计元信息，不包含密码内容。
 - 新增走 `POST /api/workspace/linux-passwords`
 - 编辑走 `PUT /api/workspace/linux-passwords/{id}`
 - 删除走 `DELETE /api/workspace/linux-passwords/{id}`
@@ -100,14 +116,19 @@
 | 操作 | 前端显隐 | 后端校验 |
 |---|---|---|
 | 列表 / 详情 | 受页面登录策略控制 | 已登录 |
+| 查看密码 | 眼睛按钮 | 已登录，后端解密并写审计 |
+| 复制密码 | 复制按钮 | 已登录，后端解密并写审计 |
 | 新增 | 登录即可进入页面后可操作 | 已登录 |
 | 编辑 | 仅 `authStore.isAdmin` 显示按钮 | workspace `admin` |
 | 删除 | 仅 `authStore.isAdmin` 显示按钮 | workspace `admin` |
+| 审计入口 / 审计页面 | 仅 `authStore.isAdmin` 显示和放行 | workspace `admin` |
 
 ## 表单规则
 
 - 新增：
-  - 必填：`hostname`、`ip`、`username`、`password`
+  - 必填：`hostname`、`ip`
+  - 至少维护 1 个登录账户
+  - 新增登录账户必填：`username`、`password`
   - 不显示状态字段
   - 后端默认写入 `status=online`
   - 提供“新增目录”输入框，可一次补充 1 个新目录
@@ -116,6 +137,8 @@
   - 复用同一表单
   - 额外显示 `status` 下拉框
   - 可选值：`online` / `maintenance` / `offline`
+  - 可新增、删除、修改登录账户
+  - 已有登录账户密码输入框留空表示保留原密码
   - 同样支持“输入 1 个新目录 + 勾选已有目录”
 - 业务单元为空时，由后端归一化为 `Uncategorized`
 - 目录表由机器 CRUD 自动维护；不再存在前端预制目录常量。
@@ -158,16 +181,39 @@
 
 - 页面布局与 Figma 版本核心结构一致。
 - 列表、新增 / 编辑表单、筛选、搜索、密码显隐、复制等交互可用。
+- 一台机器可显示并维护多个登录账户。
+- 密码默认遮罩；点击眼睛后才请求后端解密并展示，复制同样触发后端审计。
 - 新增目录后左侧目录立即出现；移除最后一个引用该目录的机器后，左侧目录立即消失。
 - 管理员可看到编辑 / 删除按钮；非管理员不可见。
+- 管理员可在左侧栏左下角进入审计记录页面；非管理员无法看到入口，直接访问 `/linux-passwords/audits` 会被路由守卫拦截。
+- 审计页面支持多维搜索和分页，列表展示员工、机器、登录账户、动作、结果、来源 IP、User-Agent 与访问时间。
 - 所有列表刷新由真实接口返回驱动，而不是本地 mock 数据更新。
 
 ## 验证命令
 
 - `cd support-roster-ui && node --test src/features/workspace/config/accessPolicyPages.test.js src/features/linux-passwords/lib/linuxPasswords.test.js src/features/linux-passwords/lib/useLinuxPasswords.test.js`
+- `cd support-roster-ui && node --test src/features/linux-passwords/lib/useLinuxPasswordAudits.test.js`
+- `cd support-roster-ui && node --test src/router/index.test.js src/features/workspace/config/navigation.test.js src/features/linux-passwords/pages/LinuxPasswordsPage.test.js`
 - `cd support-roster-ui && npm run build`
 - `cd automationtest && npm run test:raw -- specs/auth/linux-password-route-guard.spec.mjs`
 - `cd automationtest && npm run test:raw -- specs/workspace/linux-passwords-smoke.spec.mjs`
+
+## 实现约束与已修复问题
+
+### 密码缓存生命周期
+
+- `visiblePasswords` 与 `revealedPasswords` 在 `loadServers()` 成功返回后自动清空，防止服务器列表刷新后显示过期的已解密密码。
+- 同一 credential 的"显示密码"请求在飞行中时，重复点击不会触发第二次 `VIEW` 审计事件；`revealingCredentials` Set 在请求完成前守护并发调用。
+
+### 凭证列表 key 稳定性
+
+- `LinuxPasswordForm` 中每个凭证条目使用模块内自增的 `_localKey` 作为 Vue `:key`，而不是 `credential.id || index`。这确保在删除中间项或尚无后端 ID 的新增凭证时，Vue 不会复用错误的 DOM 节点。
+
+### 筛选组件 prop 不可变原则
+
+- `LinuxPasswordAuditFilters` 维护内部 `localFilters` 副本，通过 `@input` / `@change` 处理器触发 `update:filters` 事件，不直接修改父组件传入的 `filters` prop。
+- `LinuxPasswordAuditPage` 监听 `update:filters` 并以 `Object.assign(model.filters, $event)` 将变更同步回 composable 状态。
+- `resetFilters()` 调用后，composable 重置 `filters` reactive 对象，`LinuxPasswordAuditFilters` 通过 `watch(props.filters, ...)` 将本地副本同步回默认值。
 
 ## 后续演进预留
 
@@ -175,4 +221,5 @@
 
 - 详情接口独立加载
 - 更细的字段脱敏 / 审计
+- 审计记录查询页面
 - 业务单元独立字典接口

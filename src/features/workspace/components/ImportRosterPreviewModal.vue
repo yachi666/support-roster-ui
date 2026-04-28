@@ -42,8 +42,8 @@ function normalizeGroups(groups, totalDays) {
     newTeam: Boolean(group.newTeam),
     staff: (group.staff || []).map((person) => ({
       id: person.previewStaffId,
-      existingStaffId: person.staffId,
-      staffCode: person.staffCode,
+      existingStaffId: person.staffRecordId,
+      staffId: person.staffId,
       name: person.staffName,
       avatar: person.avatar,
       role: person.roleName || 'Unassigned',
@@ -177,7 +177,7 @@ const filteredGroups = computed(() => {
   return result
     .map(group => ({
       ...group,
-      staff: group.staff.filter((person) => [person.name, person.staffCode, person.role].join(' ').toLowerCase().includes(query)),
+      staff: group.staff.filter((person) => [person.name, person.staffId, person.role].join(' ').toLowerCase().includes(query)),
     }))
     .filter(group => group.staff.length > 0)
 })
@@ -434,7 +434,7 @@ function buildSavePayload() {
     month: props.preview.month,
     rows: activePreviewState.value.groups.flatMap(group =>
       group.staff.map(person => ({
-        staffCode: person.staffCode,
+        staffId: person.staffId,
         teamName: group.team,
         schedule: Object.fromEntries(person.schedule.map((code, index) => [index + 1, code || ''])),
       })),
@@ -487,8 +487,8 @@ function savePreview() {
               {{ t('workspace.importExport.previewModal.newStaffTitle') }}
             </div>
             <p class="mt-2 text-xs leading-6 text-slate-500">
-              <template v-if="preview.newStaffCodes?.length">
-                {{ t('workspace.importExport.previewModal.newStaffHint', { count: preview.newStaffCodes.length }) }}
+              <template v-if="preview.newStaffIds?.length">
+                {{ t('workspace.importExport.previewModal.newStaffHint', { count: preview.newStaffIds.length }) }}
               </template>
               <template v-else>
                 {{ t('workspace.importExport.previewModal.none') }}

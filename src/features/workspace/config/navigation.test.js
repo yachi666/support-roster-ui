@@ -9,6 +9,10 @@ test('resolveSafeAppRedirectPath keeps top-level app routes like linux-passwords
     '/linux-passwords',
   )
   assert.equal(
+    navigation.resolveSafeAppRedirectPath?.('/linux-passwords/audits', navigation.WORKSPACE_ENTRY_PATH),
+    '/linux-passwords/audits',
+  )
+  assert.equal(
     navigation.resolveSafeAppRedirectPath?.('/viewer', navigation.WORKSPACE_ENTRY_PATH),
     '/viewer',
   )

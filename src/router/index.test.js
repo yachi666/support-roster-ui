@@ -28,3 +28,13 @@ test('router exposes standalone product updates page', () => {
   assert.match(routerSource, /path:\s*'\/product-updates'/)
   assert.match(routerSource, /name:\s*'product-updates'/)
 })
+
+test('router gates linux password audit page to admins', () => {
+  assert.match(
+    routerSource,
+    /import LinuxPasswordAuditPage from ['"]@\/features\/linux-passwords\/pages\/LinuxPasswordAuditPage\.vue['"]/,
+  )
+  assert.match(routerSource, /path:\s*'\/linux-passwords\/audits'/)
+  assert.match(routerSource, /name:\s*'linux-password-audits'/)
+  assert.match(routerSource, /meta:\s*\{\s*protectedPageCode:\s*'linux-passwords',\s*requiresAuth:\s*true,\s*roles:\s*\['admin'\]\s*\}/)
+})

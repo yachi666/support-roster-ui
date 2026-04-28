@@ -1,6 +1,6 @@
 export const WORKSPACE_ENTRY_PATH = '/workspace'
 export const WORKSPACE_OVERVIEW_PATH = '/workspace/overview'
-const SAFE_APP_REDIRECT_PATHS = new Set(['/viewer', '/linux-passwords'])
+const SAFE_APP_REDIRECT_PATHS = new Set(['/viewer', '/linux-passwords', '/linux-passwords/audits'])
 
 export const workspaceNavigation = [
   { pageCode: 'overview', labelKey: 'workspace.nav.overview', to: WORKSPACE_OVERVIEW_PATH, icon: 'LayoutDashboard' },
