@@ -103,6 +103,9 @@ npm run preview
 | 变量 | 用途 | 示例 |
 |------|------|------|
 | `VITE_API_BASE_URL` | 前端构建使用的后端 API 基础地址。 | `http://127.0.0.1:8080/api` |
+| `VITE_XMATTERS_URL` | External Systems 抽屉中的 xMatters 链接。 | `https://www.xmatters.com/` |
+| `VITE_SERVICENOW_URL` | External Systems 抽屉中的 ServiceNow 链接。 | `https://www.servicenow.com/` |
+| `VITE_MESSAGE_DELIVERY_KB_URL` | External Systems 抽屉中的 Message Delivery Knowledge Base 链接。 | `https://learn.microsoft.com/` |
 
 生产默认值和部署示例见 `.env.production`、`Dockerfile` 与 `build/`。
 

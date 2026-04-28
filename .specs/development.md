@@ -198,7 +198,7 @@ playwright-cli close-all
 
 #### Viewer
 
-- 页面可正常打开，标题 `On-call Overview` 可见
+- 页面可正常打开，标题 `Messaging Support Rota & Escalation Matrix` 可见
 - 时间轴或状态卡片二者至少有一种正确渲染
 - 若接口有数据，应能看到团队行与班次信息
 - 若接口无数据或失败，应出现明确空态 / 错误态 / Retry

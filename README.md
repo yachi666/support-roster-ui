@@ -103,6 +103,9 @@ npm run preview
 | Variable | Purpose | Example |
 |----------|---------|---------|
 | `VITE_API_BASE_URL` | Backend API base URL used by the frontend build. | `http://127.0.0.1:8080/api` |
+| `VITE_XMATTERS_URL` | External Systems drawer link for xMatters. | `https://www.xmatters.com/` |
+| `VITE_SERVICENOW_URL` | External Systems drawer link for ServiceNow. | `https://www.servicenow.com/` |
+| `VITE_MESSAGE_DELIVERY_KB_URL` | External Systems drawer link for Message Delivery Knowledge Base. | `https://learn.microsoft.com/` |
 
 Production defaults and deployment examples live in `.env.production`, `Dockerfile`, and `build/`.
 

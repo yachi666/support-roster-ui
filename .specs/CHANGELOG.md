@@ -1,5 +1,28 @@
 # Spec Change Log
 
+## 2026-04-28
+
+### Summary
+
+Public Viewer 顶部新增 External Systems 纯图标入口，点击后从右侧打开外部系统抽屉，集中跳转 xMatters、ServiceNow 和 Message Delivery Knowledge Base。
+
+### Files Changed
+
+- `.specs/modules/header.md`
+- `.specs/modules/index.md`
+- `.specs/CHANGELOG.md`
+
+### Detailed Changes
+
+| File | Section | Change Type | Before | After | Why |
+|---|---|---|---|---|---|
+| `.specs/modules/header.md` | 模块概述 / 内部状态 / 工具入口 / 交互细节 / 可访问性 | Update | Header 仅描述日期、时区、时钟和既有工具入口 | 增加 External Systems 抽屉状态、入口按钮、右侧抽屉、外链占位与关闭方式 | 保持 viewer 外部系统入口实现与规范一致 |
+| `.specs/modules/index.md` | 适用代码范围 / 文档目录 | Update | Viewer 模块范围不包含外部系统抽屉组件 | 增加 `ExternalSystemsDrawer.vue` 并更新 Header 主题描述 | 让新增 viewer 级组件有明确规格入口 |
+
+### Follow-up
+
+- External Systems 的三个链接改为通过 `VITE_XMATTERS_URL`、`VITE_SERVICENOW_URL`、`VITE_MESSAGE_DELIVERY_KB_URL` 注入，`.env.production` 保留公开占位链接，后续替换为公司内部地址后需重新构建。
+
 ## 2026-04-27
 
 ### Summary
