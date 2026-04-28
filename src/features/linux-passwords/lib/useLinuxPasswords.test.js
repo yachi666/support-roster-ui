@@ -307,6 +307,41 @@ test('togglePassword ignores a second reveal request while the first is still in
   assert.equal(revealCallCount, 1, 'backend should only be called once despite two concurrent toggles')
 })
 
+test('togglePassword does not mark credential visible when reveal API throws', async () => {
+  const revealError = new Error('Reveal failed: 403 Forbidden')
+  const model = createLinuxPasswordsModel({
+    api: {
+      workspace: {
+        getLinuxPasswords: async () => ({ items: [] }),
+        getLinuxPasswordDirectories: async () => [],
+        createLinuxPassword: async () => null,
+        updateLinuxPassword: async () => null,
+        deleteLinuxPassword: async () => null,
+        revealLinuxPasswordCredential: async () => { throw revealError },
+      },
+    },
+    authStore: { isAdmin: false },
+    t: (key, params = {}) => `${key}:${JSON.stringify(params)}`,
+    confirmDelete: async () => true,
+  })
+
+  await assert.rejects(
+    () => model.togglePassword({ id: 'cred-1', username: 'admin' }),
+    (err) => err === revealError,
+  )
+
+  assert.equal(
+    model.visiblePasswords['cred-1'],
+    undefined,
+    'credential must not be marked visible after a failed reveal',
+  )
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(model.revealedPasswords, 'cred-1'),
+    false,
+    'revealedPasswords must not contain the credential after a failed reveal',
+  )
+})
+
 test('loadServers clears visiblePasswords and revealedPasswords on successful reload', async () => {
   const deps = createDependencies()
   const model = createLinuxPasswordsModel(deps)

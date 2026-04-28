@@ -171,9 +171,11 @@ export function createLinuxPasswordsModel({
       revealingCredentials.add(credentialId)
       try {
         await revealCredentialPassword(credentialId, 'VIEW')
-      } finally {
+      } catch (error) {
         revealingCredentials.delete(credentialId)
+        throw error
       }
+      revealingCredentials.delete(credentialId)
     }
     visiblePasswords.value = {
       ...visiblePasswords.value,
