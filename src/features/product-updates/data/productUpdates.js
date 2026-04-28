@@ -23,6 +23,15 @@ export const productUpdateModules = [
 
 export const productUpdates = [
   {
+    id: '2026-04-28-viewer-external-systems-drawer',
+    version: '2026.04.28',
+    date: '2026-04-28',
+    type: 'feature',
+    modules: ['viewer', 'system'],
+    prNumbers: [],
+    sectionTypes: ['feature', 'improvement'],
+  },
+  {
     id: '2026-04-27-linux-password-audit',
     version: '2026.04.27',
     date: '2026-04-27',
@@ -106,14 +115,70 @@ export const productUpdates = [
 ]
 
 const PRODUCT_UPDATE_TRANSLATIONS = {
+  '2026-04-28-viewer-external-systems-drawer': {
+    'zh-CN': {
+      title: 'Viewer 外部系统抽屉',
+      summary: 'Public Viewer 顶部新增外部系统图标入口，可从右侧抽屉快速打开支持相关系统。',
+      status: '已发布',
+      importance: '常规更新',
+      audience: ['排班查看者', '值班支持人员'],
+      impact: '值班人员可以在查看 rota 与升级矩阵时快速跳转到告警、工单和知识库入口。',
+      highlights: [
+        'Viewer Header 新增 External Systems 纯图标按钮',
+        '右侧抽屉集中展示 xMatters、ServiceNow 和 Message Delivery Knowledge Base',
+        '外部系统链接当前使用公开官网或文档站占位，便于后续替换为公司内部地址',
+        'Message Delivery Knowledge Base 使用专属本地图标',
+      ],
+      sections: [
+        {
+          title: '新增功能',
+          items: [
+            '在 Public Viewer Header 工具区加入 External Systems 图标按钮。',
+            '点击按钮后从右侧打开外部系统抽屉，不离开当前 viewer 页面。',
+            '抽屉入口以新标签页打开外部系统，避免覆盖当前排班视图。',
+            '抽屉支持点击遮罩、关闭按钮和 Esc 键关闭。',
+          ],
+        },
+      ],
+    },
+    en: {
+      title: 'Viewer external systems drawer',
+      summary:
+        'Added an external systems icon entry to the Public Viewer header with a right-side drawer for support tools.',
+      status: 'Published',
+      importance: 'Standard update',
+      audience: ['Roster viewers', 'On-call support users'],
+      impact:
+        'On-call users can open alerting, ticketing, and knowledge-base links while reviewing the rota and escalation matrix.',
+      highlights: [
+        'Added an External Systems icon button to the Viewer Header',
+        'Grouped xMatters, ServiceNow, and Message Delivery Knowledge Base in a right-side drawer',
+        'External links currently use public website or documentation placeholders for easy internal URL replacement',
+        'Message Delivery Knowledge Base uses a dedicated local icon asset',
+      ],
+      sections: [
+        {
+          title: 'New capability',
+          items: [
+            'Added an External Systems icon button to the Public Viewer Header utility area.',
+            'Opening the button shows a right-side drawer without leaving the current viewer page.',
+            'Drawer entries open external systems in a new browser tab so the roster stays available.',
+            'The drawer can be closed by clicking the backdrop, using the close button, or pressing Escape.',
+          ],
+        },
+      ],
+    },
+  },
   '2026-04-27-linux-password-audit': {
     'zh-CN': {
       title: 'Linux 密码库多账户与查看审计',
-      summary: 'Linux 密码库支持同一机器维护多个登录账户，密码改为点击查看或复制时按需解密并记录审计。',
+      summary:
+        'Linux 密码库支持同一机器维护多个登录账户，密码改为点击查看或复制时按需解密并记录审计。',
       status: '已发布',
       importance: '重点更新',
       audience: ['工作台用户', 'Linux 密码库维护者', '审计负责人'],
-      impact: '用户可以按机器管理多套 Linux 登录账户；每次查看或复制密码都会绑定当前员工 ID 写入审计记录。',
+      impact:
+        '用户可以按机器管理多套 Linux 登录账户；每次查看或复制密码都会绑定当前员工 ID 写入审计记录。',
       highlights: [
         '同一台 Linux 机器可维护多个登录账户',
         '列表不再返回密码明文或密文',

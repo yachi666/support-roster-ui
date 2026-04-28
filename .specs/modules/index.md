@@ -9,6 +9,7 @@
 - `src/pages/PublicDashboardPage.vue`
 - `src/components/Dashboard.vue`
 - `src/components/Header.vue`
+- `src/components/ExternalSystemsDrawer.vue`
 - `src/components/Timeline.vue`
 - `src/api/index.js`
 
@@ -23,7 +24,7 @@
 | 文件 | 主题 | 说明 |
 |------|------|------|
 | `./dashboard.md` | 页面容器 | 串联 Header、Timeline、请求状态与只读页面行为 |
-| `./header.md` | 顶部控件区 | 日期、时区、筛选与页面级操作触发 |
+| `./header.md` | 顶部控件区 | 日期、时区、外部系统抽屉与页面级操作触发 |
 | `./timeline.md` | 时间轴渲染 | 排班布局算法、泳道安排、tooltip 与样式逻辑 |
 
 ## 模块关系图
@@ -47,4 +48,3 @@ graph TB
 - Viewer 页面入口、组件职责或数据流变化时，先更新本文件的目录与模块关系。
 - 若新增 viewer 级独立组件并形成稳定职责，应在本目录新增对应 spec 并补回目录表。
 - 过细的样式参数与视觉表达不应堆积在本文件，应写入具体模块页或 `../ui-design.md`。
-
