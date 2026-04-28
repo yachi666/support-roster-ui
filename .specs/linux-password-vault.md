@@ -192,10 +192,28 @@
 ## 验证命令
 
 - `cd support-roster-ui && node --test src/features/workspace/config/accessPolicyPages.test.js src/features/linux-passwords/lib/linuxPasswords.test.js src/features/linux-passwords/lib/useLinuxPasswords.test.js`
+- `cd support-roster-ui && node --test src/features/linux-passwords/lib/useLinuxPasswordAudits.test.js`
 - `cd support-roster-ui && node --test src/router/index.test.js src/features/workspace/config/navigation.test.js src/features/linux-passwords/pages/LinuxPasswordsPage.test.js`
 - `cd support-roster-ui && npm run build`
 - `cd automationtest && npm run test:raw -- specs/auth/linux-password-route-guard.spec.mjs`
 - `cd automationtest && npm run test:raw -- specs/workspace/linux-passwords-smoke.spec.mjs`
+
+## 实现约束与已修复问题
+
+### 密码缓存生命周期
+
+- `visiblePasswords` 与 `revealedPasswords` 在 `loadServers()` 成功返回后自动清空，防止服务器列表刷新后显示过期的已解密密码。
+- 同一 credential 的"显示密码"请求在飞行中时，重复点击不会触发第二次 `VIEW` 审计事件；`revealingCredentials` Set 在请求完成前守护并发调用。
+
+### 凭证列表 key 稳定性
+
+- `LinuxPasswordForm` 中每个凭证条目使用模块内自增的 `_localKey` 作为 Vue `:key`，而不是 `credential.id || index`。这确保在删除中间项或尚无后端 ID 的新增凭证时，Vue 不会复用错误的 DOM 节点。
+
+### 筛选组件 prop 不可变原则
+
+- `LinuxPasswordAuditFilters` 维护内部 `localFilters` 副本，通过 `@input` / `@change` 处理器触发 `update:filters` 事件，不直接修改父组件传入的 `filters` prop。
+- `LinuxPasswordAuditPage` 监听 `update:filters` 并以 `Object.assign(model.filters, $event)` 将变更同步回 composable 状态。
+- `resetFilters()` 调用后，composable 重置 `filters` reactive 对象，`LinuxPasswordAuditFilters` 通过 `watch(props.filters, ...)` 将本地副本同步回默认值。
 
 ## 后续演进预留
 

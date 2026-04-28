@@ -273,3 +273,52 @@ test('copyPassword requests copy audit action before writing clipboard', async (
   assert.deepEqual(writes, ['Proxy@Infra99'])
   assert.equal(model.copiedServerId, 'cred-1')
 })
+
+test('togglePassword ignores a second reveal request while the first is still in flight', async () => {
+  const deferred = createDeferred()
+  let revealCallCount = 0
+  const model = createLinuxPasswordsModel({
+    api: {
+      workspace: {
+        getLinuxPasswords: async () => ({ items: [] }),
+        getLinuxPasswordDirectories: async () => [],
+        createLinuxPassword: async () => null,
+        updateLinuxPassword: async () => null,
+        deleteLinuxPassword: async () => null,
+        revealLinuxPasswordCredential: async (credentialId, action) => {
+          revealCallCount += 1
+          return deferred.promise
+        },
+      },
+    },
+    authStore: { isAdmin: false },
+    t: (key, params = {}) => `${key}:${JSON.stringify(params)}`,
+    confirmDelete: async () => true,
+  })
+
+  // Fire two toggle calls concurrently before the first resolves
+  const first = model.togglePassword({ id: 'cred-1', username: 'admin' })
+  const second = model.togglePassword({ id: 'cred-1', username: 'admin' })
+
+  deferred.resolve({ password: 'Secret99' })
+  await first
+  await second
+
+  assert.equal(revealCallCount, 1, 'backend should only be called once despite two concurrent toggles')
+})
+
+test('loadServers clears visiblePasswords and revealedPasswords on successful reload', async () => {
+  const deps = createDependencies()
+  const model = createLinuxPasswordsModel(deps)
+
+  // Pre-populate caches by toggling password
+  await model.togglePassword({ id: 'cred-1', username: 'admin' })
+  assert.equal(model.revealedPasswords['cred-1'], 'Proxy@Infra99')
+  assert.equal(model.visiblePasswords['cred-1'], true)
+
+  // Reload servers — caches should be cleared
+  await model.loadServers()
+
+  assert.deepEqual(model.revealedPasswords, {})
+  assert.deepEqual(model.visiblePasswords, {})
+})

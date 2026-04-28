@@ -22,6 +22,8 @@ const props = defineProps({
 const emit = defineEmits(['submit', 'cancel'])
 const { t } = useI18n()
 
+let credentialKeyCounter = 0
+
 const formState = reactive({
   hostname: '',
   ip: '',
@@ -38,6 +40,7 @@ function applyServer(server) {
   formState.ip = server?.ip || ''
   formState.credentials = Array.isArray(server?.credentials) && server.credentials.length
     ? server.credentials.map((credential) => ({
+        _localKey: ++credentialKeyCounter,
         id: credential.id,
         username: credential.username || '',
         password: '',
@@ -51,6 +54,7 @@ function applyServer(server) {
 
 function createCredential() {
   return {
+    _localKey: ++credentialKeyCounter,
     id: null,
     username: '',
     password: '',
@@ -171,7 +175,7 @@ function handleSubmit() {
         <div class="divide-y divide-slate-200">
           <div
             v-for="(credential, index) in formState.credentials"
-            :key="credential.id || index"
+            :key="credential._localKey"
             class="grid grid-cols-1 gap-4 px-4 py-4 md:grid-cols-[1fr_1fr_auto]"
           >
             <label class="block">

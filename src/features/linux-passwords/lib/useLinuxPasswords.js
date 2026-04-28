@@ -40,6 +40,7 @@ export function createLinuxPasswordsModel({
   const availableUnits = ref([])
   const visiblePasswords = ref({})
   const revealedPasswords = ref({})
+  const revealingCredentials = new Set()
   const view = shallowRef('list')
   const selectedUnit = shallowRef('All')
   const search = shallowRef('')
@@ -72,6 +73,8 @@ export function createLinuxPasswordsModel({
       })
       if (requestId === latestLoadServersRequestId) {
         servers.value = Array.isArray(response?.items) ? response.items : []
+        visiblePasswords.value = {}
+        revealedPasswords.value = {}
       }
     } finally {
       if (requestId === latestLoadServersRequestId) {
@@ -162,7 +165,15 @@ export function createLinuxPasswordsModel({
       return
     }
     if (!Object.prototype.hasOwnProperty.call(revealedPasswords.value, credentialId)) {
-      await revealCredentialPassword(credentialId, 'VIEW')
+      if (revealingCredentials.has(credentialId)) {
+        return
+      }
+      revealingCredentials.add(credentialId)
+      try {
+        await revealCredentialPassword(credentialId, 'VIEW')
+      } finally {
+        revealingCredentials.delete(credentialId)
+      }
     }
     visiblePasswords.value = {
       ...visiblePasswords.value,

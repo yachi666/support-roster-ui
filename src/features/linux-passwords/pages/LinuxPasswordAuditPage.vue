@@ -50,6 +50,7 @@ onMounted(async () => {
       :filters="model.filters"
       :is-loading="model.isLoading"
       :has-active-filters="model.hasActiveFilters"
+      @update:filters="Object.assign(model.filters, $event)"
       @search="model.searchAudits"
       @reset="model.resetFilters"
     />
