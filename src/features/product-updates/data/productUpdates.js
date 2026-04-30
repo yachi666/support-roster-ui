@@ -23,6 +23,15 @@ export const productUpdateModules = [
 
 export const productUpdates = [
   {
+    id: '2026-05-01-roster-save-actions',
+    version: '2026.05.01',
+    date: '2026-05-01',
+    type: 'improvement',
+    modules: ['workspace', 'roster'],
+    prNumbers: [],
+    sectionTypes: ['improvement'],
+  },
+  {
     id: '2026-04-28-viewer-external-systems-drawer',
     version: '2026.04.28',
     date: '2026-04-28',
@@ -115,6 +124,56 @@ export const productUpdates = [
 ]
 
 const PRODUCT_UPDATE_TRANSLATIONS = {
+  '2026-05-01-roster-save-actions': {
+    'zh-CN': {
+      title: '排班保存操作移到表格上方',
+      summary: '月度排班页的保存和放弃操作更贴近未保存状态提示。',
+      status: '已发布',
+      importance: '体验优化',
+      audience: ['排班管理员', '团队编辑者'],
+      impact: '编辑排班后可以在表格上方直接保存或放弃修改，减少底部浮层遮挡排班内容的问题。',
+      highlights: [
+        '保存修改按钮移入表格上方状态条',
+        '放弃修改与未保存数量提示保持在同一上下文',
+        '移除遮挡排班矩阵的底部保存浮层',
+      ],
+      sections: [
+        {
+          title: '体验优化',
+          items: [
+            '月度排班页在出现未保存修改时，于表格上方状态条右侧展示“放弃”和“保存修改”。',
+            '未保存数量、筛选摘要、区间选择提示和保存动作现在处于同一工作流区域。',
+            '移除底部居中的深色保存浮层，避免覆盖排班矩阵内容。',
+          ],
+        },
+      ],
+    },
+    en: {
+      title: 'Roster save actions moved above the grid',
+      summary:
+        'Monthly roster save and discard actions now sit closer to the unsaved status context.',
+      status: 'Published',
+      importance: 'Experience improvement',
+      audience: ['Roster admins', 'Team editors'],
+      impact:
+        'After editing the roster, users can save or discard changes above the grid without a bottom overlay covering roster cells.',
+      highlights: [
+        'Moved Save Changes into the status strip above the grid',
+        'Kept discard action next to the unsaved-count context',
+        'Removed the bottom save overlay that could cover the roster matrix',
+      ],
+      sections: [
+        {
+          title: 'Experience improvements',
+          items: [
+            'Monthly Roster now shows Discard and Save Changes on the right side of the status strip when unsaved edits exist.',
+            'Unsaved counts, filter summaries, range-selection hints, and save actions now share one workflow area.',
+            'Removed the centered dark bottom overlay so roster cells remain unobstructed.',
+          ],
+        },
+      ],
+    },
+  },
   '2026-04-28-viewer-external-systems-drawer': {
     'zh-CN': {
       title: 'Viewer 外部系统抽屉',
