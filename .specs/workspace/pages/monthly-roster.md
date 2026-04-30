@@ -6,13 +6,13 @@
 
 ## 源码与依赖
 
-| 类型 | 位置 |
-|------|------|
-| 页面组件 | `src/features/workspace/pages/MonthlyRosterPlannerPage.vue` |
+| 类型     | 位置                                                                |
+| -------- | ------------------------------------------------------------------- |
+| 页面组件 | `src/features/workspace/pages/MonthlyRosterPlannerPage.vue`         |
 | 共享组件 | `RosterGrid.vue`、`AssignmentDrawer.vue`、`WorkspacePageHeader.vue` |
-| 状态抽象 | `src/features/workspace/composables/useRosterPlanner.js` |
-| 读取接口 | `GET /api/workspace/roster?year=&month=` |
-| 保存接口 | `POST /api/workspace/roster/save` |
+| 状态抽象 | `src/features/workspace/composables/useRosterPlanner.js`            |
+| 读取接口 | `GET /api/workspace/roster?year=&month=`                            |
+| 保存接口 | `POST /api/workspace/roster/save`                                   |
 
 ## 页面流程图
 
@@ -32,9 +32,11 @@ flowchart LR
 - 网格在大数据量下应采用“仅渲染可视区行 + 适度 overscan”的渲染策略，避免一次性挂载整月全部人员行导致首屏和滚动卡顿。
 - 选择单元格后打开抽屉，编辑当前员工在指定日期上的班次编码。
 - 编辑先作用于本地工作副本，再统一通过保存接口提交 `updates`。
-- 页面需要直接在网格中标识未保存改动，避免用户只能依赖底部保存条判断是否有待提交修改。
+- 页面需要直接在网格中标识未保存改动，避免用户只能依赖页面级提示判断是否有待提交修改。
+- 当存在未保存修改且当前用户可写时，月度排班表上方状态条右侧应展示“放弃修改”和“保存修改”动作；这些动作应与未保存数量、筛选摘要和区间选择提示保持在同一工作流区域，不能再使用遮挡排班矩阵的底部浮层。
 - 抽屉应清楚展示“当前班次 / 待应用班次 / 日期”，避免把单日编辑误读为区间编辑。
 - 网格应支持方向键移动当前选中单元格，并允许使用 `Enter` 或 `Space` 打开当前格子的编辑抽屉。
+- 网格应在选中任意日期格或键盘聚焦单元格后以清晰可见的 teal 底色高亮该员工整行，冻结的员工姓名列也可点击来选中该员工行；整行高亮只作为定位辅助，不能覆盖当前单元格、拖拽区间或待保存改动的视觉优先级。
 - 抽屉应支持连续编辑，例如“应用并跳到下一天”，减少同一员工跨多天排班时的重复点击。
 - 抽屉可提供低风险的快捷复用入口，例如沿用前一天或上周同日的班次，减少重复选择编码的次数。
 - 抽屉可提供“复制当前周到下一周”的快捷动作，复制后应跳转到目标周起始日，便于管理员立即复核结果。

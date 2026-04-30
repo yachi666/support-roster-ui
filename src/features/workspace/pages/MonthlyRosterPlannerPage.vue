@@ -363,45 +363,74 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
       v-if="
         hasUnsavedChanges || activeFilterSummary.length || validationWarning || hasRangeSelection
       "
-      class="border-b border-slate-200 bg-slate-50/80 px-4 py-3"
+      data-testid="roster-status-strip"
+      class="border-b border-slate-200 px-4 py-3"
+      :class="hasUnsavedChanges ? 'bg-amber-50/80' : 'bg-slate-50/80'"
     >
-      <div class="flex flex-wrap items-center gap-2">
-        <span
-          class="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white"
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex flex-wrap items-center gap-2">
+          <span
+            class="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white"
+          >
+            {{ monthLabel }}
+          </span>
+          <span
+            v-if="hasUnsavedChanges"
+            class="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-800"
+          >
+            {{ t('workspace.roster.pendingEdits', { count: pendingUpdateCount }) }}
+          </span>
+          <span
+            v-for="item in activeFilterSummary"
+            :key="item"
+            class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600"
+          >
+            {{ item }}
+          </span>
+          <span
+            class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600"
+          >
+            {{ t('workspace.roster.keyboardHint') }}
+          </span>
+          <span
+            v-if="hasRangeSelection"
+            class="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700"
+          >
+            {{ selectedRangeSummary }}
+          </span>
+          <button
+            v-if="hasRangeSelection"
+            class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-800"
+            @click="clearRangeSelection"
+          >
+            {{ t('workspace.roster.clearRange') }}
+          </button>
+        </div>
+        <div
+          v-if="hasUnsavedChanges && authStore.canWriteWorkspace"
+          class="flex shrink-0 items-center gap-2"
         >
-          {{ monthLabel }}
-        </span>
-        <span
-          v-if="hasUnsavedChanges"
-          class="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-800"
-        >
-          {{ t('workspace.roster.pendingEdits', { count: pendingUpdateCount }) }}
-        </span>
-        <span
-          v-for="item in activeFilterSummary"
-          :key="item"
-          class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600"
-        >
-          {{ item }}
-        </span>
-        <span
-          class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600"
-        >
-          {{ t('workspace.roster.keyboardHint') }}
-        </span>
-        <span
-          v-if="hasRangeSelection"
-          class="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700"
-        >
-          {{ selectedRangeSummary }}
-        </span>
-        <button
-          v-if="hasRangeSelection"
-          class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-800"
-          @click="clearRangeSelection"
-        >
-          {{ t('workspace.roster.clearRange') }}
-        </button>
+          <button
+            class="rounded-md border border-amber-200 bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 shadow-sm transition-colors hover:border-amber-300 hover:bg-amber-100"
+            @click="discardChanges"
+          >
+            {{ t('workspace.roster.discard') }}
+          </button>
+          <button
+            class="flex items-center gap-1.5 rounded-md bg-teal-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-70"
+            :disabled="saving || !authStore.canWriteWorkspace"
+            @click="authStore.canWriteWorkspace && saveChanges()"
+          >
+            <Save class="h-3.5 w-3.5" />
+            {{
+              !authStore.canWriteWorkspace
+                ? t('common.readonlyMode')
+                : saving
+                  ? t('common.saving')
+                  : t('workspace.roster.saveChanges')
+            }}
+          </button>
+        </div>
       </div>
       <div
         v-if="validationWarning"
@@ -483,42 +512,6 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
       @open-selected-cell="openSelectedCell"
     />
 
-    <Transition name="status-bar">
-      <div
-        v-if="hasUnsavedChanges && authStore.canWriteWorkspace"
-        class="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-6 rounded-xl border border-slate-700 bg-slate-800 px-5 py-3 text-white shadow-lg shadow-slate-900/20"
-      >
-        <div class="flex items-center gap-2">
-          <div class="h-2 w-2 rounded-full bg-amber-400 animate-pulse"></div>
-          <span class="text-sm font-medium">{{
-            t('workspace.roster.unsavedChanges', { count: pendingUpdateCount })
-          }}</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <button
-            class="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-slate-700"
-            @click="discardChanges"
-          >
-            {{ t('workspace.roster.discard') }}
-          </button>
-          <button
-            class="flex items-center gap-1.5 rounded-md bg-teal-500 px-4 py-1.5 text-xs font-semibold text-slate-900 shadow-sm transition-colors hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-70"
-            :disabled="saving || !authStore.canWriteWorkspace"
-            @click="authStore.canWriteWorkspace && saveChanges()"
-          >
-            <Save class="h-3.5 w-3.5" />
-            {{
-              !authStore.canWriteWorkspace
-                ? t('common.readonlyMode')
-                : saving
-                  ? t('common.saving')
-                  : t('workspace.roster.saveChanges')
-            }}
-          </button>
-        </div>
-      </div>
-    </Transition>
-
     <AssignmentDrawer
       v-model="drawerOpen"
       :assignment="selectedAssignment"
@@ -538,18 +531,3 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
     />
   </div>
 </template>
-
-<style scoped>
-.status-bar-enter-active,
-.status-bar-leave-active {
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
-}
-
-.status-bar-enter-from,
-.status-bar-leave-to {
-  opacity: 0;
-  transform: translate(-50%, 16px);
-}
-</style>

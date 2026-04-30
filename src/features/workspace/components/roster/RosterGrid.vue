@@ -53,6 +53,10 @@ function isSelectedStaff(staffId) {
   return props.selectedCell?.staffId === staffId
 }
 
+function selectStaffRow(staffId) {
+  emit('select-cell', { staffId, day: props.selectedCell?.day || 1 })
+}
+
 function isPendingUpdate(staffId, day) {
   return props.pendingUpdateKeySet.has(`${staffId}:${day}`)
 }
@@ -530,12 +534,18 @@ onBeforeUnmount(() => {
             <tr v-else class="group transition-colors hover:bg-slate-50/60">
               <td
                 :class="[
-                  'sticky left-0 z-20 min-w-[256px] w-64 border-b border-r border-slate-200 bg-white px-4 py-2.5 shadow-[1px_0_0_0_#e2e8f0] group-hover:bg-slate-50',
-                  isSelectedStaff(row.person.id) ? 'bg-teal-50/40 group-hover:bg-teal-50/60' : '',
+                  'sticky left-0 z-20 min-w-[256px] w-64 border-b border-r border-slate-200 px-4 py-2.5 shadow-[1px_0_0_0_#e2e8f0]',
+                  isSelectedStaff(row.person.id)
+                    ? 'bg-teal-100/90 shadow-[inset_-3px_0_0_#14b8a6,1px_0_0_0_#e2e8f0] group-hover:bg-teal-100'
+                    : 'bg-white group-hover:bg-slate-50',
                 ]"
                 :style="{ minWidth: `${FROZEN_COLUMN_WIDTH}px` }"
               >
-                <div class="flex items-center gap-3">
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-3 text-left outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-teal-500"
+                  @click="selectStaffRow(row.person.id)"
+                >
                   <AvatarImage
                     :name="row.person.name"
                     :src="row.person.avatar"
@@ -546,7 +556,7 @@ onBeforeUnmount(() => {
                     <span class="text-sm font-medium text-slate-800">{{ row.person.name }}</span>
                     <span class="text-[10px] text-slate-400">{{ row.person.role }}</span>
                   </div>
-                </div>
+                </button>
               </td>
               <td
                 v-for="(code, index) in row.person.schedule"
@@ -554,9 +564,12 @@ onBeforeUnmount(() => {
                 :class="[
                   'relative cursor-cell border-b border-r border-slate-100 p-1 text-center font-mono text-[11px] outline-none transition-all focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500',
                   isWeekend(days[index]) ? 'bg-rose-50/20' : '',
+                  isSelectedStaff(row.person.id)
+                    ? 'bg-teal-100/70 hover:bg-teal-100/90'
+                    : 'hover:bg-slate-100/80',
                   isSelected(row.person.id, index + 1)
                     ? 'z-10 bg-teal-50/60 ring-2 ring-inset ring-teal-500'
-                    : 'hover:bg-slate-100/80',
+                    : '',
                   isRangeSelected(row.person.id, index + 1)
                     ? 'bg-sky-50/70 ring-1 ring-inset ring-sky-300'
                     : '',

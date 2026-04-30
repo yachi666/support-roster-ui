@@ -11,10 +11,15 @@ import {
 test('groups product updates by release month', () => {
   const groups = groupProductUpdatesByMonth(productUpdates, 'zh-CN')
 
-  assert.equal(groups.length, 2)
-  assert.equal(groups[0].month, '2026年4月')
+  assert.equal(groups.length, 3)
+  assert.equal(groups[0].month, '2026年5月')
   assert.deepEqual(
     groups[0].items.map((item) => item.id),
+    ['2026-05-01-roster-save-actions'],
+  )
+  assert.equal(groups[1].month, '2026年4月')
+  assert.deepEqual(
+    groups[1].items.map((item) => item.id),
     [
       '2026-04-28-viewer-external-systems-drawer',
       '2026-04-27-linux-password-audit',
@@ -26,19 +31,19 @@ test('groups product updates by release month', () => {
       '2026-04-03-search-validation',
     ],
   )
-  assert.equal(groups[1].month, '2026年3月')
+  assert.equal(groups[2].month, '2026年3月')
 })
 
 test('localizes product updates and labels for English', () => {
   const updates = localizeProductUpdates(productUpdates, 'en')
   const groups = groupProductUpdatesByMonth(updates, 'en')
 
-  assert.equal(updates[0].title, 'Viewer external systems drawer')
-  assert.equal(updates[0].sections[0].title, 'New capability')
+  assert.equal(updates[0].title, 'Roster save actions moved above the grid')
+  assert.equal(updates[0].sections[0].title, 'Experience improvements')
   assert.equal(getProductUpdateTypeLabel('feature', 'en'), 'New')
   assert.equal(
     formatProductUpdateModuleList(['contact', 'viewer'], 'en'),
     'Contact information, Viewer',
   )
-  assert.equal(groups[0].month, 'April 2026')
+  assert.equal(groups[0].month, 'May 2026')
 })
