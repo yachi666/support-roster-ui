@@ -4,6 +4,11 @@
 :root {
 	color-scheme: light;
 	font-family: 'Manrope', sans-serif;
+	--workspace-motion-micro: 140ms;
+	--workspace-motion-standard: 200ms;
+	--workspace-motion-panel: 260ms;
+	--workspace-motion-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+	--workspace-motion-ease-in: cubic-bezier(0.4, 0, 1, 1);
 }
 
 html,
@@ -89,11 +94,97 @@ textarea {
 	animation: pulse 3s ease-in-out infinite;
 }
 
+.workspace-fade-enter-active,
+.workspace-fade-leave-active {
+	transition: opacity var(--workspace-motion-standard) var(--workspace-motion-ease-out);
+}
+
+.workspace-fade-enter-from,
+.workspace-fade-leave-to {
+	opacity: 0;
+}
+
+.workspace-slide-enter-active {
+	transition:
+		transform var(--workspace-motion-panel) var(--workspace-motion-ease-out),
+		opacity var(--workspace-motion-standard) var(--workspace-motion-ease-out);
+}
+
+.workspace-slide-leave-active {
+	transition:
+		transform var(--workspace-motion-standard) var(--workspace-motion-ease-in),
+		opacity var(--workspace-motion-standard) var(--workspace-motion-ease-in);
+}
+
+.workspace-slide-enter-from,
+.workspace-slide-leave-to {
+	opacity: 0;
+	transform: translateX(100%);
+}
+
+.workspace-modal-enter-active,
+.workspace-modal-leave-active {
+	transition:
+		opacity var(--workspace-motion-standard) var(--workspace-motion-ease-out),
+		transform var(--workspace-motion-standard) var(--workspace-motion-ease-out);
+}
+
+.workspace-modal-enter-from,
+.workspace-modal-leave-to {
+	opacity: 0;
+	transform: scale(0.97);
+}
+
+.workspace-popover-enter-active,
+.workspace-popover-leave-active,
+.workspace-status-enter-active,
+.workspace-status-leave-active {
+	transition:
+		opacity var(--workspace-motion-standard) var(--workspace-motion-ease-out),
+		transform var(--workspace-motion-standard) var(--workspace-motion-ease-out);
+}
+
+.workspace-popover-enter-from,
+.workspace-popover-leave-to {
+	opacity: 0;
+	transform: translateY(-4px) scale(0.98);
+}
+
+.workspace-status-enter-from,
+.workspace-status-leave-to {
+	opacity: 0;
+	transform: translateY(-6px);
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.animate-fade-in-up,
 	.animate-fade-in,
 	.animate-slide-in-right,
 	.animate-pulse-subtle {
 		animation: none;
+	}
+
+	.workspace-fade-enter-active,
+	.workspace-fade-leave-active,
+	.workspace-slide-enter-active,
+	.workspace-slide-leave-active,
+	.workspace-modal-enter-active,
+	.workspace-modal-leave-active,
+	.workspace-popover-enter-active,
+	.workspace-popover-leave-active,
+	.workspace-status-enter-active,
+	.workspace-status-leave-active {
+		transition: none;
+	}
+
+	.workspace-slide-enter-from,
+	.workspace-slide-leave-to,
+	.workspace-modal-enter-from,
+	.workspace-modal-leave-to,
+	.workspace-popover-enter-from,
+	.workspace-popover-leave-to,
+	.workspace-status-enter-from,
+	.workspace-status-leave-to {
+		transform: none;
 	}
 }

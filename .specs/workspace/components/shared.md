@@ -29,6 +29,9 @@
 - 页面私有字段映射、API 调用与业务验证逻辑，应保留在页面或 composable 中。
 - 组件命名、插槽与动作区层级需要保持一致，避免每页一套交互习惯。
 - 像 `RosterGrid.vue` 这类高密度共享组件，性能策略（虚拟滚动、重型浮层懒挂载）属于公共实现约束，变更时要同步评估所有复用页面。
+- `WorkspaceDrawer.vue` 与 `WorkspaceModal.vue` 使用全局 Workspace transition class，不在组件内重复维护 scoped timing。
+- 共享 overlay 组件必须支持 `prefers-reduced-motion`，禁用位移与缩放后仍需保持打开/关闭状态清晰。
+- `RosterGrid.vue` 处于高频渲染路径，单元格动效必须使用明确的 transition-property，不能依赖 `transition-all`。
 
 ## 维护规则
 

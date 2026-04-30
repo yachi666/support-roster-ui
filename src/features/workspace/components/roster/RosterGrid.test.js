@@ -29,3 +29,21 @@ test('roster grid lets the frozen staff cell select that staff row', () => {
   assert.match(source, /@click="selectStaffRow\(row\.person\.id\)"/)
   assert.match(source, /type="button"/)
 })
+
+test('roster grid uses focused motion classes instead of broad transition-all in the hot cell path', () => {
+  assert.match(source, /roster-cell-motion/)
+  assert.match(source, /roster-shift-chip-motion/)
+  assert.match(
+    source,
+    /\.roster-cell-motion \{[\s\S]*transition-property:\s*background-color,\s*border-color,\s*box-shadow;/,
+  )
+  assert.match(
+    source,
+    /\.roster-shift-chip-motion \{[\s\S]*transition-property:\s*background-color,\s*border-color,\s*box-shadow,\s*transform;/,
+  )
+  assert.match(
+    source,
+    /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.roster-shift-chip-motion:hover[\s\S]*transform:\s*none;/,
+  )
+  assert.doesNotMatch(source, /transition-all/)
+})

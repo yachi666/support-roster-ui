@@ -78,25 +78,3 @@ onBeforeUnmount(() => {
     </aside>
   </Transition>
 </template>
-
-<style scoped>
-.workspace-fade-enter-active,
-.workspace-fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.workspace-fade-enter-from,
-.workspace-fade-leave-to {
-  opacity: 0;
-}
-
-.workspace-slide-enter-active,
-.workspace-slide-leave-active {
-  transition: transform 0.28s ease;
-}
-
-.workspace-slide-enter-from,
-.workspace-slide-leave-to {
-  transform: translateX(100%);
-}
-</style>
