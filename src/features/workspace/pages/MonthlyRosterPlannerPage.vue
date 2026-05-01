@@ -5,6 +5,7 @@ import { onBeforeRouteLeave, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { resolveWorkspaceColor } from '../lib/color'
+import { buildShiftPresentationByTeam } from '../lib/shiftPresentation'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
 import RosterGrid from '../components/roster/RosterGrid.vue'
 import RosterSelectionActionBar from '../components/roster/RosterSelectionActionBar.vue'
@@ -52,10 +53,19 @@ const { t } = useI18n()
 
 const showTeamFilter = ref(false)
 const selectedRange = ref(null)
+const selectedActionBarTeamId = computed(() =>
+  selectedAssignment.value?.group?.teamId || selectedAssignment.value?.staff?.teamId || '',
+)
 const selectedAssignmentEditable = computed(() => {
   const teamId = selectedAssignment.value?.group?.teamId || selectedAssignment.value?.staff?.teamId
   return authStore.canEditTeam(teamId)
 })
+const shiftPresentation = computed(() =>
+  buildShiftPresentationByTeam({
+    shiftDetailsByTeam: shiftDetailsByTeam.value,
+    shiftCodeColorMap: shiftCodeColorMap.value,
+  }),
+)
 
 const visibleStaffRows = computed(() =>
   filteredGroups.value.flatMap((group) =>
@@ -325,6 +335,9 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
       :visible="Boolean(selectedRange || selectedCell)"
       :readonly="!selectedAssignmentEditable"
       :shift-code-options="shiftCodeOptions"
+      :selected-team-id="selectedActionBarTeamId"
+      :shift-presentation-by-team="shiftPresentation.shiftPresentationByTeam"
+      :fallback-shift-presentation-by-code="shiftPresentation.fallbackShiftPresentationByCode"
       @select-code="applyCurrentSelection($event)"
     />
 
