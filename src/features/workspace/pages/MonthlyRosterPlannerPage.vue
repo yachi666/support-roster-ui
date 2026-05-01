@@ -115,6 +115,10 @@ function applyCurrentSelection(code) {
     return
   }
 
+  if (!selectedAssignmentEditable.value) {
+    return
+  }
+
   applyShiftCodeToActiveSelection(activeSelection, code)
 }
 

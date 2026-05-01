@@ -8,7 +8,7 @@ test('monthly roster wires the selection action bar through a wrapper handler', 
   assert.match(source, /import RosterSelectionActionBar from '\.\.\/components\/roster\/RosterSelectionActionBar\.vue'/)
   assert.match(
     source,
-    /function applyCurrentSelection\(code\) \{[\s\S]*const activeSelection = selectedRange\.value \|\| selectedCell\.value[\s\S]*applyShiftCodeToActiveSelection\(activeSelection, code\)/,
+    /function applyCurrentSelection\(code\) \{[\s\S]*const activeSelection = selectedRange\.value \|\| selectedCell\.value[\s\S]*if \(!selectedAssignmentEditable\.value\) \{[\s\S]*return[\s\S]*\}[\s\S]*applyShiftCodeToActiveSelection\(activeSelection, code\)/,
   )
   assert.match(
     source,

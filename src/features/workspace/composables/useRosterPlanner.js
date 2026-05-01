@@ -317,7 +317,7 @@ export function useRosterPlanner() {
         rosterStaffIndex,
         baseStaffIndex,
         pendingUpdates,
-        staffId: selection.staffId,
+        staffId,
         day,
         shiftCode: normalizedCode,
       })
@@ -338,7 +338,7 @@ export function useRosterPlanner() {
       updatedCount,
       startDay: normalizedStartDay,
       endDay: normalizedEndDay,
-      staffId: selection.staffId,
+      staffId,
     }
   }
 
