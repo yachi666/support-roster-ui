@@ -23,6 +23,7 @@
 | 共享组件 | `./components/shared.md` | Header、Surface、Drawer、Stat Card 等复用件 |
 | 页面：总览 | `./pages/overview.md` | 首页聚合看板与快捷入口 |
 | 页面：月度排班 | `./pages/monthly-roster.md` | 排班矩阵、抽屉编辑、保存与回滚 |
+| 页面：月度排班极简改版 | `./pages/monthly-roster-minimal-editing.md` | 去抽屉、去厚状态条、顶部极简班次动作条 |
 | 页面：人员目录 | `./pages/staff-directory.md` | 列表、详情抽屉、增删改流程 |
 | 页面：班次定义 | `./pages/shift-definitions.md` | 班次定义、共享团队、时间预览 |
 | 页面：团队管理 | `./pages/team-mapping.md` | 团队顺序、可见性、分组映射 |
@@ -52,6 +53,7 @@ graph TB
 
     PAGES --> P1[overview.md]
     PAGES --> P2[monthly-roster.md]
+    PAGES --> P2B[monthly-roster-minimal-editing.md]
     PAGES --> P3[staff-directory.md]
     PAGES --> P4[shift-definitions.md]
     PAGES --> P5[team-mapping.md]
@@ -71,4 +73,3 @@ graph TB
 - 新增页面时，必须同步更新本目录表、路由图与侧边导航描述。
 - 若共享组件演化为稳定公共能力，应优先补充到 `components/shared.md`。
 - 若某页复杂度显著上升，可在 `pages/` 下继续拆分子专题，但必须在本文件登记。
-
