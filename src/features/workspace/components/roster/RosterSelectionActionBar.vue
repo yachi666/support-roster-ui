@@ -81,6 +81,7 @@ function handleActionClick(code) {
           <button
             type="button"
             :aria-disabled="readonly ? 'true' : 'false'"
+            :tabindex="readonly ? -1 : 0"
             :class="[
               'roster-shift-chip-motion flex min-h-[32px] items-center justify-center rounded-[3px] border px-3 py-1.5 font-mono text-sm font-medium shadow-sm outline-none transition hover:-translate-y-0.5 focus-visible:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-teal-500/30',
               getShiftChipStyle(code)
@@ -170,6 +171,7 @@ function handleActionClick(code) {
         class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
         :class="readonly ? 'cursor-not-allowed opacity-60' : ''"
         :aria-disabled="readonly ? 'true' : 'false'"
+        :tabindex="readonly ? -1 : 0"
         @click="handleActionClick('Clear')"
       >
         {{ t('workspace.roster.clear') }}
