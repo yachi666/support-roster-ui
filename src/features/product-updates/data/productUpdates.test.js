@@ -58,10 +58,14 @@ test('includes the roster editing and workspace motion feedback release notes in
 
   assert.ok(zhRosterEntry)
   assert.equal(zhRosterEntry.title, '月度排班直接编辑更轻量')
-  assert.equal(zhRosterEntry.sections[0].items[0], '月度排班页现在使用更轻的直接编辑流程，选择单元格后不再打开右侧抽屉。')
+  assert.equal(zhRosterEntry.sections[0].items[1], '表格上方的班次按钮沿用网格里按团队区分的颜色呈现。')
+  assert.equal(zhRosterEntry.sections[0].items[2], '班次按钮在 hover 和 focus 时会复用网格 tooltip 的信息与视觉样式。')
+  assert.equal(zhRosterEntry.sections[0].items[3], 'Clear 保持中性，不展示任何班次元数据。')
 
   assert.ok(enRosterEntry)
-  assert.equal(enRosterEntry.sections[0].items[1], 'The action bar above the grid only contains shift buttons and Clear, without repeating staff, date, or range-copy details.')
+  assert.equal(enRosterEntry.sections[0].items[1], 'The shift buttons above the grid reuse the roster grid’s team-aware color presentation.')
+  assert.equal(enRosterEntry.sections[0].items[2], 'Hovering or focusing a shift button reuses the roster grid tooltip information and visual treatment.')
+  assert.equal(enRosterEntry.sections[0].items[3], 'Clear stays neutral and does not show shift metadata.')
 
   assert.ok(zhEntry)
   assert.equal(zhEntry.type, 'improvement')
