@@ -565,7 +565,7 @@ onBeforeUnmount(() => {
                   'roster-cell-motion relative cursor-cell border-b border-r border-slate-100 p-1 text-center font-mono text-[11px] outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500',
                   isWeekend(days[index]) ? 'bg-rose-50/20' : '',
                   isSelectedStaff(row.person.id)
-                    ? 'bg-teal-100/70 hover:bg-teal-100/90'
+                    ? 'shadow-[inset_0_1px_0_0_rgba(13,148,136,0.22),inset_0_-1px_0_0_rgba(13,148,136,0.22)] hover:shadow-[inset_0_1px_0_0_rgba(13,148,136,0.32),inset_0_-1px_0_0_rgba(13,148,136,0.32)]'
                     : 'hover:bg-slate-100/80',
                   isSelected(row.person.id, index + 1)
                     ? 'z-10 bg-teal-50/60 ring-2 ring-inset ring-teal-500'

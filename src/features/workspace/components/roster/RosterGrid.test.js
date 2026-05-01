@@ -7,7 +7,7 @@ const source = readFileSync(new URL('./RosterGrid.vue', import.meta.url), 'utf8'
 test('roster grid highlights the selected staff row without replacing selected cell priority', () => {
   assert.match(
     source,
-    /isSelectedStaff\(row\.person\.id\)\s*\?\s*'bg-teal-100\/70 hover:bg-teal-100\/90'\s*:\s*'hover:bg-slate-100\/80'/,
+    /isWeekend\(days\[index\]\)\s*\?\s*'bg-rose-50\/20'\s*:\s*'',\s*isSelectedStaff\(row\.person\.id\)\s*\?\s*'shadow-\[[^']+\] hover:shadow-\[[^']+\]'\s*:\s*'hover:bg-slate-100\/80'/,
   )
   assert.match(
     source,

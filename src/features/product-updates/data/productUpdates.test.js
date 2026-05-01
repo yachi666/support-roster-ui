@@ -15,7 +15,7 @@ test('groups product updates by release month', () => {
   assert.equal(groups[0].month, '2026年5月')
   assert.deepEqual(
     groups[0].items.map((item) => item.id),
-    ['2026-05-01-roster-save-actions'],
+    ['2026-05-01-roster-save-actions', '2026-05-01-workspace-motion-feedback'],
   )
   assert.equal(groups[1].month, '2026年4月')
   assert.deepEqual(
@@ -46,4 +46,21 @@ test('localizes product updates and labels for English', () => {
     'Contact information, Viewer',
   )
   assert.equal(groups[0].month, 'May 2026')
+})
+
+test('includes the workspace motion feedback release note in both locales', () => {
+  const zhUpdates = localizeProductUpdates(productUpdates, 'zh-CN')
+  const enUpdates = localizeProductUpdates(productUpdates, 'en')
+  const zhEntry = zhUpdates.find((item) => item.id === '2026-05-01-workspace-motion-feedback')
+  const enEntry = enUpdates.find((item) => item.id === '2026-05-01-workspace-motion-feedback')
+
+  assert.ok(zhEntry)
+  assert.equal(zhEntry.type, 'improvement')
+  assert.deepEqual(zhEntry.modules, ['workspace', 'roster'])
+  assert.equal(zhEntry.title, '工作台动效与排班反馈更聚焦')
+  assert.equal(zhEntry.sections[0].title, '体验优化')
+
+  assert.ok(enEntry)
+  assert.equal(enEntry.title, 'Workspace motion and roster feedback feel more focused')
+  assert.equal(enEntry.sections[0].title, 'Experience improvements')
 })
