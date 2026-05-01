@@ -136,24 +136,27 @@ const PRODUCT_UPDATE_TRANSLATIONS = {
   '2026-05-01-roster-save-actions': {
     'zh-CN': {
       title: '月度排班直接编辑更轻量',
-      summary: '月度排班页改为更轻的直接编辑流程，减少右侧抽屉和厚重状态条带来的打断感。',
+      summary: '月度排班页继续采用轻量的直接编辑流程，点击班次按钮会先写入本地工作副本，用户再从页面头部保存，同时补充与网格一致的颜色和 tooltip 提示。',
       status: '已发布',
       importance: '体验优化',
       audience: ['排班管理员', '团队编辑者'],
-      impact: '编辑排班时可以直接点班次快速写入草稿，再从头部统一保存，页面也不再被厚重状态条打断。',
+      impact:
+        '编辑排班时，页面仍保持紧凑的动作条、直接写入本地工作副本和头部 Save Changes 的轻量流程；顶部班次按钮再沿用网格里按团队区分的颜色和提示，Clear 保持中性，方便快速判断会影响到哪类班次。',
       highlights: [
-        '表格上方只保留轻量班次动作条',
-        '点击班次后立即写入本地工作副本',
-        '未保存状态折叠到头部的 Save Changes 中',
+        '表格上方保留紧凑的动作条',
+        '点击班次按钮会立即写入本地工作副本',
+        '保存仍通过页面头部的 Save Changes 完成',
+        '表格上方的班次按钮沿用网格的团队颜色与 tooltip 呈现',
+        'Clear 保持中性，不展示班次元数据',
       ],
       sections: [
         {
           title: '体验优化',
           items: [
-            '月度排班页现在使用更轻的直接编辑流程，选择单元格后不再打开右侧抽屉。',
-            '表格上方的动作条只保留班次按钮和 Clear，不再重复展示员工、日期或区间复制信息。',
-            '点击班次按钮会先写入本地工作副本，用户再通过页面头部统一保存修改。',
-            '未保存状态不再依赖厚重的状态条，改为折叠进头部的 Save Changes 动作。',
+            '月度排班页现在使用更轻的直接编辑流程，选择单元格后不再打开右侧抽屉，班次按钮会先写入本地工作副本，再由页面头部的 Save Changes 统一保存。',
+            '表格上方的班次按钮沿用网格里按团队区分的颜色呈现。',
+            '班次按钮在 hover 和 focus 时会复用网格 tooltip 的信息与视觉样式。',
+            'Clear 保持中性，不展示任何班次元数据。',
           ],
         },
       ],
@@ -161,25 +164,27 @@ const PRODUCT_UPDATE_TRANSLATIONS = {
     en: {
       title: 'Monthly roster editing feels lighter',
       summary:
-        'Monthly roster now uses a lighter direct-editing flow, reducing the interruption from drawers and heavy status chrome.',
+        "Monthly roster keeps its lighter direct-editing flow: shift buttons stage changes into the local working copy first, users save from the header, and the grid now adds matching color and tooltip cues.",
       status: 'Published',
       importance: 'Experience improvement',
       audience: ['Roster admins', 'Team editors'],
       impact:
-        'After editing the roster, users can stage changes quickly from the action bar and save them from the header without heavy chrome breaking focus.',
+        "When editing the roster, the page still uses the compact action bar, direct staging into the local working copy, and the header Save Changes action with no heavy chrome; the top shift buttons also reuse the grid's team-aware colors and tooltip details, while Clear stays neutral so it is easier to see what each action affects.",
       highlights: [
-        'Added a compact shift action bar that stages cell edits and lets Clear revert the active cell',
-        'Shift button clicks stage directly into the local working copy',
-        'Unsaved state is folded into header-level Save Changes',
+        'Compact action bar stays above the grid',
+        'Shift buttons stage changes into the local working copy immediately',
+        'Save Changes remains in the header',
+        "Top shift buttons match the roster grid's team-aware colors and tooltip treatment",
+        'Clear stays neutral and does not show shift metadata',
       ],
       sections: [
         {
           title: 'Experience improvements',
           items: [
-            'Monthly Roster now uses a lighter direct-editing flow, so selecting a cell no longer opens the right drawer.',
-            'The action bar above the grid only contains shift buttons and Clear, without repeating staff, date, or range-copy details.',
-            'Clicking a shift button stages the change immediately in the local working copy, then users save from the header.',
-            'Unsaved state is no longer carried by a thick status strip and is instead folded into Save Changes.',
+            "Monthly roster now uses a lighter direct-editing flow, so selecting a cell no longer opens the right drawer and shift buttons stage changes into the local working copy before the header Save Changes action commits them.",
+            "The shift buttons above the grid reuse the roster grid's team-aware color presentation.",
+            'Hovering or focusing a shift button reuses the roster grid tooltip information and visual treatment.',
+            'Clear stays neutral and does not show shift metadata.',
           ],
         },
       ],
