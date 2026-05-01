@@ -43,7 +43,7 @@ const {
   openCell,
   closeDrawer,
   setShiftCode,
-  applySelectedShift,
+  applySelectedShift: applySingleSelectedShift,
   copySelectedWeekToNextWeek,
   applySelectedRange,
   discardChanges,
@@ -170,12 +170,12 @@ function openSelectedCell(payload) {
 }
 
 function applyAndAdvanceDay() {
-  if (!selectedAssignmentEditable.value || !selectedCell.value) {
+  if (!selectedAssignmentEditable.value || !selectedCell.value || hasRangeSelection.value) {
     return
   }
 
   const { staffId, day } = selectedCell.value
-  applySelectedShift()
+  applySingleSelectedShift()
 
   const nextDay = day + 1
   if (nextDay > plannerDays.value.length) {
@@ -197,16 +197,18 @@ function copyWeekForward() {
   openCell(result.staffId, result.firstTargetDay)
 }
 
-function applyRangeForward(endDay) {
+function applySelectedShift() {
   if (!selectedAssignmentEditable.value) {
     return
   }
-  const result = applySelectedRange(endDay)
-  if (!result) {
+  if (hasRangeSelection.value) {
+    const result = applySelectedRange(selectedRange.value.endDay)
+    if (result) {
+      closeDrawer()
+    }
     return
   }
-
-  openCell(result.staffId, result.endDay)
+  applySingleSelectedShift()
 }
 
 function copyPreviousMonth() {
@@ -536,7 +538,6 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
       @apply="selectedAssignmentEditable && applySelectedShift()"
       @apply-and-next="applyAndAdvanceDay"
       @copy-week="copyWeekForward"
-      @apply-range="applyRangeForward"
       @clear-range="selectedAssignmentEditable && clearRangeSelection()"
     />
   </div>

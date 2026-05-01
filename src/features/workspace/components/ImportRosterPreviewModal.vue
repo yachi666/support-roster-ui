@@ -144,6 +144,14 @@ const shiftDetailsByTeam = computed(() => props.preview?.shiftDetailsByTeam || {
 const pendingUpdateKeySet = computed(() => new Set(pendingUpdates.value.keys()))
 const hasUnsavedChanges = computed(() => pendingUpdates.value.size > 0)
 const pendingUpdateCount = computed(() => pendingUpdates.value.size)
+const hasRangeSelection = computed(() => {
+  return Boolean(
+    selectedRange.value &&
+    selectedAssignment.value &&
+    selectedRange.value.staffId === selectedAssignment.value.staff.id &&
+    selectedRange.value.endDay > selectedAssignment.value.day,
+  )
+})
 
 const activePreviewState = computed(() => removePreviewTeams(rosterGroups.value, removedTeamIds.value))
 
@@ -289,6 +297,13 @@ function applySelectedShift() {
   if (!selectedAssignment.value) {
     return
   }
+  if (hasRangeSelection.value) {
+    const result = applySelectedRange(selectedRange.value.endDay)
+    if (result) {
+      closeDrawer()
+    }
+    return
+  }
   const code = selectedShiftCode.value === 'Clear' ? '' : selectedShiftCode.value
   applyScheduleUpdate({
     rosterStaffIndex,
@@ -302,7 +317,7 @@ function applySelectedShift() {
 }
 
 function applyAndAdvanceDay() {
-  if (!selectedCell.value) {
+  if (!selectedCell.value || hasRangeSelection.value) {
     return
   }
   const { staffId, day } = selectedCell.value
@@ -393,13 +408,6 @@ function applySelectedRange(endDay) {
   }
 
   return { updatedCount, endDay: normalizedEndDay, staffId: selectedAssignment.value.staff.id }
-}
-
-function applyRangeForward(endDay) {
-  const result = applySelectedRange(endDay)
-  if (result) {
-    openCell(result.staffId, result.endDay)
-  }
 }
 
 function toggleTeamFilter(teamId) {
@@ -653,7 +661,6 @@ function savePreview() {
     @apply="applySelectedShift"
     @apply-and-next="applyAndAdvanceDay"
     @copy-week="copyWeekForward"
-    @apply-range="applyRangeForward"
     @clear-range="clearRangeSelection"
   />
 </template>

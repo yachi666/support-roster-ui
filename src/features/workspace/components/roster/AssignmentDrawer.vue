@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { AlertCircle, Check } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { currentLocale } from '@/i18n'
@@ -19,7 +19,14 @@ const props = defineProps({
   month: { type: Number, required: true },
 })
 
-const emit = defineEmits(['update:modelValue', 'select-code', 'apply', 'apply-and-next', 'copy-week', 'apply-range', 'clear-range'])
+const emit = defineEmits([
+  'update:modelValue',
+  'select-code',
+  'apply',
+  'apply-and-next',
+  'copy-week',
+  'clear-range',
+])
 const { t } = useI18n()
 
 const normalizedCurrentCode = computed(() => props.assignment?.currentCode || t('workspace.roster.assignmentDrawer.unassigned'))
@@ -55,17 +62,9 @@ const weekCopySummary = computed(() => {
   }
 })
 const totalDays = computed(() => props.assignment?.staff?.schedule?.length || 0)
-const rangeEndDay = ref(null)
-const rangeEndOptions = computed(() => {
-  if (!props.assignment) {
-    return []
-  }
-
-  return Array.from(
-    { length: totalDays.value - props.assignment.day + 1 },
-    (_, index) => props.assignment.day + index,
-  )
-})
+const hasRangeSelection = computed(
+  () => Boolean(props.selectedRange && props.assignment && props.selectedRange.endDay > props.assignment.day),
+)
 const quickReuseOptions = computed(() => {
   if (!props.assignment?.staff?.schedule?.length) {
     return []
@@ -96,25 +95,6 @@ const quickReuseOptions = computed(() => {
 
   return options
 })
-
-watch(
-  () => [props.assignment?.day, props.selectedRange?.endDay, props.selectedRange?.staffId, props.assignment?.staff?.id],
-  ([day, selectedRangeEndDay, selectedRangeStaffId, assignmentStaffId]) => {
-    if (
-      day != null &&
-      assignmentStaffId != null &&
-      selectedRangeStaffId === assignmentStaffId &&
-      Number.isInteger(selectedRangeEndDay) &&
-      selectedRangeEndDay >= day
-    ) {
-      rangeEndDay.value = selectedRangeEndDay
-      return
-    }
-
-    rangeEndDay.value = day ?? null
-  },
-  { immediate: true },
-)
 
 function formatAssignmentDate(day) {
   return formatLocalizedDate(new Date(props.year, props.month - 1, day), {
@@ -209,7 +189,7 @@ function formatDayRange(startDay, endDay) {
           </div>
         </div>
 
-        <div v-if="rangeEndOptions.length > 1" class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <div v-if="totalDays > 1" class="rounded-lg border border-slate-200 bg-slate-50 p-3">
           <div class="flex items-center justify-between gap-3">
             <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{{ t('workspace.roster.assignmentDrawer.rangeFill') }}</div>
             <button
@@ -225,29 +205,8 @@ function formatDayRange(startDay, endDay) {
           <div v-if="selectedRange && selectedRange.endDay > assignment.day" class="mt-2 text-xs text-sky-700">
             {{ t('workspace.roster.assignmentDrawer.dragDetected', { startDay: assignment.day, endDay: selectedRange.endDay }) }}
           </div>
-          <div class="mt-2 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-            <label class="space-y-1.5 text-sm text-slate-700">
-              <span class="block text-xs font-medium text-slate-500">
-                {{ t('workspace.roster.assignmentDrawer.applyThrough', { day: assignment.day }) }}
-              </span>
-              <select
-                v-model="rangeEndDay"
-                class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-                :disabled="readonly"
-              >
-                <option v-for="day in rangeEndOptions" :key="day" :value="day">
-                  {{ t('workspace.roster.assignmentDrawer.dayLabel', { day }) }}
-                </option>
-              </select>
-            </label>
-            <button
-              type="button"
-              class="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700"
-              :disabled="readonly"
-              @click="emit('apply-range', rangeEndDay)"
-            >
-              {{ t('workspace.roster.assignmentDrawer.applyRange') }}
-            </button>
+          <div v-if="hasRangeSelection" class="mt-2 text-xs text-slate-500">
+            {{ t('workspace.roster.assignmentDrawer.rangeFollowsSelection') }}
           </div>
         </div>
 
@@ -312,7 +271,7 @@ function formatDayRange(startDay, endDay) {
         <button
           type="button"
           class="flex flex-1 items-center justify-center gap-2 rounded-md border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-medium text-teal-700 shadow-sm transition-colors hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-60"
-          :disabled="readonly || !hasSelectionChanged"
+          :disabled="readonly || !hasSelectionChanged || hasRangeSelection"
           @click="emit('apply-and-next')"
         >
           <Check class="h-4 w-4" />
