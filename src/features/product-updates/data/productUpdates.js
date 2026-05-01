@@ -168,7 +168,7 @@ const PRODUCT_UPDATE_TRANSLATIONS = {
       impact:
         'After editing the roster, users can stage changes quickly from the action bar and save them from the header without heavy chrome breaking focus.',
       highlights: [
-        'Kept a minimal shift action bar above the grid',
+        'Added a compact shift action bar that stages cell edits and lets Clear revert the active cell',
         'Shift button clicks stage directly into the local working copy',
         'Unsaved state is folded into header-level Save Changes',
       ],

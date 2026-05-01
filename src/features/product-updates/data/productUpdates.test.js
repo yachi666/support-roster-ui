@@ -48,7 +48,7 @@ test('localizes product updates and labels for English', () => {
   assert.equal(groups[0].month, 'May 2026')
 })
 
-test('includes the workspace motion feedback release note in both locales', () => {
+test('includes the roster editing and workspace motion feedback release notes in both locales', () => {
   const zhUpdates = localizeProductUpdates(productUpdates, 'zh-CN')
   const enUpdates = localizeProductUpdates(productUpdates, 'en')
   const zhRosterEntry = zhUpdates.find((item) => item.id === '2026-05-01-roster-save-actions')

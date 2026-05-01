@@ -24,7 +24,7 @@ flowchart LR
     BAR --> APPLY[点击班次按钮后立即写入本地工作副本]
     APPLY --> SAVE[在页面头部保存修改]
     SAVE --> REFRESH[使用服务端最新月视图回填页面]
-    APPLY --> DISCARD[清除单元格并恢复最近快照]
+    APPLY --> DISCARD[放弃全部待保存修改并恢复最近快照]
 ```
 
 ## 核心交互
