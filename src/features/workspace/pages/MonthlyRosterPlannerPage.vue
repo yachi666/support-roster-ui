@@ -321,7 +321,7 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
       :visible="Boolean(selectedRange || selectedCell)"
       :readonly="!selectedAssignmentEditable"
       :shift-code-options="shiftCodeOptions"
-      @select-code="selectedAssignmentEditable && applyCurrentSelection($event)"
+      @select-code="applyCurrentSelection($event)"
     />
 
     <WorkspaceSurface

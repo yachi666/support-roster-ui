@@ -273,16 +273,40 @@ export function useRosterPlanner() {
     void loadRoster()
   }, { immediate: true })
 
-  function applyShiftCodeToActiveSelection(selection, shiftCode) {
-    if (!selection?.staffId) {
+  /**
+   * Accepts either a single-cell selection ({ staffId, day }) or a range selection
+   * ({ staffId, startDay, endDay }) and normalizes it before applying a shift code.
+   */
+  function normalizeShiftSelection(selection) {
+    if (!selection || typeof selection !== 'object') {
+      console.error('[useRosterPlanner] Invalid selection passed to applyShiftCodeToActiveSelection.')
       return null
     }
 
-    const startDay = selection.day ?? selection.startDay
-    if (!startDay) {
+    const { staffId, day, startDay, endDay } = selection
+    const normalizedStaffId = staffId ? String(staffId) : ''
+    const normalizedStartDay = day ?? startDay
+    const normalizedEndDay = day ?? endDay ?? normalizedStartDay
+
+    if (!normalizedStaffId || !Number.isFinite(normalizedStartDay) || !Number.isFinite(normalizedEndDay)) {
+      console.error('[useRosterPlanner] Expected a single-cell or range selection, received:', selection)
       return null
     }
-    const endDay = selection.day ?? selection.endDay ?? startDay
+
+    return {
+      staffId: normalizedStaffId,
+      startDay: normalizedStartDay,
+      endDay: normalizedEndDay,
+    }
+  }
+
+  function applyShiftCodeToActiveSelection(selection, shiftCode) {
+    const normalizedSelection = normalizeShiftSelection(selection)
+    if (!normalizedSelection) {
+      return null
+    }
+
+    const { staffId, startDay, endDay } = normalizedSelection
     const normalizedStartDay = Math.min(startDay, endDay)
     const normalizedEndDay = Math.max(startDay, endDay)
     const normalizedCode = shiftCode === 'Clear' ? '' : shiftCode

@@ -12,7 +12,7 @@ test('monthly roster wires the selection action bar through a wrapper handler', 
   )
   assert.match(
     source,
-    /<RosterSelectionActionBar[\s\S]*:visible="Boolean\(selectedRange \|\| selectedCell\)"[\s\S]*@select-code="selectedAssignmentEditable && applyCurrentSelection\(\$event\)"/,
+    /<RosterSelectionActionBar[\s\S]*:visible="Boolean\(selectedRange \|\| selectedCell\)"[\s\S]*@select-code="applyCurrentSelection\(\$event\)"/,
   )
   assert.doesNotMatch(source, /<AssignmentDrawer/)
   assert.doesNotMatch(source, /data-testid="roster-status-strip"/)
