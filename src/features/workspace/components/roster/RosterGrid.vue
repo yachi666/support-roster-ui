@@ -12,8 +12,10 @@ import {
 } from 'radix-vue'
 import AvatarImage from '../AvatarImage.vue'
 import { cn } from '@/lib/utils'
-import { hexToRgba } from '../../lib/color'
-import { describeShiftWindow } from '../../lib/shiftTime'
+import {
+  buildShiftPresentationByTeam,
+  getShiftPresentation as resolveShiftPresentation,
+} from '../../lib/shiftPresentation'
 
 const props = defineProps({
   days: { type: Array, required: true },
@@ -27,7 +29,7 @@ const props = defineProps({
   pendingUpdateKeySet: { type: Object, default: () => new Set() },
 })
 
-const emit = defineEmits(['select-cell', 'select-range', 'navigate-cell', 'open-selected-cell'])
+const emit = defineEmits(['select-cell', 'select-range', 'navigate-cell'])
 const { t } = useI18n()
 
 const GROUP_ROW_HEIGHT = 38
@@ -82,7 +84,7 @@ const pointerState = ref({
 })
 const activeTooltipKey = ref('')
 
-function emitRangeSelection(staffId, startDay, endDay, openEditor = false) {
+function emitRangeSelection(staffId, startDay, endDay) {
   const normalizedStartDay = Math.min(startDay, endDay)
   const normalizedEndDay = Math.max(startDay, endDay)
 
@@ -90,7 +92,6 @@ function emitRangeSelection(staffId, startDay, endDay, openEditor = false) {
     staffId,
     startDay: normalizedStartDay,
     endDay: normalizedEndDay,
-    openEditor,
   })
 }
 
@@ -114,7 +115,7 @@ function updatePointerSelection(staffId, day) {
   if (pointerState.value.currentDay !== day) {
     pointerState.value.dragged = true
     pointerState.value.currentDay = day
-    emitRangeSelection(staffId, pointerState.value.startDay, day, false)
+    emitRangeSelection(staffId, pointerState.value.startDay, day)
   }
 }
 
@@ -163,9 +164,7 @@ function finishPointerSelection(staffId, day) {
   const endDay = pointerState.value.currentDay ?? day
 
   if (didDrag) {
-    emitRangeSelection(staffId, startDay, endDay, true)
-  } else {
-    emit('open-selected-cell', { staffId, day })
+    emitRangeSelection(staffId, startDay, endDay)
   }
 
   clearPointerState()
@@ -211,7 +210,7 @@ function handleCellKeydown(event, staffId, day) {
     case ' ':
       event.preventDefault()
       setActiveTooltip(staffId, day)
-      emit('open-selected-cell', { staffId, day })
+      emit('select-cell', { staffId, day })
       break
     default:
       break
@@ -242,93 +241,28 @@ function isWeekend(day) {
 }
 
 function getShiftMeta(teamId, code) {
-  if (!code) {
-    return null
-  }
-
-  const teamDetails =
-    props.shiftDetailsByTeam?.[String(teamId)] || props.shiftDetailsByTeam?.[teamId] || {}
-  return teamDetails?.[code] || null
+  return getShiftPresentation(teamId, code)?.meta || null
 }
 
-const fallbackShiftPresentationByCode = computed(() => {
-  return Object.fromEntries(
-    Object.entries(props.shiftCodeColorMap || {}).map(([code, colorHex]) => [
-      code,
-      {
-        meta: null,
-        cellStyle: {
-          backgroundColor: hexToRgba(colorHex, 0.15),
-          borderColor: hexToRgba(colorHex, 0.4),
-          color: colorHex,
-        },
-        cardStyle: {
-          borderColor: hexToRgba(colorHex, 0.26),
-          background: `linear-gradient(135deg, ${hexToRgba(colorHex, 0.14)} 0%, rgba(255, 255, 255, 0.98) 72%)`,
-        },
-        badgeStyle: {
-          backgroundColor: hexToRgba(colorHex, 0.14),
-          borderColor: hexToRgba(colorHex, 0.24),
-          color: colorHex,
-        },
-        windowLabel: '',
-      },
-    ]),
-  )
-})
+const shiftPresentation = computed(() =>
+  buildShiftPresentationByTeam({
+    shiftDetailsByTeam: props.shiftDetailsByTeam,
+    shiftCodeColorMap: props.shiftCodeColorMap,
+  }),
+)
 
-const shiftPresentationByTeam = computed(() => {
-  const byTeam = {}
-
-  for (const [teamId, teamDetails] of Object.entries(props.shiftDetailsByTeam || {})) {
-    byTeam[teamId] = Object.fromEntries(
-      Object.entries(teamDetails || {}).map(([code, detail]) => {
-        const colorHex = detail?.colorHex || props.shiftCodeColorMap[code]
-        return [
-          code,
-          {
-            meta: detail,
-            cellStyle: colorHex
-              ? {
-                  backgroundColor: hexToRgba(colorHex, 0.15),
-                  borderColor: hexToRgba(colorHex, 0.4),
-                  color: colorHex,
-                }
-              : null,
-            cardStyle: colorHex
-              ? {
-                  borderColor: hexToRgba(colorHex, 0.26),
-                  background: `linear-gradient(135deg, ${hexToRgba(colorHex, 0.14)} 0%, rgba(255, 255, 255, 0.98) 72%)`,
-                }
-              : null,
-            badgeStyle: colorHex
-              ? {
-                  backgroundColor: hexToRgba(colorHex, 0.14),
-                  borderColor: hexToRgba(colorHex, 0.24),
-                  color: colorHex,
-                }
-              : null,
-            windowLabel: describeShiftWindow(detail.startTime, detail.endTime),
-          },
-        ]
-      }),
-    )
-  }
-
-  return byTeam
-})
+const shiftPresentationByTeam = computed(() => shiftPresentation.value.shiftPresentationByTeam)
+const fallbackShiftPresentationByCode = computed(
+  () => shiftPresentation.value.fallbackShiftPresentationByCode,
+)
 
 function getShiftPresentation(teamId, code) {
-  if (!code) {
-    return null
-  }
-
-  const normalizedTeamId = String(teamId)
-  return (
-    shiftPresentationByTeam.value?.[normalizedTeamId]?.[code] ||
-    fallbackShiftPresentationByCode.value?.[code] ||
-    null
-  )
+  return resolveShiftPresentation({
+    shiftPresentationByTeam: shiftPresentationByTeam.value,
+    fallbackShiftPresentationByCode: fallbackShiftPresentationByCode.value,
+    teamId,
+    code,
+  })
 }
 
 function getShiftStyle(teamId, code) {

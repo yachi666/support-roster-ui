@@ -4,50 +4,40 @@ import { readFileSync } from 'node:fs'
 
 const source = readFileSync(new URL('./MonthlyRosterPlannerPage.vue', import.meta.url), 'utf8')
 
-test('monthly roster places unsaved save actions in the table status strip', () => {
-  assert.match(source, /data-testid="roster-status-strip"/)
+test('monthly roster wires the selection action bar through a wrapper handler and shared presentation state', () => {
+  assert.match(source, /import RosterSelectionActionBar from '\.\.\/components\/roster\/RosterSelectionActionBar\.vue'/)
   assert.match(
     source,
-    /data-testid="roster-status-strip"[\s\S]*@click="discardChanges"[\s\S]*@click="authStore\.canWriteWorkspace && saveChanges\(\)"/,
+    /import \{ buildShiftPresentationByTeam \} from '\.\.\/lib\/shiftPresentation'/,
   )
-  assert.doesNotMatch(source, /class="absolute bottom-6/)
+  assert.match(
+    source,
+    /function applyCurrentSelection\(code\) \{[\s\S]*const activeSelection = selectedRange\.value \|\| selectedCell\.value[\s\S]*if \(!selectedAssignmentEditable\.value\) \{[\s\S]*return[\s\S]*\}[\s\S]*applyShiftCodeToActiveSelection\(activeSelection, code\)/,
+  )
+  assert.match(
+    source,
+    /const selectedActionBarTeamId = computed\(\(\) =>[\s\S]*selectedAssignment\.value\?\.group\?\.teamId \|\| selectedAssignment\.value\?\.staff\?\.teamId \|\| ''[\s\S]*\)/,
+  )
+  assert.match(
+    source,
+    /const shiftPresentation = computed\(\(\) =>[\s\S]*buildShiftPresentationByTeam\(\{[\s\S]*shiftDetailsByTeam: shiftDetailsByTeam\.value[\s\S]*shiftCodeColorMap: shiftCodeColorMap\.value[\s\S]*\}\)[\s\S]*\)\)/,
+  )
+  assert.match(
+    source,
+    /<RosterSelectionActionBar[\s\S]*:visible="Boolean\(selectedRange \|\| selectedCell\)"[\s\S]*:selected-team-id="selectedActionBarTeamId"[\s\S]*:shift-presentation-by-team="shiftPresentation\.shiftPresentationByTeam"[\s\S]*:fallback-shift-presentation-by-code="shiftPresentation\.fallbackShiftPresentationByCode"[\s\S]*@select-code="applyCurrentSelection\(\$event\)"/,
+  )
+  assert.doesNotMatch(source, /<AssignmentDrawer/)
+  assert.doesNotMatch(source, /data-testid="roster-status-strip"/)
 })
 
-test('monthly roster animates status strip and save/import messages with workspace status transitions', () => {
+test('monthly roster clears stale selection state when the active cell disappears or is filtered out', () => {
+  assert.match(source, /function clearSelection\(\) \{[\s\S]*selectedCell\.value = null[\s\S]*selectedRange\.value = null/)
   assert.match(
     source,
-    /<Transition name="workspace-status">[\s\S]*data-testid="roster-status-strip"/,
+    /watch\(selectedCell, \(cell\) => \{[\s\S]*if \(!cell\) \{[\s\S]*selectedRange\.value = null/,
   )
   assert.match(
     source,
-    /<Transition name="workspace-status">[\s\S]*v-if="saveErrorMessage"/,
+    /watch\(visibleStaffIds, \(staffIds\) => \{[\s\S]*if \(!staffIds\.has\(selectedCell\.value\.staffId\)\) \{[\s\S]*clearSelection\(\)/,
   )
-  assert.match(
-    source,
-    /<Transition name="workspace-status">[\s\S]*v-if="saveSuccessMessage"/,
-  )
-  assert.match(
-    source,
-    /<Transition name="workspace-status">[\s\S]*v-if="importExportError"/,
-  )
-})
-
-test('monthly roster animates the team filter popover with the shared workspace popover transition', () => {
-  assert.match(
-    source,
-    /<Transition name="workspace-popover">[\s\S]*v-if="showTeamFilter"/,
-  )
-})
-
-test('monthly roster applies the current dragged range through the existing primary apply action', () => {
-  assert.match(
-    source,
-    /<AssignmentDrawer[\s\S]*@apply="selectedAssignmentEditable && applySelectedShift\(\)"/,
-  )
-  assert.doesNotMatch(source, /@apply-range=/)
-})
-
-test('monthly roster only exposes range clearing after drag selection while the primary apply action stays shared', () => {
-  assert.match(source, /@clear-range="selectedAssignmentEditable && clearRangeSelection\(\)"/)
-  assert.doesNotMatch(source, /function applyRangeForward/)
 })

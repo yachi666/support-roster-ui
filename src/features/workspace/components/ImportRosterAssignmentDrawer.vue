@@ -4,8 +4,8 @@ import { AlertCircle, Check } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { currentLocale } from '@/i18n'
 import { formatLocalizedDate } from '@/i18n/format'
-import AvatarImage from '../AvatarImage.vue'
-import WorkspaceDrawer from '../WorkspaceDrawer.vue'
+import AvatarImage from './AvatarImage.vue'
+import WorkspaceDrawer from './WorkspaceDrawer.vue'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },

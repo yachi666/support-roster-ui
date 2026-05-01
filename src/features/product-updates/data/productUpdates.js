@@ -135,49 +135,56 @@ export const productUpdates = [
 const PRODUCT_UPDATE_TRANSLATIONS = {
   '2026-05-01-roster-save-actions': {
     'zh-CN': {
-      title: '排班保存操作移到表格上方',
-      summary: '月度排班页的保存和放弃操作更贴近未保存状态提示。',
+      title: '月度排班直接编辑更轻量',
+      summary: '月度排班页继续采用轻量的直接编辑流程，点击班次按钮会先写入本地工作副本，用户再从页面头部保存，同时补充与网格一致的颜色和 tooltip 提示。',
       status: '已发布',
       importance: '体验优化',
       audience: ['排班管理员', '团队编辑者'],
-      impact: '编辑排班后可以在表格上方直接保存或放弃修改，减少底部浮层遮挡排班内容的问题。',
+      impact:
+        '编辑排班时，页面仍保持紧凑的动作条、直接写入本地工作副本和头部 Save Changes 的轻量流程；顶部班次按钮再沿用网格里按团队区分的颜色和提示，Clear 保持中性，方便快速判断会影响到哪类班次。',
       highlights: [
-        '保存修改按钮移入表格上方状态条',
-        '放弃修改与未保存数量提示保持在同一上下文',
-        '移除遮挡排班矩阵的底部保存浮层',
+        '表格上方保留紧凑的动作条',
+        '点击班次按钮会立即写入本地工作副本',
+        '保存仍通过页面头部的 Save Changes 完成',
+        '表格上方的班次按钮沿用网格的团队颜色与 tooltip 呈现',
+        'Clear 保持中性，不展示班次元数据',
       ],
       sections: [
         {
           title: '体验优化',
           items: [
-            '月度排班页在出现未保存修改时，于表格上方状态条右侧展示“放弃”和“保存修改”。',
-            '未保存数量、筛选摘要、区间选择提示和保存动作现在处于同一工作流区域。',
-            '移除底部居中的深色保存浮层，避免覆盖排班矩阵内容。',
+            '月度排班页现在使用更轻的直接编辑流程，选择单元格后不再打开右侧抽屉，班次按钮会先写入本地工作副本，再由页面头部的 Save Changes 统一保存。',
+            '表格上方的班次按钮沿用网格里按团队区分的颜色呈现。',
+            '班次按钮在 hover 和 focus 时会复用网格 tooltip 的信息与视觉样式。',
+            'Clear 保持中性，不展示任何班次元数据。',
           ],
         },
       ],
     },
     en: {
-      title: 'Roster save actions moved above the grid',
+      title: 'Monthly roster editing feels lighter',
       summary:
-        'Monthly roster save and discard actions now sit closer to the unsaved status context.',
+        "Monthly roster keeps its lighter direct-editing flow: shift buttons stage changes into the local working copy first, users save from the header, and the grid now adds matching color and tooltip cues.",
       status: 'Published',
       importance: 'Experience improvement',
       audience: ['Roster admins', 'Team editors'],
       impact:
-        'After editing the roster, users can save or discard changes above the grid without a bottom overlay covering roster cells.',
+        "When editing the roster, the page still uses the compact action bar, direct staging into the local working copy, and the header Save Changes action with no heavy chrome; the top shift buttons also reuse the grid's team-aware colors and tooltip details, while Clear stays neutral so it is easier to see what each action affects.",
       highlights: [
-        'Moved Save Changes into the status strip above the grid',
-        'Kept discard action next to the unsaved-count context',
-        'Removed the bottom save overlay that could cover the roster matrix',
+        'Compact action bar stays above the grid',
+        'Shift buttons stage changes into the local working copy immediately',
+        'Save Changes remains in the header',
+        "Top shift buttons match the roster grid's team-aware colors and tooltip treatment",
+        'Clear stays neutral and does not show shift metadata',
       ],
       sections: [
         {
           title: 'Experience improvements',
           items: [
-            'Monthly Roster now shows Discard and Save Changes on the right side of the status strip when unsaved edits exist.',
-            'Unsaved counts, filter summaries, range-selection hints, and save actions now share one workflow area.',
-            'Removed the centered dark bottom overlay so roster cells remain unobstructed.',
+            "Monthly roster now uses a lighter direct-editing flow, so selecting a cell no longer opens the right drawer and shift buttons stage changes into the local working copy before the header Save Changes action commits them.",
+            "The shift buttons above the grid reuse the roster grid's team-aware color presentation.",
+            'Hovering or focusing a shift button reuses the roster grid tooltip information and visual treatment.',
+            'Clear stays neutral and does not show shift metadata.',
           ],
         },
       ],
