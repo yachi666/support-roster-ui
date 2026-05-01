@@ -241,13 +241,7 @@ function isWeekend(day) {
 }
 
 function getShiftMeta(teamId, code) {
-  if (!code) {
-    return null
-  }
-
-  const teamDetails =
-    props.shiftDetailsByTeam?.[String(teamId)] || props.shiftDetailsByTeam?.[teamId] || {}
-  return teamDetails?.[code] || null
+  return getShiftPresentation(teamId, code)?.meta || null
 }
 
 const shiftPresentation = computed(() =>
