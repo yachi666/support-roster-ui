@@ -1,13 +1,13 @@
 <script setup>
 import { AlertTriangle, Copy, Download, Filter, Save, Search, Upload } from 'lucide-vue-next'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { resolveWorkspaceColor } from '../lib/color'
 import WorkspaceSurface from '../components/WorkspaceSurface.vue'
-import AssignmentDrawer from '../components/roster/AssignmentDrawer.vue'
 import RosterGrid from '../components/roster/RosterGrid.vue'
+import RosterSelectionActionBar from '../components/roster/RosterSelectionActionBar.vue'
 import { useRosterPlanner } from '../composables/useRosterPlanner'
 import { registerWorkspacePeriodGuard } from '../composables/useWorkspacePeriod'
 
@@ -24,12 +24,10 @@ const {
   saveErrorMessage,
   saveSuccessMessage,
   selectedCell,
-  drawerOpen,
   hasUnsavedChanges,
   pendingUpdateCount,
   pendingUpdateKeySet,
   selectedAssignment,
-  selectedShiftCode,
   validationWarning,
   shiftCodeOptions,
   shiftCodeColorMap,
@@ -40,12 +38,7 @@ const {
   importExportLoading,
   copyPreviousMonthPending,
   importExportError,
-  openCell,
-  closeDrawer,
-  setShiftCode,
-  applySelectedShift: applySingleSelectedShift,
-  copySelectedWeekToNextWeek,
-  applySelectedRange,
+  applyShiftCodeToActiveSelection,
   discardChanges,
   saveChanges,
   toggleTeamFilter,
@@ -59,37 +52,6 @@ const { t } = useI18n()
 
 const showTeamFilter = ref(false)
 const selectedRange = ref(null)
-const hasRangeSelection = computed(() => {
-  return Boolean(
-    selectedRange.value &&
-    selectedRange.value.staffId &&
-    selectedRange.value.endDay > selectedRange.value.startDay,
-  )
-})
-const selectedRangeSummary = computed(() => {
-  if (!hasRangeSelection.value) {
-    return ''
-  }
-
-  return t('workspace.roster.selectedDays', {
-    startDay: selectedRange.value.startDay,
-    endDay: selectedRange.value.endDay,
-  })
-})
-
-const activeFilterSummary = computed(() => {
-  const filters = []
-
-  if (searchTerm.value.trim()) {
-    filters.push(t('workspace.roster.searchSummary', { value: searchTerm.value.trim() }))
-  }
-
-  if (selectedTeamIds.value.length > 0) {
-    filters.push(t('workspace.roster.teamFilterSummary', { count: selectedTeamIds.value.length }))
-  }
-
-  return filters
-})
 const selectedAssignmentEditable = computed(() => {
   const teamId = selectedAssignment.value?.group?.teamId || selectedAssignment.value?.staff?.teamId
   return authStore.canEditTeam(teamId)
@@ -103,6 +65,7 @@ const visibleStaffRows = computed(() =>
     })),
   ),
 )
+const visibleStaffIds = computed(() => new Set(visibleStaffRows.value.map((row) => row.staffId)))
 
 function confirmDiscardPendingChanges() {
   if (!hasUnsavedChanges.value) {
@@ -112,31 +75,19 @@ function confirmDiscardPendingChanges() {
   return window.confirm(t('workspace.roster.leavePrompt', { count: pendingUpdateCount.value }))
 }
 
+function clearSelection() {
+  selectedCell.value = null
+  selectedRange.value = null
+}
+
 function selectCell(staffId, day) {
   selectedCell.value = { staffId, day }
   selectedRange.value = { staffId, startDay: day, endDay: day }
 }
 
-function selectRange({ staffId, startDay, endDay, openEditor = false }) {
+function selectRange({ staffId, startDay, endDay }) {
   selectedCell.value = { staffId, day: startDay }
   selectedRange.value = { staffId, startDay, endDay }
-
-  if (openEditor) {
-    openCell(staffId, startDay)
-  }
-}
-
-function clearRangeSelection() {
-  if (!selectedCell.value?.staffId || !selectedCell.value?.day) {
-    selectedRange.value = null
-    return
-  }
-
-  selectedRange.value = {
-    staffId: selectedCell.value.staffId,
-    startDay: selectedCell.value.day,
-    endDay: selectedCell.value.day,
-  }
 }
 
 function handleGridNavigation({ rowDelta, dayDelta, staffId, day }) {
@@ -158,62 +109,38 @@ function handleGridNavigation({ rowDelta, dayDelta, staffId, day }) {
   selectCell(rows[nextIndex].staffId, nextDay)
 }
 
-function openSelectedCell(payload) {
-  const staffId = payload?.staffId || selectedCell.value?.staffId
-  const day = payload?.day || selectedCell.value?.day
-
-  if (!staffId || !day) {
+function applyCurrentSelection(code) {
+  const activeSelection = selectedRange.value || selectedCell.value
+  if (!activeSelection) {
     return
   }
 
-  openCell(staffId, day)
-}
-
-function applyAndAdvanceDay() {
-  if (!selectedAssignmentEditable.value || !selectedCell.value || hasRangeSelection.value) {
-    return
-  }
-
-  const { staffId, day } = selectedCell.value
-  applySingleSelectedShift()
-
-  const nextDay = day + 1
-  if (nextDay > plannerDays.value.length) {
-    return
-  }
-
-  openCell(staffId, nextDay)
-}
-
-function copyWeekForward() {
   if (!selectedAssignmentEditable.value) {
     return
   }
-  const result = copySelectedWeekToNextWeek()
-  if (!result) {
-    return
-  }
 
-  openCell(result.staffId, result.firstTargetDay)
-}
-
-function applySelectedShift() {
-  if (!selectedAssignmentEditable.value) {
-    return
-  }
-  if (hasRangeSelection.value) {
-    const result = applySelectedRange(selectedRange.value.endDay)
-    if (result) {
-      closeDrawer()
-    }
-    return
-  }
-  applySingleSelectedShift()
+  applyShiftCodeToActiveSelection(activeSelection, code)
 }
 
 function copyPreviousMonth() {
   void copyPreviousMonthIntoCurrent()
 }
+
+watch(selectedCell, (cell) => {
+  if (!cell) {
+    selectedRange.value = null
+  }
+})
+
+watch(visibleStaffIds, (staffIds) => {
+  if (!selectedCell.value) {
+    return
+  }
+
+  if (!staffIds.has(selectedCell.value.staffId)) {
+    clearSelection()
+  }
+})
 
 let unregisterPeriodGuard = null
 
@@ -261,7 +188,7 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
         </div>
       </div>
 
-      <div class="flex items-center gap-3">
+      <div class="flex flex-wrap items-center justify-end gap-3">
         <div class="relative">
           <label for="workspace-roster-search" class="sr-only">{{
             t('workspace.roster.filterStaff')
@@ -360,92 +287,46 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
           <Download class="h-3.5 w-3.5" />
           {{ importExportLoading ? t('workspace.roster.exporting') : t('workspace.roster.export') }}
         </button>
+        <button
+          v-if="hasUnsavedChanges && authStore.canWriteWorkspace"
+          class="rounded-md border border-amber-200 bg-white px-3 py-1.5 text-sm font-semibold text-amber-800 shadow-sm transition-colors hover:border-amber-300 hover:bg-amber-100"
+          @click="discardChanges"
+        >
+          {{ t('workspace.roster.discard') }}
+        </button>
+        <button
+          class="flex items-center gap-1.5 rounded-md bg-teal-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-70"
+          :disabled="saving || !authStore.canWriteWorkspace"
+          @click="authStore.canWriteWorkspace && saveChanges()"
+        >
+          <Save class="h-3.5 w-3.5" />
+          {{
+            !authStore.canWriteWorkspace
+              ? t('common.readonlyMode')
+              : saving
+                ? t('common.saving')
+                : t('workspace.roster.saveChanges')
+          }}
+        </button>
       </div>
     </div>
 
     <Transition name="workspace-status">
       <div
-        v-if="
-          hasUnsavedChanges || activeFilterSummary.length || validationWarning || hasRangeSelection
-        "
-        data-testid="roster-status-strip"
-        class="border-b border-slate-200 px-4 py-3"
-        :class="hasUnsavedChanges ? 'bg-amber-50/80' : 'bg-slate-50/80'"
+        v-if="validationWarning"
+        class="mx-4 mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
       >
-        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div class="flex flex-wrap items-center gap-2">
-            <span
-              class="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white"
-            >
-              {{ monthLabel }}
-            </span>
-            <span
-              v-if="hasUnsavedChanges"
-              class="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-800"
-            >
-              {{ t('workspace.roster.pendingEdits', { count: pendingUpdateCount }) }}
-            </span>
-            <span
-              v-for="item in activeFilterSummary"
-              :key="item"
-              class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600"
-            >
-              {{ item }}
-            </span>
-            <span
-              class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600"
-            >
-              {{ t('workspace.roster.keyboardHint') }}
-            </span>
-            <span
-              v-if="hasRangeSelection"
-              class="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700"
-            >
-              {{ selectedRangeSummary }}
-            </span>
-            <button
-              v-if="hasRangeSelection"
-              class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-800"
-              @click="clearRangeSelection"
-            >
-              {{ t('workspace.roster.clearRange') }}
-            </button>
-          </div>
-          <div
-            v-if="hasUnsavedChanges && authStore.canWriteWorkspace"
-            class="flex shrink-0 items-center gap-2"
-          >
-            <button
-              class="rounded-md border border-amber-200 bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 shadow-sm transition-colors hover:border-amber-300 hover:bg-amber-100"
-              @click="discardChanges"
-            >
-              {{ t('workspace.roster.discard') }}
-            </button>
-            <button
-              class="flex items-center gap-1.5 rounded-md bg-teal-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-70"
-              :disabled="saving || !authStore.canWriteWorkspace"
-              @click="authStore.canWriteWorkspace && saveChanges()"
-            >
-              <Save class="h-3.5 w-3.5" />
-              {{
-                !authStore.canWriteWorkspace
-                  ? t('common.readonlyMode')
-                  : saving
-                    ? t('common.saving')
-                    : t('workspace.roster.saveChanges')
-              }}
-            </button>
-          </div>
-        </div>
-        <div
-          v-if="validationWarning"
-          class="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
-        >
-          <AlertTriangle class="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
-          <span>{{ validationWarning }}</span>
-        </div>
+        <AlertTriangle class="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
+        <span>{{ validationWarning }}</span>
       </div>
     </Transition>
+
+    <RosterSelectionActionBar
+      :visible="Boolean(selectedRange || selectedCell)"
+      :readonly="!selectedAssignmentEditable"
+      :shift-code-options="shiftCodeOptions"
+      @select-code="applyCurrentSelection($event)"
+    />
 
     <WorkspaceSurface
       v-if="errorMessage"
@@ -521,24 +402,6 @@ onBeforeRouteLeave(() => confirmDiscardPendingChanges())
       @select-cell="selectCell($event.staffId, $event.day)"
       @select-range="selectRange"
       @navigate-cell="handleGridNavigation"
-      @open-selected-cell="openSelectedCell"
-    />
-
-    <AssignmentDrawer
-      v-model="drawerOpen"
-      :assignment="selectedAssignment"
-      :readonly="!selectedAssignmentEditable"
-      :selected-range="selectedRange"
-      :selected-shift-code="selectedShiftCode"
-      :shift-code-options="shiftCodeOptions"
-      :validation-warning="validationWarning"
-      :year="year"
-      :month="month"
-      @select-code="selectedAssignmentEditable && setShiftCode($event)"
-      @apply="selectedAssignmentEditable && applySelectedShift()"
-      @apply-and-next="applyAndAdvanceDay"
-      @copy-week="copyWeekForward"
-      @clear-range="selectedAssignmentEditable && clearRangeSelection()"
     />
   </div>
 </template>
