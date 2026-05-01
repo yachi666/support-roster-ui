@@ -32,7 +32,6 @@
 - `WorkspaceDrawer.vue` 与 `WorkspaceModal.vue` 使用全局 Workspace transition class，不在组件内重复维护 scoped timing。
 - 共享 overlay 组件必须支持 `prefers-reduced-motion`，禁用位移与缩放后仍需保持打开/关闭状态清晰。
 - `RosterGrid.vue` 处于高频渲染路径，单元格动效必须使用明确的 transition-property，不能依赖 `transition-all`。
-- `RosterGrid.vue` 的 tooltip 班次字段应统一通过共享 `getShiftPresentation(...).meta` 读取，避免再直接分叉访问 `shiftDetailsByTeam`。
 
 ## 维护规则
 
