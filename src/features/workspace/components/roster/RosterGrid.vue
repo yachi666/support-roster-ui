@@ -562,10 +562,10 @@ onBeforeUnmount(() => {
                 v-for="(code, index) in row.person.schedule"
                 :key="`${row.person.id}-${index}`"
                 :class="[
-                  'relative cursor-cell border-b border-r border-slate-100 p-1 text-center font-mono text-[11px] outline-none transition-all focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500',
+                  'roster-cell-motion relative cursor-cell border-b border-r border-slate-100 p-1 text-center font-mono text-[11px] outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500',
                   isWeekend(days[index]) ? 'bg-rose-50/20' : '',
                   isSelectedStaff(row.person.id)
-                    ? 'bg-teal-100/70 hover:bg-teal-100/90'
+                    ? 'shadow-[inset_0_1px_0_0_rgba(13,148,136,0.22),inset_0_-1px_0_0_rgba(13,148,136,0.22)] hover:shadow-[inset_0_1px_0_0_rgba(13,148,136,0.32),inset_0_-1px_0_0_rgba(13,148,136,0.32)]'
                     : 'hover:bg-slate-100/80',
                   isSelected(row.person.id, index + 1)
                     ? 'z-10 bg-teal-50/60 ring-2 ring-inset ring-teal-500'
@@ -601,7 +601,7 @@ onBeforeUnmount(() => {
                   <TooltipTrigger as-child>
                     <div
                       :class="[
-                        'flex min-h-[28px] w-full items-center justify-center rounded-[3px] border outline-none transition-transform hover:-translate-y-0.5 focus-visible:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-teal-500/30',
+                        'roster-shift-chip-motion flex min-h-[28px] w-full items-center justify-center rounded-[3px] border outline-none hover:-translate-y-0.5 focus-visible:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-teal-500/30',
                         !getShiftStyle(row.person.teamId, code) &&
                           (colorMap[code] || 'border-slate-200 bg-white text-slate-700'),
                       ]"
@@ -696,7 +696,7 @@ onBeforeUnmount(() => {
                 <div
                   v-else
                   :class="[
-                    'flex min-h-[28px] w-full items-center justify-center rounded-[3px] border border-dashed text-slate-300 transition-colors',
+                    'roster-cell-slot-motion flex min-h-[28px] w-full items-center justify-center rounded-[3px] border border-dashed text-slate-300',
                     isPendingUpdate(row.person.id, index + 1)
                       ? 'border-amber-300 bg-amber-50 text-amber-700'
                       : 'border-slate-200/80',
@@ -719,3 +719,36 @@ onBeforeUnmount(() => {
     </div>
   </TooltipProvider>
 </template>
+
+<style scoped>
+.roster-cell-motion {
+  transition-duration: var(--workspace-motion-micro);
+  transition-property: background-color, border-color, box-shadow;
+  transition-timing-function: var(--workspace-motion-ease-out);
+}
+
+.roster-shift-chip-motion {
+  transition-duration: var(--workspace-motion-micro);
+  transition-property: background-color, border-color, box-shadow, transform;
+  transition-timing-function: var(--workspace-motion-ease-out);
+}
+
+.roster-cell-slot-motion {
+  transition-duration: var(--workspace-motion-micro);
+  transition-property: background-color, border-color, color;
+  transition-timing-function: var(--workspace-motion-ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roster-cell-motion,
+  .roster-shift-chip-motion,
+  .roster-cell-slot-motion {
+    transition: none;
+  }
+
+  .roster-shift-chip-motion:hover,
+  .roster-shift-chip-motion:focus-visible {
+    transform: none;
+  }
+}
+</style>

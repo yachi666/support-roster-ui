@@ -85,26 +85,3 @@ onBeforeUnmount(() => {
     </div>
   </Transition>
 </template>
-
-<style scoped>
-.workspace-fade-enter-active,
-.workspace-fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.workspace-fade-enter-from,
-.workspace-fade-leave-to {
-  opacity: 0;
-}
-
-.workspace-modal-enter-active,
-.workspace-modal-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.workspace-modal-enter-from,
-.workspace-modal-leave-to {
-  opacity: 0;
-  transform: scale(0.97);
-}
-</style>

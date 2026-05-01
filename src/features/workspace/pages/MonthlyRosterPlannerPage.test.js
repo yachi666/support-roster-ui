@@ -12,3 +12,42 @@ test('monthly roster places unsaved save actions in the table status strip', () 
   )
   assert.doesNotMatch(source, /class="absolute bottom-6/)
 })
+
+test('monthly roster animates status strip and save/import messages with workspace status transitions', () => {
+  assert.match(
+    source,
+    /<Transition name="workspace-status">[\s\S]*data-testid="roster-status-strip"/,
+  )
+  assert.match(
+    source,
+    /<Transition name="workspace-status">[\s\S]*v-if="saveErrorMessage"/,
+  )
+  assert.match(
+    source,
+    /<Transition name="workspace-status">[\s\S]*v-if="saveSuccessMessage"/,
+  )
+  assert.match(
+    source,
+    /<Transition name="workspace-status">[\s\S]*v-if="importExportError"/,
+  )
+})
+
+test('monthly roster animates the team filter popover with the shared workspace popover transition', () => {
+  assert.match(
+    source,
+    /<Transition name="workspace-popover">[\s\S]*v-if="showTeamFilter"/,
+  )
+})
+
+test('monthly roster applies the current dragged range through the existing primary apply action', () => {
+  assert.match(
+    source,
+    /<AssignmentDrawer[\s\S]*@apply="selectedAssignmentEditable && applySelectedShift\(\)"/,
+  )
+  assert.doesNotMatch(source, /@apply-range=/)
+})
+
+test('monthly roster only exposes range clearing after drag selection while the primary apply action stays shared', () => {
+  assert.match(source, /@clear-range="selectedAssignmentEditable && clearRangeSelection\(\)"/)
+  assert.doesNotMatch(source, /function applyRangeForward/)
+})

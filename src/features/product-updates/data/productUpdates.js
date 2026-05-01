@@ -32,6 +32,15 @@ export const productUpdates = [
     sectionTypes: ['improvement'],
   },
   {
+    id: '2026-05-01-workspace-motion-feedback',
+    version: '2026.05.01',
+    date: '2026-05-01',
+    type: 'improvement',
+    modules: ['workspace', 'roster'],
+    prNumbers: [],
+    sectionTypes: ['improvement'],
+  },
+  {
     id: '2026-04-28-viewer-external-systems-drawer',
     version: '2026.04.28',
     date: '2026-04-28',
@@ -169,6 +178,57 @@ const PRODUCT_UPDATE_TRANSLATIONS = {
             'Monthly Roster now shows Discard and Save Changes on the right side of the status strip when unsaved edits exist.',
             'Unsaved counts, filter summaries, range-selection hints, and save actions now share one workflow area.',
             'Removed the centered dark bottom overlay so roster cells remain unobstructed.',
+          ],
+        },
+      ],
+    },
+  },
+  '2026-05-01-workspace-motion-feedback': {
+    'zh-CN': {
+      title: '工作台动效与排班反馈更聚焦',
+      summary: '工作台顶部、状态条和排班表格的动效反馈更统一，便于更快识别当前操作焦点。',
+      status: '已发布',
+      importance: '体验优化',
+      audience: ['排班管理员', '团队编辑者'],
+      impact:
+        '切换月份、查看保存状态和浏览排班矩阵时，界面反馈更集中，选中人员所在行也更容易识别而不会盖掉单元格状态。',
+      highlights: [
+        '工作台状态提示、弹层和抽屉统一使用共享动效节奏',
+        '月度排班页顶部栏与状态条的反馈更紧凑，减少视觉跳动',
+        '选中人员整行会保持轻量高亮，同时保留单元格选中、范围和待保存状态优先级',
+      ],
+      sections: [
+        {
+          title: '体验优化',
+          items: [
+            '工作台抽屉、弹窗、状态条和筛选弹层统一使用同一套动效节奏，页面反馈更连贯。',
+            '月度排班页顶部栏和保存状态提示的动效更聚焦，减少注意力在工具栏与表格之间来回跳转。',
+            '在排班表格中选中某位成员后，会轻量标记整行，帮助定位该成员，同时保留单元格选中、范围选择和待保存状态的视觉优先级。',
+          ],
+        },
+      ],
+    },
+    en: {
+      title: 'Workspace motion and roster feedback feel more focused',
+      summary:
+        'Workspace header, status-strip, and roster-grid motion now feel more consistent so active context is easier to track.',
+      status: 'Published',
+      importance: 'Experience improvement',
+      audience: ['Roster admins', 'Team editors'],
+      impact:
+        'When changing months, checking save status, or scanning the roster grid, the UI now keeps attention on the active area and preserves cell-status priority while highlighting the selected staff row.',
+      highlights: [
+        'Workspace status cues, popovers, and drawers now share one motion rhythm',
+        'Monthly roster topbar and status-strip feedback feels tighter with less visual jumping',
+        'Selected staff rows stay lightly highlighted without overriding selected, range, or pending cell states',
+      ],
+      sections: [
+        {
+          title: 'Experience improvements',
+          items: [
+            'Workspace drawers, modals, status strips, and filter popovers now use one shared motion cadence for more consistent feedback.',
+            'The monthly roster topbar and save-status cues feel more focused so attention does not bounce between toolbar controls and the grid.',
+            'Selecting a staff member in the roster grid now lightly marks the whole row while keeping selected, range-selected, and pending cell states visually higher priority.',
           ],
         },
       ],
