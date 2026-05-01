@@ -1,199 +1,362 @@
-# Support Roster UI
+# 📱 Support Roster UI
 
 [中文](./README.zh-CN.md) · [Parent workspace](https://github.com/yachi666/support-platform)
 
-![Vue 3](https://img.shields.io/badge/Vue-3.5-42b883?style=flat-square)
-![Vite](https://img.shields.io/badge/Vite-7.x-646cff?style=flat-square)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.x-06b6d4?style=flat-square)
-![Node.js](https://img.shields.io/badge/Node.js-20%2B-5fa04e?style=flat-square)
+![Vue 3](https://img.shields.io/badge/Vue-3.5-42b883?style=flat-square&logo=vue.js)
+![Vite](https://img.shields.io/badge/Vite-7.x-646cff?style=flat-square&logo=vite)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.x-06b6d4?style=flat-square&logo=tailwindcss)
+![Node.js](https://img.shields.io/badge/Node.js-20%2B-5fa04e?style=flat-square&logo=node.js)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
-`support-roster-ui` is the Vue 3 frontend for the support roster platform. It ships a single Vite SPA with a public roster viewer, authenticated admin workspace, contact information pages, product update notes, and protected operational tools.
+> A modern Vue 3 frontend for the support roster platform, delivering public on-call visibility, authenticated workspace management, and operational tools through a polished single-page application.
 
-This repository is designed to run as a submodule of [`support-platform`](https://github.com/yachi666/support-platform), where the backend, automation tests, local scripts, and curated screenshots are coordinated.
+**Support Roster UI** is the user-facing web interface for managing and viewing on-call schedules. It provides a public roster viewer, an admin workspace for planning and operations, contact information pages, product release notes, and protected tools—all built with Vue 3, Vite, and Tailwind CSS.
 
-## Screenshots
+This repository is designed to work as a **Git submodule** within [`support-platform`](https://github.com/yachi666/support-platform), where backend services, automated tests, development scripts, and curated screenshots are centrally coordinated.
 
-| Public viewer | Workspace overview |
+---
+
+## ✨ Highlights
+
+- **🎯 Vue 3 Composition API** with `<script setup>` and reusable feature structure
+- **⚡ Lightning-fast development** powered by Vite 7 with HMR
+- **🎨 Modern styling** using Tailwind CSS 4 with custom design tokens
+- **🛣️ Smart routing** via Vue Router 5 with role-based access guards
+- **🔒 Access control** enforcing workspace policies on protected pages
+- **📦 Modular architecture** with feature-based organization
+- **🌐 Internationalization** support via Vue I18n
+- **🐳 Production-ready** with Docker + Nginx deployment path
+- **📚 Comprehensive specs** maintained in `.specs/` for all features
+
+---
+
+## 🖼️ Screenshots
+
+| Public Viewer | Workspace Overview |
 |---|---|
 | ![Public roster viewer](https://raw.githubusercontent.com/yachi666/support-platform/main/docs/assets/screenshots/public-viewer.png) | ![Workspace overview](https://raw.githubusercontent.com/yachi666/support-platform/main/docs/assets/screenshots/workspace-overview.png) |
 
-| Monthly roster | Validation center |
+| Monthly Roster Planner | Validation Center |
 |---|---|
 | ![Monthly roster planner](https://raw.githubusercontent.com/yachi666/support-platform/main/docs/assets/screenshots/workspace-roster.png) | ![Workspace validation center](https://raw.githubusercontent.com/yachi666/support-platform/main/docs/assets/screenshots/workspace-validation.png) |
 
-## Product Surfaces
+---
 
-| Surface | Route | Purpose |
-|---------|-------|---------|
-| Public Viewer | `/viewer` | Read-only on-call timeline with date and timezone controls. |
-| Login | `/login` | Staff ID login and account activation. |
-| Admin Workspace | `/workspace/*` | Roster operations for overview, monthly planning, staff, shifts, teams, validation, import/export, and accounts. |
-| Contact Information | `/contact-information` | Public and admin contact information flows. |
-| Linux Passwords | `/linux-passwords` | Protected operational page gated by workspace access policy. |
-| Product Updates | `/product-updates` | User-facing release notes maintained with visible product changes. |
+## 🗺️ Product Surfaces & Routes
 
-## Highlights
+| Surface | Route | Access | Purpose |
+|---------|-------|--------|---------|
+| **Public Viewer** | `/viewer` | Public | Read-only on-call timeline with date picker, timezone selector, and responsive layout |
+| **Login** | `/login` | Public | Staff ID authentication and account activation flow |
+| **Admin Workspace** | `/workspace/*` | Authenticated + Policy | Complete roster management: overview, monthly planning, staff, shifts, teams, validation, import/export, accounts |
+| **Contact Information** | `/contact-information` | Public + Protected | Public viewing and admin management of contact details |
+| **Linux Passwords** | `/linux-passwords` | Protected | Operational password vault gated by workspace access policy |
+| **Product Updates** | `/product-updates` | Public | User-facing release notes tracking visible product changes |
 
-- Vue 3 SPA powered by Vite.
-- Route-level split between public, authenticated, and role-gated surfaces.
-- Central API layer for `/api/**` and `/api/workspace/**`.
-- Workspace access policy checks before protected page entry.
-- Tailwind CSS 4 styling with lucide icons.
-- Docker + Nginx deployment path for static hosting.
-- Frontend specifications maintained under `.specs/`.
+> **Note:** Navigating to `/workspace` redirects users to the appropriate workspace entry page based on their authenticated permissions and workspace policy.
 
-## Tech Stack
+---
 
-| Category | Choice |
-|----------|--------|
-| Framework | `Vue 3.5` |
-| Build Tool | `Vite 7` |
-| Router | `Vue Router 5` |
-| State | Vue reactivity, composables, and `Pinia` |
-| Styling | `Tailwind CSS 4` |
-| UI Helpers | `lucide-vue-next`, `radix-vue`, `class-variance-authority`, `tailwind-merge` |
-| Date Utilities | `date-fns`, `date-fns-tz` |
-| Runtime | `Node.js ^20.19.0 || >=22.12.0` |
+## 🛠️ Tech Stack
 
-## Quick Start
+| Category | Technology |
+|----------|------------|
+| **Framework** | Vue 3.5 (Composition API) |
+| **Build Tool** | Vite 7 |
+| **Router** | Vue Router 5 |
+| **State Management** | Vue reactivity + Pinia stores |
+| **Styling** | Tailwind CSS 4 |
+| **UI Components** | Radix Vue (headless primitives) |
+| **Icons** | Lucide Vue Next |
+| **Utilities** | clsx, tailwind-merge, class-variance-authority |
+| **Date Handling** | date-fns, date-fns-tz |
+| **i18n** | Vue I18n |
+| **Runtime** | Node.js `^20.19.0 \|\| >=22.12.0` |
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js `^20.19.0 || >=22.12.0`
-- npm
-- A reachable backend API, normally `http://127.0.0.1:8080/api`
+- **Node.js** `^20.19.0 || >=22.12.0`
+- **npm** (comes with Node.js)
+- **Backend API** running at `http://127.0.0.1:8080/api` (see [Backend Dependency](#backend-dependency))
 
-### Install
+### Installation
 
 ```bash
+# Clone the repository (if standalone) or init submodules (if from parent workspace)
+git submodule update --init --recursive
+
+# Navigate to the UI directory
+cd support-roster-ui
+
+# Install dependencies
 npm install
 ```
 
-### Start Development Server
+### Development
 
 ```bash
+# Start the Vite dev server (default port: 5173)
 npm run dev
 ```
 
-Default local API configuration:
+The app will be available at `http://localhost:5173` with hot module replacement enabled.
 
+**Default API Configuration:**
 ```bash
 VITE_API_BASE_URL=http://127.0.0.1:8080/api
 ```
 
-### Build and Preview
+You can override this in `.env.development.local` (not tracked by Git).
+
+### Build & Preview
 
 ```bash
+# Build for production
 npm run build
+
+# Preview the production build locally
 npm run preview
 ```
 
-## Available Scripts
+The build output will be in the `dist/` directory.
+
+---
+
+## 📜 Available Scripts
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start the Vite development server. |
-| `npm run build` | Build the production static bundle. |
-| `npm run preview` | Preview the production build locally. |
-| `npm run format` | Format `src/` with Prettier. |
+| `npm run dev` | Start Vite development server with HMR |
+| `npm run build` | Build production-ready static bundle to `dist/` |
+| `npm run preview` | Preview production build locally |
+| `npm run format` | Format `src/` with Prettier |
 
-## Environment Variables
+---
 
-| Variable | Purpose | Example |
-|----------|---------|---------|
-| `VITE_API_BASE_URL` | Backend API base URL used by the frontend build. | `http://127.0.0.1:8080/api` |
-| `VITE_XMATTERS_URL` | External Systems drawer link for xMatters. | `https://www.xmatters.com/` |
-| `VITE_SERVICENOW_URL` | External Systems drawer link for ServiceNow. | `https://www.servicenow.com/` |
-| `VITE_MESSAGE_DELIVERY_KB_URL` | External Systems drawer link for Message Delivery Knowledge Base. | `https://learn.microsoft.com/` |
+## 🔧 Environment Variables
 
-Production defaults and deployment examples live in `.env.production`, `Dockerfile`, and `build/`.
+| Variable | Purpose | Default (Dev) | Example (Prod) |
+|----------|---------|---------------|----------------|
+| `VITE_API_BASE_URL` | Backend API base URL | `http://127.0.0.1:8080/api` | `https://supportui.servier/api` |
+| `VITE_XMATTERS_URL` | External Systems drawer link for xMatters | `https://www.xmatters.com/` | |
+| `VITE_SERVICENOW_URL` | External Systems drawer link for ServiceNow | `https://www.servicenow.com/` | |
+| `VITE_MESSAGE_DELIVERY_KB_URL` | Message Delivery Knowledge Base link | `https://learn.microsoft.com/` | |
 
-## Architecture
+**Configuration Files:**
+- `.env.development` – Development defaults
+- `.env.production` – Production defaults
+- `.env.development.local` / `.env.production.local` – Local overrides (not committed)
+
+See [Vite's environment variables documentation](https://vite.dev/guide/env-and-mode.html) for more details.
+
+---
+
+## 🏗️ Architecture
 
 ```text
-Browser
-  └── Vue 3 SPA
-      ├── /viewer                 # Public roster viewer
-      ├── /login                  # Authentication and activation
-      ├── /workspace/*            # Admin workspace shell
-      ├── /contact-information    # Contact information flows
-      ├── /linux-passwords        # Protected operational tool
-      ├── /product-updates        # Product update log
-      └── src/api/                # Backend API client layer
-              ↓
-        support-roster-server
+┌─────────────────────────────────────────────────┐
+│                   Browser                       │
+│                                                 │
+│  ┌───────────────────────────────────────────┐ │
+│  │           Vue 3 SPA (Vite)                │ │
+│  │                                           │ │
+│  │  ┌─────────────────────────────────────┐ │ │
+│  │  │  /viewer       # Public roster view │ │ │
+│  │  │  /login        # Auth & activation  │ │ │
+│  │  │  /workspace/*  # Admin workspace    │ │ │
+│  │  │  /contact-information/* # Contact flows │ │ │
+│  │  │  /linux-passwords       # Protected vault│ │ │
+│  │  │  /product-updates       # Release notes  │ │ │
+│  │  └─────────────────────────────────────┘ │ │
+│  │                                           │ │
+│  │  ┌─────────────────────────────────────┐ │ │
+│  │  │      src/api/ (API Client Layer)    │ │ │
+│  │  └─────────────────────────────────────┘ │ │
+│  └───────────────────────────────────────────┘ │
+│                       │                         │
+│                       ▼                         │
+│              HTTP Requests                      │
+└─────────────────────────────────────────────────┘
+                        │
+                        ▼
+        ┌───────────────────────────────┐
+        │   support-roster-server       │
+        │   (PostgreSQL backend)        │
+        └───────────────────────────────┘
 ```
 
-## Directory Guide
+**Key Concepts:**
+- **Single-page application** with client-side routing
+- **API layer** (`src/api/`) abstracts backend communication
+- **Route guards** enforce authentication and workspace policies
+- **Feature modules** encapsulate domain logic (workspace, contact-info, etc.)
+- **Pinia stores** manage cross-component state when reactivity isn't enough
+
+---
+
+## 📂 Project Structure
 
 ```text
 support-roster-ui/
-├── .specs/                      # Frontend specs and product notes
-├── build/                       # Nginx, ECR, and ECS deployment examples
-├── public/                      # Static public assets
+├── .specs/                          # 📚 Frontend specifications
+│   ├── spec.md                      # Main spec navigation
+│   ├── architecture.md              # Architecture decisions
+│   ├── development.md               # Local dev workflow
+│   ├── deployment.md                # Deployment guides
+│   ├── ui-design.md                 # Design system & patterns
+│   ├── product-updates.md           # Product update log rules
+│   ├── modules/                     # Module-specific specs
+│   └── workspace/                   # Workspace feature specs
+│       └── index.md
+├── build/                           # 🐳 Deployment configs
+│   ├── build-frontend.sh
+│   ├── push-to-ecr.example.sh
+│   └── ecs-task-definition.example.json
+├── public/                          # Static assets (served as-is)
 ├── src/
-│   ├── api/                     # Backend request wrappers
-│   ├── assets/                  # Global styles and shared assets
-│   ├── components/              # Public viewer components
-│   ├── features/                # Feature domains
+│   ├── api/                         # 🔌 Backend API wrappers
+│   ├── assets/                      # 🎨 Global styles, images
+│   ├── components/                  # 🧩 Shared UI components
+│   ├── data/                        # Static data (teams, etc.)
+│   ├── features/                    # 🎯 Feature modules
 │   │   ├── contact-information/
 │   │   ├── linux-passwords/
 │   │   ├── product-updates/
-│   │   └── workspace/
-│   ├── pages/                   # Top-level route pages
-│   ├── router/                  # Route definitions and guards
-│   ├── stores/                  # Pinia stores
-│   ├── App.vue
-│   └── main.js
-├── Dockerfile
-├── nginx.container.conf
+│   │   └── workspace/               # Admin workspace feature
+│   ├── i18n/                        # 🌐 Internationalization
+│   │   └── locales/
+│   ├── lib/                         # 🛠️ Utility functions
+│   ├── pages/                       # 📄 Top-level route pages
+│   ├── router/                      # 🛣️ Route config & guards
+│   ├── stores/                      # 📦 Pinia state stores
+│   ├── App.vue                      # Root component
+│   └── main.js                      # App entry point
+├── Dockerfile                       # Production container
+├── nginx.container.conf             # Nginx config for SPA routing
 ├── package.json
-└── vite.config.js
+├── vite.config.js
+└── tailwind.config.js
 ```
 
-## Backend Dependency
+---
 
-The UI expects `support-roster-server` to expose:
+## 🔗 Backend Dependency
 
-| API Area | Base Path |
-|----------|-----------|
-| Viewer and public data | `/api/**` |
-| Workspace administration | `/api/workspace/**` |
-| Authentication | `/api/auth/**` |
+The UI communicates with **`support-roster-server`**, which must expose:
 
-For local development, start PostgreSQL and the backend before running the Vite server. From the parent workspace, `../scripts/dev/restart-all.sh` can restart both services.
+| API Scope | Base Path | Purpose |
+|-----------|-----------|---------|
+| **Public Data** | `/api/**` | Viewer roster data, public contacts |
+| **Workspace Admin** | `/api/workspace/**` | CRUD for staff, shifts, teams, rosters, validation |
+| **Authentication** | `/api/auth/**` | Login, logout, account activation |
 
-## Deployment
+### Local Development Setup
 
-Supported deployment paths:
+1. **Start PostgreSQL** (required by backend)
+2. **Start backend server** (`support-roster-server` on port `8080`)
+3. **Start frontend dev server** (`npm run dev` in this directory)
 
-- Static build served by Linux + Nginx.
-- Docker image served by Nginx, suitable for ECR/ECS Fargate-style deployment.
+**Convenience script** (from parent workspace):
+```bash
+../scripts/dev/restart-all.sh
+```
 
-Relevant files:
+This script handles restarting both backend and frontend services together.
 
-- [`Dockerfile`](./Dockerfile)
-- [`nginx.container.conf`](./nginx.container.conf)
-- [`build/build-frontend.sh`](./build/build-frontend.sh)
-- [`build/ecs-task-definition.example.json`](./build/ecs-task-definition.example.json)
-- [`build/push-to-ecr.example.sh`](./build/push-to-ecr.example.sh)
+For detailed backend setup, see the [support-roster-server repository README](https://github.com/yachi666/support-roster-server/blob/main/README.md).
 
-## Documentation
+---
 
-- Frontend spec index: [`./.specs/spec.md`](./.specs/spec.md)
-- Architecture: [`./.specs/architecture.md`](./.specs/architecture.md)
-- Development workflow: [`./.specs/development.md`](./.specs/development.md)
-- Workspace specs: [`./.specs/workspace/index.md`](./.specs/workspace/index.md)
-- Deployment specs: [`./.specs/deployment.md`](./.specs/deployment.md)
-- Product update log rules: [`./.specs/product-updates.md`](./.specs/product-updates.md)
+## 🐳 Deployment
 
-## Contributing
+### Supported Deployment Paths
 
-Before changing routes, pages, component behavior, state, API integration, data models, visual rules, or development workflow, update the matching `.specs/` document in the same change.
+1. **Linux + Nginx** (static hosting)
+   - Build with `npm run build`
+   - Serve `dist/` with Nginx
+   - Configure reverse proxy to backend API
 
-For user-visible changes, also maintain `src/features/product-updates/data/productUpdates.js` in both `zh-CN` and `en` unless the change is purely internal.
+2. **Docker + Nginx** (containerized)
+   - Build Docker image: `docker build -t support-ui .`
+   - Run with environment variables for `VITE_API_BASE_URL`
+   - Suitable for AWS ECR/ECS Fargate or any container orchestrator
 
-## License
+### Deployment Resources
 
-This project is released under the [MIT License](./LICENSE).
+- [`Dockerfile`](./Dockerfile) – Multi-stage build for production
+- [`nginx.container.conf`](./nginx.container.conf) – Nginx config with SPA fallback
+- [`build/build-frontend.sh`](./build/build-frontend.sh) – Build script
+- [`build/ecs-task-definition.example.json`](./build/ecs-task-definition.example.json) – AWS ECS task template
+- [`build/push-to-ecr.example.sh`](./build/push-to-ecr.example.sh) – ECR push script example
+
+**Production Environment Variables:**
+
+See `.env.production` for default production config. Override as needed in your deployment environment.
+
+---
+
+## 📚 Documentation & Specs
+
+All frontend technical specifications live in the `.specs/` directory:
+
+| Document | Description |
+|----------|-------------|
+| [`.specs/spec.md`](./.specs/spec.md) | 🗂️ Main spec navigation hub |
+| [`.specs/architecture.md`](./.specs/architecture.md) | 🏛️ Architecture decisions & patterns |
+| [`.specs/development.md`](./.specs/development.md) | 💻 Local dev workflow, health checks, restarts |
+| [`.specs/deployment.md`](./.specs/deployment.md) | 🚀 Deployment guides (Nginx, Docker, AWS) |
+| [`.specs/ui-design.md`](./.specs/ui-design.md) | 🎨 Design system, colors, typography, components |
+| [`.specs/product-updates.md`](./.specs/product-updates.md) | 📝 Product update log maintenance rules |
+| [`.specs/workspace/index.md`](./.specs/workspace/index.md) | 🏢 Workspace feature navigation |
+| [`.specs/modules/`](./.specs/modules/) | 📦 Individual module specs |
+
+**When to update specs:**
+- Adding or changing routes, pages, components
+- Modifying state management, API integration, or data models
+- Changing visual rules, interaction patterns, or development workflow
+- Adding or removing features
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please follow these guidelines:
+
+### Spec Maintenance
+
+**Critical:** Specs are not optional. They are part of the implementation.
+
+- ✅ **Always update `.specs/` docs** when changing routes, pages, components, state, APIs, or workflows
+- ✅ **Update navigation files** (`.specs/spec.md` or relevant `index.md`) when adding new spec documents
+- ✅ **Keep specs synced** with code in the same commit/PR
+- ❌ **Don't create scattered spec files** outside `.specs/`
+
+### Product Update Log
+
+- ✅ **Maintain `src/features/product-updates/data/productUpdates.js`** for user-visible changes
+- ✅ **Update both `zh-CN` and `en` entries** (bilingual requirement)
+- ✅ **Write for users, not developers** (focus on value, not implementation)
+- ⚠️ **Skip for internal refactors** (note "no user-visible changes" in PR description)
+
+### Code Quality
+
+- Follow Vue 3 Composition API best practices
+- Use `<script setup>` for new components
+- Maintain consistent code style (use `npm run format`)
+- Write meaningful commit messages
+
+For detailed agent instructions, see [`AGENTS.md`](./AGENTS.md).
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License**. See [LICENSE](./LICENSE) for details.
+
+---
+
+**Made with ❤️ using Vue 3, Vite, and Tailwind CSS**
