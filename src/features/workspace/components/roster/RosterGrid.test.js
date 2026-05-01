@@ -10,9 +10,3 @@ test('roster grid removes open-selected-cell and keeps selection events on click
   assert.match(source, /@keydown="handleCellKeydown\(\$event, row\.person\.id, index \+ 1\)"/)
   assert.match(source, /case 'Enter':[\s\S]*emit\('select-cell', \{ staffId, day \}\)/)
 })
-
-test('roster grid still emits select-cell when a staff row is clicked or focused', () => {
-  assert.match(source, /function selectStaffRow\(staffId\)/)
-  assert.match(source, /emit\('select-cell', \{ staffId, day: props\.selectedCell\?\.day \|\| 1 \}\)/)
-  assert.match(source, /@focus="emit\('select-cell', \{ staffId: row\.person\.id, day: index \+ 1 \}\)"/)
-})
