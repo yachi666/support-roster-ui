@@ -133,8 +133,6 @@ export function useRosterPlanner() {
   const timezone = shallowRef('UTC')
   const searchTerm = useWorkspacePageSearch()
   const selectedCell = ref(null)
-  const drawerOpen = shallowRef(false)
-  const selectedShiftCode = shallowRef('')
   const shiftCodeOptions = shallowRef(['Clear'])
   const shiftCodeOptionsByTeam = shallowRef({})
   const shiftCodeColorMap = shallowRef({})
@@ -203,10 +201,6 @@ export function useRosterPlanner() {
     return options
   })
 
-  watch([selectedAssignment, availableShiftCodeOptions], ([assignment, options]) => {
-    selectedShiftCode.value = assignment?.currentCode || options[0] || ''
-  }, { immediate: true })
-
   const validationWarning = computed(() => {
     return serverValidationWarning.value
   })
@@ -254,7 +248,6 @@ export function useRosterPlanner() {
 
       if (selectedCell.value && !findAssignment(rosterStaffIndex.value, selectedCell.value)) {
         selectedCell.value = null
-        drawerOpen.value = false
       }
 
       void refreshValidationWarning()
@@ -277,112 +270,32 @@ export function useRosterPlanner() {
 
   watch([year, month], () => {
     selectedCell.value = null
-    drawerOpen.value = false
     void loadRoster()
   }, { immediate: true })
 
-  function openCell(staffId, day) {
-    selectedCell.value = { staffId, day }
-    drawerOpen.value = true
-  }
-
-  function closeDrawer() {
-    drawerOpen.value = false
-  }
-
-  function setShiftCode(code) {
-    selectedShiftCode.value = code
-  }
-
-  function applySelectedShift() {
-    if (!selectedAssignment.value) {
-      return
-    }
-
-    const code = selectedShiftCode.value === 'Clear' ? '' : selectedShiftCode.value
-    const { staff, day } = selectedAssignment.value
-    applyScheduleUpdate({
-      rosterStaffIndex,
-      baseStaffIndex,
-      pendingUpdates,
-      staffId: staff.id,
-      day,
-      shiftCode: code,
-    })
-    saveSuccessMessage.value = ''
-    drawerOpen.value = false
-  }
-
-  function copySelectedWeekToNextWeek() {
-    if (!selectedAssignment.value) {
+  function applyShiftCodeToActiveSelection(selection, shiftCode) {
+    if (!selection?.staffId) {
       return null
     }
 
-    const totalDays = plannerDays.value.length
-    const currentDate = new Date(year.value, month.value - 1, selectedAssignment.value.day)
-    const dayOfWeek = currentDate.getDay()
-    const mondayOffset = (dayOfWeek + 6) % 7
-    const sourceWeekStart = Math.max(1, selectedAssignment.value.day - mondayOffset)
-    const sourceWeekEnd = Math.min(totalDays, sourceWeekStart + 6)
-
-    let copiedCount = 0
-    let firstTargetDay = null
-
-    for (let sourceDay = sourceWeekStart; sourceDay <= sourceWeekEnd; sourceDay += 1) {
-      const targetDay = sourceDay + 7
-      if (targetDay > totalDays) {
-        continue
-      }
-
-      const sourceCode = selectedAssignment.value.staff.schedule[sourceDay - 1] || ''
-      const didApply = applyScheduleUpdate({
-        rosterStaffIndex,
-        baseStaffIndex,
-        pendingUpdates,
-        staffId: selectedAssignment.value.staff.id,
-        day: targetDay,
-        shiftCode: sourceCode,
-      })
-
-      if (didApply) {
-        copiedCount += 1
-        if (firstTargetDay == null) {
-          firstTargetDay = targetDay
-        }
-      }
-    }
-
-    if (!copiedCount || firstTargetDay == null) {
+    const startDay = selection.day ?? selection.startDay
+    if (!startDay) {
       return null
     }
-
-    saveSuccessMessage.value = ''
-
-    return {
-      copiedCount,
-      firstTargetDay,
-      staffId: selectedAssignment.value.staff.id,
-    }
-  }
-
-  function applySelectedRange(endDay) {
-    if (!selectedAssignment.value) {
-      return null
-    }
-
-    const totalDays = plannerDays.value.length
-    const normalizedEndDay = Math.min(Math.max(Number(endDay), selectedAssignment.value.day), totalDays)
-    const code = selectedShiftCode.value === 'Clear' ? '' : selectedShiftCode.value
+    const endDay = selection.day ?? selection.endDay ?? startDay
+    const normalizedStartDay = Math.min(startDay, endDay)
+    const normalizedEndDay = Math.max(startDay, endDay)
+    const normalizedCode = shiftCode === 'Clear' ? '' : shiftCode
     let updatedCount = 0
 
-    for (let day = selectedAssignment.value.day; day <= normalizedEndDay; day += 1) {
+    for (let day = normalizedStartDay; day <= normalizedEndDay; day += 1) {
       const didApply = applyScheduleUpdate({
         rosterStaffIndex,
         baseStaffIndex,
         pendingUpdates,
-        staffId: selectedAssignment.value.staff.id,
+        staffId: selection.staffId,
         day,
-        shiftCode: code,
+        shiftCode: normalizedCode,
       })
 
       if (didApply) {
@@ -394,12 +307,14 @@ export function useRosterPlanner() {
       return null
     }
 
+    saveErrorMessage.value = ''
     saveSuccessMessage.value = ''
 
     return {
       updatedCount,
+      startDay: normalizedStartDay,
       endDay: normalizedEndDay,
-      staffId: selectedAssignment.value.staff.id,
+      staffId: selection.staffId,
     }
   }
 
@@ -408,7 +323,6 @@ export function useRosterPlanner() {
     pendingUpdates.value = new Map()
     saveErrorMessage.value = ''
     saveSuccessMessage.value = ''
-    drawerOpen.value = false
     selectedCell.value = null
   }
 
@@ -550,12 +464,10 @@ export function useRosterPlanner() {
     saveErrorMessage,
     saveSuccessMessage,
     selectedCell,
-    drawerOpen,
     hasUnsavedChanges,
     pendingUpdateCount,
     pendingUpdateKeySet,
     selectedAssignment,
-    selectedShiftCode,
     validationWarning,
     shiftCodeOptions: availableShiftCodeOptions,
     shiftCodeColorMap,
@@ -566,12 +478,7 @@ export function useRosterPlanner() {
     importExportLoading,
     copyPreviousMonthPending,
     importExportError,
-    openCell,
-    closeDrawer,
-    setShiftCode,
-    applySelectedShift,
-    copySelectedWeekToNextWeek,
-    applySelectedRange,
+    applyShiftCodeToActiveSelection,
     discardChanges,
     saveChanges,
     toggleTeamFilter,

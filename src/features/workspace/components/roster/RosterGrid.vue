@@ -27,7 +27,7 @@ const props = defineProps({
   pendingUpdateKeySet: { type: Object, default: () => new Set() },
 })
 
-const emit = defineEmits(['select-cell', 'select-range', 'navigate-cell', 'open-selected-cell'])
+const emit = defineEmits(['select-cell', 'select-range', 'navigate-cell'])
 const { t } = useI18n()
 
 const GROUP_ROW_HEIGHT = 38
@@ -82,7 +82,7 @@ const pointerState = ref({
 })
 const activeTooltipKey = ref('')
 
-function emitRangeSelection(staffId, startDay, endDay, openEditor = false) {
+function emitRangeSelection(staffId, startDay, endDay) {
   const normalizedStartDay = Math.min(startDay, endDay)
   const normalizedEndDay = Math.max(startDay, endDay)
 
@@ -90,7 +90,6 @@ function emitRangeSelection(staffId, startDay, endDay, openEditor = false) {
     staffId,
     startDay: normalizedStartDay,
     endDay: normalizedEndDay,
-    openEditor,
   })
 }
 
@@ -114,7 +113,7 @@ function updatePointerSelection(staffId, day) {
   if (pointerState.value.currentDay !== day) {
     pointerState.value.dragged = true
     pointerState.value.currentDay = day
-    emitRangeSelection(staffId, pointerState.value.startDay, day, false)
+    emitRangeSelection(staffId, pointerState.value.startDay, day)
   }
 }
 
@@ -163,9 +162,7 @@ function finishPointerSelection(staffId, day) {
   const endDay = pointerState.value.currentDay ?? day
 
   if (didDrag) {
-    emitRangeSelection(staffId, startDay, endDay, true)
-  } else {
-    emit('open-selected-cell', { staffId, day })
+    emitRangeSelection(staffId, startDay, endDay)
   }
 
   clearPointerState()
@@ -211,7 +208,7 @@ function handleCellKeydown(event, staffId, day) {
     case ' ':
       event.preventDefault()
       setActiveTooltip(staffId, day)
-      emit('open-selected-cell', { staffId, day })
+      emit('select-cell', { staffId, day })
       break
     default:
       break
