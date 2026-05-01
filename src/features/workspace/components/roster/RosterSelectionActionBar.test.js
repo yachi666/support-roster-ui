@@ -42,7 +42,7 @@ test('selection action bar keeps Clear neutral and without shift metadata toolti
   assert.match(source, /props\.shiftCodeOptions\.filter\(\(code\) => code && code !== 'Clear'\)/)
   assert.match(
     source,
-    /<button[\s\S]*class="rounded-md border border-slate-200 bg-white px-3 py-1\.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"[\s\S]*handleActionClick\('Clear'\)/,
+    /<button[\s\S]*class="rounded-md border border-slate-200 bg-white px-3 py-1\.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"[\s\S]*:aria-disabled="readonly \? 'true' : 'false'"[\s\S]*handleActionClick\('Clear'\)/,
   )
   assert.doesNotMatch(source, /getShiftPresentation\('Clear'\)/)
   assert.doesNotMatch(source, /getShiftMeaning\('Clear'\)/)
