@@ -20,3 +20,11 @@ test('roster planner stages shift codes directly against the active selection', 
   assert.match(source, /return \{[\s\S]*staffId,[\s\S]*\}/)
   assert.doesNotMatch(source, /staffId: selection\.staffId/)
 })
+
+test('roster planner forwards selected team filters into previous month copy updates', () => {
+  assert.match(source, /const selectedTeamIds = ref\(\[\]\)/)
+  assert.match(
+    source,
+    /buildPreviousMonthCopyUpdates\(\{[\s\S]*selectedTeamIds: selectedTeamIds\.value,[\s\S]*\}\)/,
+  )
+})
