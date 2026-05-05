@@ -438,6 +438,7 @@ export function useRosterPlanner() {
         previousGroups,
         targetDayCount: plannerDays.value.length,
         canCopyTeam: (teamId) => authStore.canEditTeam(teamId),
+        selectedTeamIds: selectedTeamIds.value,
       })
 
       if (!updates.length) {

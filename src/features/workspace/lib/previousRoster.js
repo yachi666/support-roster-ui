@@ -29,12 +29,20 @@ export function buildPreviousMonthCopyUpdates({
   previousGroups,
   targetDayCount,
   canCopyTeam = () => true,
+  selectedTeamIds = [],
 }) {
   const previousScheduleIndex = buildStaffScheduleIndex(previousGroups)
+  const selectedTeamIdSet = selectedTeamIds.length
+    ? new Set(selectedTeamIds.map((teamId) => String(teamId)))
+    : null
   const updates = []
 
   for (const group of currentGroups || []) {
     if (!canCopyTeam(group?.teamId)) {
+      continue
+    }
+
+    if (selectedTeamIdSet && !selectedTeamIdSet.has(String(group?.teamId ?? ''))) {
       continue
     }
 
