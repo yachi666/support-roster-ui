@@ -375,7 +375,7 @@ const hasShiftContactInfo = (shift) => {
 
                 <TooltipPortal>
                   <TooltipContent
-                    class="z-50 min-w-[20rem] max-w-[min(40rem,calc(100vw-2rem))] rounded-lg border border-gray-200 bg-white p-4 shadow-xl"
+                    class="z-50 min-w-[min(20rem,calc(100vw-2rem))] max-w-[min(40rem,calc(100vw-2rem))] rounded-lg border border-gray-200 bg-white p-4 shadow-xl"
                     :side-offset="5"
                   >
                     <div class="mb-3 flex items-start justify-between">
