@@ -1,7 +1,8 @@
 <script setup>
-import { computed, onMounted, reactive, shallowRef } from 'vue'
+import { computed, nextTick, onMounted, reactive, shallowRef, watch } from 'vue'
 import { Clock3, Lock, Pencil, Plus, Search, Trash2 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import { api } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
@@ -56,6 +57,8 @@ const fieldErrors = reactive({})
 const formState = reactive({ ...EMPTY_FORM })
 const authStore = useAuthStore()
 const { t } = useI18n()
+const route = useRoute()
+const highlightedShiftId = shallowRef(null)
 
 const shiftErrorRules = [
   {
@@ -472,6 +475,31 @@ function closeDrawer(force = false) {
   resetForm()
 }
 
+function scrollToFocusedShift(shiftId) {
+  nextTick(() => {
+    const targetRow = document.querySelector(`[data-workspace-shift-id="${shiftId}"]`)
+    targetRow?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  })
+}
+
+function focusShiftFromRoute() {
+  const focusShiftId = String(route.query.focusShiftId || '').trim()
+  if (!focusShiftId) {
+    return
+  }
+
+  const targetShift = shiftDefinitions.value.find((shift) => String(shift.id) === focusShiftId)
+  if (!targetShift) {
+    return
+  }
+
+  searchTerm.value = targetShift.code || targetShift.meaning || ''
+  selectedTeamFilter.value = getShiftTeams(targetShift)[0]?.id ? String(getShiftTeams(targetShift)[0].id) : ''
+  highlightedShiftId.value = targetShift.id
+  openShiftDrawer(targetShift)
+  scrollToFocusedShift(focusShiftId)
+}
+
 function inputClass(fieldName) {
   return [
     'w-full rounded-md border px-3 py-2 outline-none transition focus:ring-2 focus:ring-teal-500/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500',
@@ -485,6 +513,10 @@ onMounted(() => {
   void loadTeams()
   void loadShiftDefinitions()
 })
+
+watch([visibleShifts, () => route.query.focusShiftId], () => {
+  focusShiftFromRoute()
+}, { immediate: true })
 </script>
 
 <template>
@@ -569,12 +601,17 @@ onMounted(() => {
                 <tr
                   v-for="shift in visibleShifts"
                   :key="shift.id || shift.code"
-                  class="group cursor-pointer transition-colors hover:bg-slate-50/80"
+                  :data-workspace-shift-id="String(shift.id)"
+                  :class="[
+                    'group cursor-pointer transition-colors hover:bg-slate-50/80',
+                    highlightedShiftId === shift.id ? 'bg-amber-50 ring-1 ring-inset ring-amber-300' : '',
+                  ]"
                   @click="openShiftDrawer(shift)"
                 >
                   <td class="px-6 py-4">
                     <span
-                      class="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-200 bg-slate-100 font-mono text-sm font-semibold text-slate-800 shadow-sm"
+                      :title="shift.code"
+                      class="inline-flex min-h-[32px] max-w-[9rem] items-center justify-center truncate rounded border border-slate-200 bg-slate-100 px-2.5 font-mono text-sm font-semibold text-slate-800 shadow-sm"
                       :style="codeIconStyle(shift)"
                     >
                       {{ shift.code }}

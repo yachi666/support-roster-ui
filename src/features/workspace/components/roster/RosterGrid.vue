@@ -495,6 +495,8 @@ onBeforeUnmount(() => {
               <td
                 v-for="(code, index) in row.person.schedule"
                 :key="`${row.person.id}-${index}`"
+                :data-roster-staff-id="String(row.person.id)"
+                :data-roster-day="String(index + 1)"
                 :class="[
                   'roster-cell-motion relative cursor-cell border-b border-r border-slate-100 p-1 text-center font-mono text-[11px] outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500',
                   isWeekend(days[index]) ? 'bg-rose-50/20' : '',

@@ -23,6 +23,15 @@ export const productUpdateModules = [
 
 export const productUpdates = [
   {
+    id: '2026-05-09-workspace-validation-navigation',
+    version: '2026.05.09',
+    date: '2026-05-09',
+    type: 'fix',
+    modules: ['workspace', 'validation', 'roster', 'viewer'],
+    prNumbers: [],
+    sectionTypes: ['fix', 'improvement', 'data'],
+  },
+  {
     id: '2026-05-01-roster-save-actions',
     version: '2026.05.01',
     date: '2026-05-01',
@@ -133,6 +142,65 @@ export const productUpdates = [
 ]
 
 const PRODUCT_UPDATE_TRANSLATIONS = {
+  '2026-05-09-workspace-validation-navigation': {
+    'zh-CN': {
+      title: '工作台校验修复链路更直接',
+      summary: '导出增加姓名列，校验中心支持更完整的批量清理和精准跳转，班次定义与 Viewer 的可见性行为也已修正。',
+      status: '已发布',
+      importance: '问题修复',
+      audience: ['排班管理员', '团队编辑者', '值班查看者'],
+      impact:
+        '管理员在处理导入导出、班次维护和校验问题时，不再需要手动对照员工姓名或反复翻页查记录；Viewer 也会按 visible 规则稳定展示应公开的班次。',
+      highlights: [
+        '月排班导出增加姓名列，便于在 Excel 中核对员工',
+        '校验中心多选后可批量处理系统清理类问题',
+        '打开相关区域会直接定位到员工、班次或排班记录',
+        '清理确认弹窗会展示待删记录详情',
+        '只勾选“在排班表中显示”的班次也会出现在 Viewer',
+      ],
+      sections: [
+        {
+          title: '修复与优化',
+          items: [
+            '月排班导出和模板补上了姓名列，管理员在 Excel 中核对 staff_id 时不需要再回到系统里查名字。',
+            '校验中心的批量操作现在会同时纳入可预览的系统清理问题，多选后不会再出现“全部按钮点不了”的情况。',
+            '从校验中心打开相关区域时，员工、班次和排班记录会直接滚动并高亮到目标位置，减少二次查找。',
+            '清理孤儿数据前会展示具体待删记录的标题、摘要和说明，删除范围更清楚。',
+            '班次定义列表修复了长编码显示，Viewer 也会显示 `visible=true` 且 `primaryShift=false` 的班次。',
+          ],
+        },
+      ],
+    },
+    en: {
+      title: 'Workspace validation fixes are more direct',
+      summary:
+        'Exports now include employee names, Validation Center supports fuller bulk cleanup and precise jumps, and shift visibility is fixed across definitions and Viewer.',
+      status: 'Published',
+      importance: 'Bug fix',
+      audience: ['Roster admins', 'Team editors', 'Viewer users'],
+      impact:
+        'Admins no longer need to cross-check names manually or hunt for the right record after leaving Validation Center, and Viewer now shows every shift that is meant to be public under the visible flag.',
+      highlights: [
+        'Monthly roster exports now include a name column',
+        'Validation Center bulk actions now cover previewable cleanup issues',
+        'Open related area jumps directly to the matching staff, shift, or roster record',
+        'Cleanup confirmations now show record-level details',
+        'Viewer now shows shifts that are visible even when they are not marked primary',
+      ],
+      sections: [
+        {
+          title: 'Fixes and improvements',
+          items: [
+            'Monthly roster exports and templates now include a name column so admins can verify employees in Excel without switching back to the app.',
+            'Validation Center bulk actions now include previewable system-cleanup issues, so multi-select no longer leaves the bulk action disabled.',
+            'Opening the related area from Validation Center now scrolls to and highlights the matching staff, shift, or roster record when a precise target is available.',
+            'Cleanup confirmation dialogs now show each record title, subtitle, and description before anything is deleted.',
+            'Shift Definitions now handle long codes more gracefully, and Viewer now includes shifts with `visible=true` even when `primaryShift=false`.',
+          ],
+        },
+      ],
+    },
+  },
   '2026-05-01-roster-save-actions': {
     'zh-CN': {
       title: '月度排班直接编辑更轻量',

@@ -15,7 +15,11 @@ test('groups product updates by release month', () => {
   assert.equal(groups[0].month, '2026年5月')
   assert.deepEqual(
     groups[0].items.map((item) => item.id),
-    ['2026-05-01-roster-save-actions', '2026-05-01-workspace-motion-feedback'],
+    [
+      '2026-05-09-workspace-validation-navigation',
+      '2026-05-01-roster-save-actions',
+      '2026-05-01-workspace-motion-feedback',
+    ],
   )
   assert.equal(groups[1].month, '2026年4月')
   assert.deepEqual(
@@ -38,8 +42,8 @@ test('localizes product updates and labels for English', () => {
   const updates = localizeProductUpdates(productUpdates, 'en')
   const groups = groupProductUpdatesByMonth(updates, 'en')
 
-  assert.equal(updates[0].title, 'Monthly roster editing feels lighter')
-  assert.equal(updates[0].sections[0].title, 'Experience improvements')
+  assert.equal(updates[0].title, 'Workspace validation fixes are more direct')
+  assert.equal(updates[0].sections[0].title, 'Fixes and improvements')
   assert.equal(getProductUpdateTypeLabel('feature', 'en'), 'New')
   assert.equal(
     formatProductUpdateModuleList(['contact', 'viewer'], 'en'),

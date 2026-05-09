@@ -1,7 +1,7 @@
 <script setup>
 import { AlertTriangle, Copy, Download, Filter, Save, Search, Upload } from 'lucide-vue-next'
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { onBeforeRouteLeave, RouterLink } from 'vue-router'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeRouteLeave, RouterLink, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { resolveWorkspaceColor } from '../lib/color'
@@ -50,6 +50,7 @@ const {
 } = useRosterPlanner()
 const authStore = useAuthStore()
 const { t } = useI18n()
+const route = useRoute()
 
 const showTeamFilter = ref(false)
 const selectedRange = ref(null)
@@ -136,6 +137,29 @@ function copyPreviousMonth() {
   void copyPreviousMonthIntoCurrent()
 }
 
+function focusRosterCellFromRoute() {
+  const focusStaffId = String(route.query.focusStaffId || '').trim()
+  const focusDay = Number(route.query.focusDay)
+  if (!focusStaffId || !Number.isFinite(focusDay)) {
+    return
+  }
+
+  searchTerm.value = ''
+  if (selectedTeamIds.value.length) {
+    clearTeamFilter()
+  }
+
+  nextTick(() => {
+    if (!visibleStaffIds.value.has(focusStaffId)) {
+      return
+    }
+    selectCell(String(focusStaffId), Number(focusDay))
+    const targetCell = document.querySelector(`[data-roster-staff-id="${focusStaffId}"][data-roster-day="${focusDay}"]`)
+    targetCell?.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' })
+    targetCell?.focus()
+  })
+}
+
 watch(selectedCell, (cell) => {
   if (!cell) {
     selectedRange.value = null
@@ -151,6 +175,10 @@ watch(visibleStaffIds, (staffIds) => {
     clearSelection()
   }
 })
+
+watch([filteredGroups, () => route.query.focusStaffId, () => route.query.focusDay], () => {
+  focusRosterCellFromRoute()
+}, { immediate: true })
 
 let unregisterPeriodGuard = null
 
