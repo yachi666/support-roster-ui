@@ -77,6 +77,7 @@ export default {
       secondarySupport: '辅助支持',
       microsoftTeams: 'Microsoft Teams',
       backup: '备援',
+      shiftCode: '班次编码',
     },
   },
   productUpdates: {

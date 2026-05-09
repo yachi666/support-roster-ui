@@ -79,6 +79,7 @@ export default {
       secondarySupport: 'Secondary Support',
       microsoftTeams: 'Microsoft Teams',
       backup: 'Backup',
+      shiftCode: 'Shift Code',
     },
   },
   productUpdates: {
