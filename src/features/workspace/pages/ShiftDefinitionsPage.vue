@@ -50,6 +50,7 @@ const errorMessage = shallowRef('')
 const formVisible = shallowRef(false)
 const deletePending = shallowRef(false)
 const submitPending = shallowRef(false)
+const reorderPending = shallowRef(false)
 const formErrorMessage = shallowRef('')
 const confirmDeleteVisible = shallowRef(false)
 const baselineSnapshot = shallowRef('')
@@ -59,6 +60,8 @@ const authStore = useAuthStore()
 const { t } = useI18n()
 const route = useRoute()
 const highlightedShiftId = shallowRef(null)
+const draggedShiftId = shallowRef(null)
+const dragOverShiftId = shallowRef(null)
 
 const shiftErrorRules = [
   {
@@ -136,6 +139,13 @@ const editableTeamOptions = computed(() =>
   teams.value.filter((team) => authStore.isAdmin || authStore.canEditTeam(team.id)),
 )
 const canCreateShift = computed(() => authStore.canWriteWorkspace)
+const canReorderSelectedTeam = computed(() => {
+  if (!selectedTeamFilter.value) return false
+  const visibleTeamIds = new Set(
+    visibleShifts.value.flatMap((shift) => getShiftTeams(shift).map((team) => String(team.id))),
+  )
+  return visibleTeamIds.size === 1 && authStore.canEditTeam(selectedTeamFilter.value)
+})
 const selectedShiftTeamIds = computed(() =>
   getShiftTeams(selectedShift.value)
     .map((team) => String(team.id || ''))
@@ -271,6 +281,42 @@ function canEditShift(shift) {
   return authStore.canEditAllTeams(getShiftTeams(shift).map((team) => team.id))
 }
 
+function applyReorderedVisibleShifts(nextOrderedShifts) {
+  const nextOrderedShiftIds = new Set(nextOrderedShifts.map((shift) => shift.id))
+  let nextOrderedShiftIndex = 0
+
+  return shiftDefinitions.value.map((shift) => {
+    if (!nextOrderedShiftIds.has(shift.id)) {
+      return shift
+    }
+
+    const nextShift = nextOrderedShifts[nextOrderedShiftIndex]
+    nextOrderedShiftIndex += 1
+    return nextShift
+  })
+}
+
+async function saveReorderedShifts(nextOrderedShifts) {
+  if (!selectedTeamFilter.value || reorderPending.value || !canReorderSelectedTeam.value) {
+    return
+  }
+
+  reorderPending.value = true
+  errorMessage.value = ''
+
+  try {
+    await api.workspace.reorderShiftDefinitions(
+      Number(selectedTeamFilter.value),
+      nextOrderedShifts.map((shift) => shift.id),
+    )
+    shiftDefinitions.value = applyReorderedVisibleShifts(nextOrderedShifts)
+  } catch (error) {
+    errorMessage.value = error.message || 'Failed to reorder shift definitions.'
+  } finally {
+    reorderPending.value = false
+  }
+}
+
 function markFormPristine() {
   baselineSnapshot.value = formSnapshot.value
 }
@@ -354,6 +400,54 @@ function openShiftDrawer(shift) {
   fillForm(shift)
   formVisible.value = true
   markFormPristine()
+}
+
+function handleRowDragStart(shift) {
+  if (reorderPending.value || !canReorderSelectedTeam.value) {
+    return
+  }
+
+  draggedShiftId.value = shift.id
+}
+
+function handleRowDragOver(shift) {
+  if (draggedShiftId.value == null || draggedShiftId.value === shift.id) {
+    return
+  }
+
+  dragOverShiftId.value = shift.id
+}
+
+function handleRowDragEnd() {
+  draggedShiftId.value = null
+  dragOverShiftId.value = null
+}
+
+function handleRowDrop(targetShift) {
+  if (
+    draggedShiftId.value == null ||
+    draggedShiftId.value === targetShift.id ||
+    reorderPending.value ||
+    !canReorderSelectedTeam.value
+  ) {
+    handleRowDragEnd()
+    return
+  }
+
+  const currentVisibleShifts = [...visibleShifts.value]
+  const sourceIndex = currentVisibleShifts.findIndex((shift) => shift.id === draggedShiftId.value)
+  const targetIndex = currentVisibleShifts.findIndex((shift) => shift.id === targetShift.id)
+
+  if (sourceIndex === -1 || targetIndex === -1) {
+    handleRowDragEnd()
+    return
+  }
+
+  const [movedShift] = currentVisibleShifts.splice(sourceIndex, 1)
+  currentVisibleShifts.splice(targetIndex, 0, movedShift)
+
+  void saveReorderedShifts(currentVisibleShifts)
+  handleRowDragEnd()
 }
 
 function validateForm() {
@@ -601,11 +695,22 @@ watch([visibleShifts, () => route.query.focusShiftId], () => {
                 <tr
                   v-for="shift in visibleShifts"
                   :key="shift.id || shift.code"
+                  :draggable="canReorderSelectedTeam"
                   :data-workspace-shift-id="String(shift.id)"
                   :class="[
-                    'group cursor-pointer transition-colors hover:bg-slate-50/80',
+                    'group transition-colors hover:bg-slate-50/80',
+                    reorderPending
+                      ? 'cursor-wait'
+                      : canReorderSelectedTeam
+                        ? 'cursor-grab'
+                        : 'cursor-pointer',
                     highlightedShiftId === shift.id ? 'bg-amber-50 ring-1 ring-inset ring-amber-300' : '',
+                    dragOverShiftId === shift.id ? 'bg-teal-50/70 ring-1 ring-inset ring-teal-200' : '',
                   ]"
+                  @dragstart="handleRowDragStart(shift)"
+                  @dragend="handleRowDragEnd"
+                  @dragover.prevent="handleRowDragOver(shift)"
+                  @drop.prevent="handleRowDrop(shift)"
                   @click="openShiftDrawer(shift)"
                 >
                   <td class="px-6 py-4">

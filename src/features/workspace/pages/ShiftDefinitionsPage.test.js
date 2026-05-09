@@ -19,3 +19,10 @@ test('shift definitions handle long codes gracefully and focus routed records', 
     /class="inline-flex min-h-\[32px\] max-w-\[9rem\] items-center justify-center truncate rounded border/,
   )
 })
+
+test('shift definitions enable drag sorting only for a single selected team', () => {
+  assert.match(source, /const canReorderSelectedTeam = computed\(/)
+  assert.match(source, /@dragstart="handleRowDragStart\(shift\)"/)
+  assert.match(source, /api\.workspace\.reorderShiftDefinitions\(/)
+  assert.match(source, /selectedTeamFilter\.value/)
+})

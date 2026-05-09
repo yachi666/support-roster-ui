@@ -23,6 +23,15 @@ export const productUpdateModules = [
 
 export const productUpdates = [
   {
+    id: '2026-05-09-viewer-shift-ordering',
+    version: '2026.05.09',
+    date: '2026-05-09',
+    type: 'improvement',
+    modules: ['viewer', 'workspace'],
+    prNumbers: [],
+    sectionTypes: ['improvement'],
+  },
+  {
     id: '2026-05-09-workspace-validation-navigation',
     version: '2026.05.09',
     date: '2026-05-09',
@@ -142,6 +151,56 @@ export const productUpdates = [
 ]
 
 const PRODUCT_UPDATE_TRANSLATIONS = {
+  '2026-05-09-viewer-shift-ordering': {
+    'zh-CN': {
+      title: 'Viewer 明细展开更稳，班次顺序可按团队调整',
+      summary:
+        'Viewer 员工详情现在可以展开更长的邮箱和班次编码内容，Shift Definitions 也支持按所选 TEAM 拖拽调整班次顺序。',
+      status: '已发布',
+      importance: '体验优化',
+      audience: ['排班查看者', '团队编辑者', '排班管理员'],
+      impact:
+        '查看长邮箱或班次编码时不再需要反复 hover 才能确认完整内容，团队编辑者也可以直接维护单个 TEAM 的班次展示顺序，并让 Viewer 复用同一顺序。',
+      highlights: [
+        'Viewer 员工详情现在可以展开更长的邮箱和班次编码内容',
+        'Shift Definitions 现在支持按所选 TEAM 调整班次顺序',
+      ],
+      sections: [
+        {
+          title: '体验优化',
+          items: [
+            'Viewer 员工详情中的长邮箱地址和班次编码现在可以展开查看更多内容，避免关键信息被截断。',
+            '当 Shift Definitions 明确筛选到单个 TEAM 且当前用户有编辑权限时，可以直接拖拽调整该团队的班次顺序。',
+            '调整后的顺序会持久化，并作为 Viewer 展示该 TEAM 班次时的默认顺序来源。',
+          ],
+        },
+      ],
+    },
+    en: {
+      title: 'Viewer details expand better and shift order is team-aware',
+      summary:
+        'Viewer employee details now expand long email and shift-code content, and Shift Definitions can drag-sort shifts for the selected team.',
+      status: 'Published',
+      importance: 'Experience improvement',
+      audience: ['Roster viewers', 'Team editors', 'Roster admins'],
+      impact:
+        'Long email addresses and shift codes are easier to review in Viewer, and team editors can now control the per-team shift order that Viewer uses for display.',
+      highlights: [
+        'Viewer employee details now expand for long email and shift-code content',
+        'Shift Definitions can reorder shifts per selected team',
+      ],
+      sections: [
+        {
+          title: 'Experience improvements',
+          items: [
+            'Viewer employee details now expand long email addresses and shift codes so key values are easier to read without truncation.',
+            'When Shift Definitions is filtered to one TEAM and the current user can edit it, rows can be dragged to reorder that team’s shifts.',
+            'The saved order is persisted and reused as the default ordering source for that TEAM in Viewer.',
+          ],
+        },
+      ],
+    },
+  },
   '2026-05-09-workspace-validation-navigation': {
     'zh-CN': {
       title: '工作台校验修复链路更直接',

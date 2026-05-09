@@ -231,6 +231,11 @@ export const api = {
       body: payload,
     }),
 
+    reorderShiftDefinitions: (teamId, shiftDefinitionIds) => request('/workspace/shift-definitions/reorder', {
+      method: 'POST',
+      body: { teamId, shiftDefinitionIds },
+    }),
+
     deleteShiftDefinition: (id) => request(`/workspace/shift-definitions/${id}`, {
       method: 'DELETE',
     }),
