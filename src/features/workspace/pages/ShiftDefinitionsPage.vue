@@ -24,6 +24,10 @@ import {
   normalizeWorkspaceStaffTimezone,
   WORKSPACE_STAFF_TIMEZONE_OPTIONS,
 } from '../config/timezones'
+import {
+  applyReorderedSelectedTeamShifts,
+  buildReorderedSelectedTeamShifts,
+} from './shiftDefinitionReorder'
 
 const EMPTY_FORM = {
   teamIds: [],
@@ -100,7 +104,7 @@ async function loadShiftDefinitions() {
   errorMessage.value = ''
 
   try {
-    shiftDefinitions.value = await api.workspace.getShiftDefinitions(searchTerm.value)
+    shiftDefinitions.value = await api.workspace.getShiftDefinitions()
   } catch (error) {
     errorMessage.value = error.message || 'Failed to load shift definitions.'
   } finally {
@@ -284,42 +288,15 @@ function canEditShift(shift) {
   return authStore.canEditAllTeams(getShiftTeams(shift).map((team) => team.id))
 }
 
-function buildReorderedSelectedTeamShifts(nextVisibleShifts) {
-  const nextVisibleShiftIds = new Set(nextVisibleShifts.map((shift) => shift.id))
-  let nextVisibleShiftIndex = 0
-
-  return selectedTeamShifts.value.map((shift) => {
-    if (!nextVisibleShiftIds.has(shift.id)) {
-      return shift
-    }
-
-    const nextShift = nextVisibleShifts[nextVisibleShiftIndex]
-    nextVisibleShiftIndex += 1
-    return nextShift
-  })
-}
-
-function applyReorderedSelectedTeamShifts(nextOrderedShifts) {
-  const nextOrderedShiftIds = new Set(nextOrderedShifts.map((shift) => shift.id))
-  let nextOrderedShiftIndex = 0
-
-  return shiftDefinitions.value.map((shift) => {
-    if (!nextOrderedShiftIds.has(shift.id)) {
-      return shift
-    }
-
-    const nextShift = nextOrderedShifts[nextOrderedShiftIndex]
-    nextOrderedShiftIndex += 1
-    return nextShift
-  })
-}
-
 async function saveReorderedShifts(nextVisibleShifts) {
   if (!selectedTeamFilter.value || reorderPending.value || !canReorderSelectedTeam.value) {
     return
   }
 
-  const nextSelectedTeamShifts = buildReorderedSelectedTeamShifts(nextVisibleShifts)
+  const nextSelectedTeamShifts = buildReorderedSelectedTeamShifts(
+    selectedTeamShifts.value,
+    nextVisibleShifts,
+  )
 
   reorderPending.value = true
   errorMessage.value = ''
@@ -329,7 +306,10 @@ async function saveReorderedShifts(nextVisibleShifts) {
       Number(selectedTeamFilter.value),
       nextSelectedTeamShifts.map((shift) => shift.id),
     )
-    shiftDefinitions.value = applyReorderedSelectedTeamShifts(nextSelectedTeamShifts)
+    shiftDefinitions.value = applyReorderedSelectedTeamShifts(
+      shiftDefinitions.value,
+      nextSelectedTeamShifts,
+    )
   } catch (error) {
     errorMessage.value = error.message || 'Failed to reorder shift definitions.'
   } finally {
@@ -422,11 +402,12 @@ function openShiftDrawer(shift) {
   markFormPristine()
 }
 
-function handleRowDragStart(shift) {
+function handleRowDragStart(event, shift) {
   if (reorderPending.value || !canReorderSelectedTeam.value) {
     return
   }
 
+  event.dataTransfer?.setData('text/plain', String(shift.id))
   draggedShiftId.value = shift.id
 }
 
@@ -727,7 +708,7 @@ watch([visibleShifts, () => route.query.focusShiftId], () => {
                     highlightedShiftId === shift.id ? 'bg-amber-50 ring-1 ring-inset ring-amber-300' : '',
                     dragOverShiftId === shift.id ? 'bg-teal-50/70 ring-1 ring-inset ring-teal-200' : '',
                   ]"
-                  @dragstart="handleRowDragStart(shift)"
+                  @dragstart="handleRowDragStart($event, shift)"
                   @dragend="handleRowDragEnd"
                   @dragover.prevent="handleRowDragOver(shift)"
                   @drop.prevent="handleRowDrop(shift)"
