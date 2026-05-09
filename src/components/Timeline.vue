@@ -375,7 +375,7 @@ const hasShiftContactInfo = (shift) => {
 
                 <TooltipPortal>
                   <TooltipContent
-                    class="z-50 w-72 rounded-lg border border-gray-200 bg-white p-4 shadow-xl"
+                    class="z-50 min-w-[20rem] max-w-[min(40rem,calc(100vw-2rem))] rounded-lg border border-gray-200 bg-white p-4 shadow-xl"
                     :side-offset="5"
                   >
                     <div class="mb-3 flex items-start justify-between">
@@ -419,6 +419,10 @@ const hasShiftContactInfo = (shift) => {
                     </div>
 
                     <div class="space-y-2 text-sm text-gray-600">
+                      <div class="flex items-start gap-2">
+                        <span class="shrink-0 text-xs font-medium text-gray-500">{{ t('viewer.timeline.shiftCode') }}</span>
+                        <span class="min-w-0 break-all font-mono text-xs text-gray-700">{{ layoutShift.shift.code }}</span>
+                      </div>
                       <div class="flex items-center">
                         <Clock class="mr-2 h-3.5 w-3.5 text-gray-400" />
                         <span class="font-mono text-xs">
@@ -453,10 +457,10 @@ const hasShiftContactInfo = (shift) => {
                         </a>
                         <div
                           v-if="getShiftContactValue(layoutShift.shift, 'email')"
-                          class="flex cursor-pointer items-center transition-colors hover:text-gray-900"
+                          class="flex items-start transition-colors hover:text-gray-900"
                         >
-                          <Mail class="mr-2 h-3.5 w-3.5 text-gray-400" />
-                          <span class="select-all">{{ getShiftContactValue(layoutShift.shift, 'email') }}</span>
+                          <Mail class="mr-2 mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400" />
+                          <span class="min-w-0 break-all select-all">{{ getShiftContactValue(layoutShift.shift, 'email') }}</span>
                         </div>
                         <div
                           v-if="getShiftContactValue(layoutShift.shift, 'phone')"

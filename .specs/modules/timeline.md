@@ -374,8 +374,10 @@ const formatShiftTime = (iso) => {
 ```
 
 - 若 `shift.contact.email` 存在，tooltip 内应提供 `Microsoft Teams` 行，并通过 `https://teams.microsoft.com/l/chat/0/0?users=<email>` 在新标签页打开对应会话。
-- `Microsoft Teams` 行属于可点击动作，应与纯文本联系方式区分视觉层级。
+- `Microsoft Teams` 行属于可点击动作,应与纯文本联系方式区分视觉层级。
 - `slack / email / phone` 任一字段缺失时，对应行直接隐藏，不展示空占位。
+- 员工详情浮层不再固定窄宽度；遇到长邮箱或长班次编码时可在桌面端自适应放宽，最大不超过约 640px 与视口安全边距。
+- 浮层达到宽度上限后，邮箱和班次编码改为换行展示，避免内容溢出或遮挡。
 
 ---
 
