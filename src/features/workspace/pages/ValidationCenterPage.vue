@@ -1,6 +1,6 @@
 <script setup>
 import { computed, shallowRef, watch } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import {
   AlertCircle,
   AlertTriangle,
@@ -41,9 +41,12 @@ const remediationPreviewError = shallowRef('')
 const remediationApplyPending = shallowRef(false)
 const remediationPreview = shallowRef(null)
 const remediationIssue = shallowRef(null)
+const remediationIssues = shallowRef([])
+const remediationResolveIssueIds = shallowRef([])
 const { year, month, monthLabel } = useWorkspacePeriod()
 const authStore = useAuthStore()
 const { t } = useI18n()
+const route = useRoute()
 
 const severityMeta = {
   high: {
@@ -199,8 +202,21 @@ function canFixIssue(issue) {
   return canResolveImportIssue(issue) || canPreviewRemediation(issue)
 }
 
-const resolvableSelectedIssueIds = computed(() =>
-  selectedIssueIds.value.filter((issueId) => canResolveImportIssue(normalizedIssues.value.find((issue) => issue.id === issueId))),
+const selectedIssues = computed(() =>
+  selectedIssueIds.value
+    .map((issueId) => normalizedIssues.value.find((issue) => issue.id === issueId))
+    .filter(Boolean),
+)
+const selectedFixableIssues = computed(() =>
+  selectedIssues.value.filter((issue) => canFixIssue(issue)),
+)
+const selectedPreviewableIssues = computed(() =>
+  selectedFixableIssues.value.filter((issue) => canPreviewRemediation(issue)),
+)
+const selectedResolvableIssueIds = computed(() =>
+  selectedFixableIssues.value
+    .filter((issue) => canResolveImportIssue(issue))
+    .map((issue) => issue.id),
 )
 
 const visibleIssueIds = computed(() => visibleIssues.value.map((issue) => issue.id))
@@ -330,7 +346,19 @@ async function resolveIssues(issueIds) {
 }
 
 function resolveSelectedIssues() {
-  void resolveIssues(resolvableSelectedIssueIds.value)
+  if (!selectedFixableIssues.value.length) {
+    return
+  }
+
+  if (selectedPreviewableIssues.value.length) {
+    void openRemediationModal({
+      issues: selectedPreviewableIssues.value,
+      resolveIssueIds: selectedResolvableIssueIds.value,
+    })
+    return
+  }
+
+  void resolveIssues(selectedResolvableIssueIds.value)
 }
 
 function resolveSingleIssue(issueId) {
@@ -349,29 +377,57 @@ function closeRemediationModal() {
   remediationModalOpen.value = false
   remediationPreview.value = null
   remediationIssue.value = null
+  remediationIssues.value = []
+  remediationResolveIssueIds.value = []
   remediationPreviewError.value = ''
   remediationPreviewLoading.value = false
   remediationApplyPending.value = false
 }
 
-async function openRemediationModal(issue) {
-  if (!canPreviewRemediation(issue)) {
+function buildCombinedRemediationPreview(issuesToPreview, previews) {
+  if (!previews.length) {
+    return null
+  }
+
+  if (previews.length === 1) {
+    return previews[0]
+  }
+
+  return {
+    actionKey: 'bulk-remediation',
+    title: t('workspace.validation.bulkRemediationTitle', { count: issuesToPreview.length }),
+    summary: t('workspace.validation.bulkRemediationSummary', { count: issuesToPreview.length }),
+    warning: t('workspace.validation.bulkRemediationWarning'),
+    recordCount: previews.reduce((total, preview) => total + (preview?.recordCount || 0), 0),
+    recordIds: previews.flatMap((preview) => preview?.recordIds || []),
+    records: previews.flatMap((preview) => preview?.records || []),
+  }
+}
+
+async function openRemediationModal(input) {
+  const issuesToPreview = Array.isArray(input?.issues) ? input.issues : [input].filter(Boolean)
+  if (!issuesToPreview.length || issuesToPreview.some((issue) => !canPreviewRemediation(issue))) {
     return
   }
 
   remediationModalOpen.value = true
-  remediationIssue.value = issue
+  remediationIssue.value = issuesToPreview[0]
+  remediationIssues.value = issuesToPreview
+  remediationResolveIssueIds.value = Array.isArray(input?.resolveIssueIds) ? input.resolveIssueIds : []
   remediationPreview.value = null
   remediationPreviewError.value = ''
   remediationPreviewLoading.value = true
 
   try {
-    remediationPreview.value = await api.workspace.previewValidationRemediation(issue.id, {
-      year: year.value,
-      month: month.value,
-      actionKey: issue.remediation.actionKey,
-      recordId: issue.remediation.recordId,
-    })
+    const previews = await Promise.all(issuesToPreview.map((issue) =>
+      api.workspace.previewValidationRemediation(issue.id, {
+        year: year.value,
+        month: month.value,
+        actionKey: issue.remediation.actionKey,
+        recordId: issue.remediation.recordId,
+      }),
+    ))
+    remediationPreview.value = buildCombinedRemediationPreview(issuesToPreview, previews)
   } catch (error) {
     remediationPreviewError.value = error.message || 'Failed to load remediation preview.'
   } finally {
@@ -380,8 +436,7 @@ async function openRemediationModal(issue) {
 }
 
 async function applyRemediation() {
-  const issue = remediationIssue.value
-  if (!issue?.remediation || remediationApplyPending.value) {
+  if (!remediationIssues.value.length || remediationApplyPending.value) {
     return
   }
 
@@ -391,18 +446,33 @@ async function applyRemediation() {
   actionMessage.value = ''
 
   try {
-    const response = await api.workspace.applyValidationRemediation(issue.id, {
-      year: year.value,
-      month: month.value,
-      actionKey: issue.remediation.actionKey,
-      recordId: issue.remediation.recordId,
-    })
+    let appliedCount = 0
+    const remediationIds = remediationIssues.value.map((issue) => issue.id)
 
-    summary.value = response?.validation?.summary || { high: 0, medium: 0, low: 0, total: 0, blocking: 0 }
-    issues.value = response?.validation?.issues || []
-    topIssue.value = response?.validation?.topIssue || null
-    selectedIssueIds.value = selectedIssueIds.value.filter((id) => id !== issue.id)
-    actionMessage.value = t('workspace.validation.remediationSuccess', { count: response?.appliedCount || 0 })
+    for (const issue of remediationIssues.value) {
+      const response = await api.workspace.applyValidationRemediation(issue.id, {
+        year: year.value,
+        month: month.value,
+        actionKey: issue.remediation.actionKey,
+        recordId: issue.remediation.recordId,
+      })
+      appliedCount += response?.appliedCount || 0
+    }
+
+    if (remediationResolveIssueIds.value.length) {
+      const resolveResponse = await api.workspace.resolveValidationIssues({
+        year: year.value,
+        month: month.value,
+        issueIds: remediationResolveIssueIds.value,
+      })
+      appliedCount += resolveResponse?.resolvedCount || 0
+    }
+
+    await loadValidation()
+    selectedIssueIds.value = selectedIssueIds.value.filter((id) =>
+      !remediationIds.includes(id) && !remediationResolveIssueIds.value.includes(id),
+    )
+    actionMessage.value = t('workspace.validation.remediationSuccess', { count: appliedCount })
     closeRemediationModal()
   } catch (error) {
     remediationPreviewError.value = error.message || 'Failed to apply validation remediation.'
@@ -419,6 +489,23 @@ function triggerIssueAction(issue) {
   }
   if (canResolveImportIssue(issue)) {
     resolveSingleIssue(issue.id)
+  }
+}
+
+function buildIssueTargetRoute(issue) {
+  const target = getIssueTarget(issue)
+  if (!issue?.staffRecordId && !issue?.shiftDefinitionId && !issue?.focusDay) {
+    return target
+  }
+
+  return {
+    path: target,
+    query: {
+      ...route.query,
+      focusStaffId: issue?.staffRecordId ? String(issue.staffRecordId) : undefined,
+      focusShiftId: issue?.shiftDefinitionId ? String(issue.shiftDefinitionId) : undefined,
+      focusDay: issue?.focusDay ? String(issue.focusDay) : undefined,
+    },
   }
 }
 
@@ -495,12 +582,12 @@ watch([year, month], () => {
             <button
               v-if="authStore.canWriteWorkspace && hasIssues"
               class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-              :disabled="resolvableSelectedIssueIds.length === 0 || resolvePending"
-              @click="resolveSelectedIssues"
-            >
+               :disabled="selectedFixableIssues.length === 0 || resolvePending"
+               @click="resolveSelectedIssues"
+             >
               <CheckSquare class="h-4 w-4" />
-              {{ resolvePending ? t('workspace.validation.resolving') : t('workspace.validation.resolveSelected', { count: resolvableSelectedIssueIds.length }) }}
-            </button>
+               {{ resolvePending ? t('workspace.validation.resolving') : t('workspace.validation.resolveSelected', { count: selectedFixableIssues.length }) }}
+             </button>
           </template>
         </WorkspacePageHeader>
 
@@ -622,7 +709,7 @@ watch([year, month], () => {
                     {{ isResolving(prioritizedIssue.id) ? t('workspace.validation.fixing') : t('workspace.validation.fixNow') }}
                   </button>
                   <RouterLink
-                    :to="getIssueTarget(prioritizedIssue)"
+                    :to="buildIssueTargetRoute(prioritizedIssue)"
                     class="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:bg-white"
                   >
                     {{ t('workspace.validation.openRelatedArea') }}
@@ -816,7 +903,7 @@ watch([year, month], () => {
                     </button>
 
                     <RouterLink
-                      :to="getIssueTarget(issue)"
+                      :to="buildIssueTargetRoute(issue)"
                       class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-100"
                     >
                       {{ t('workspace.validation.openRelatedArea') }}
@@ -869,6 +956,22 @@ watch([year, month], () => {
               >
                 {{ t('workspace.validation.recordId', { id: recordId }) }}
               </span>
+            </div>
+          </WorkspaceSurface>
+
+          <WorkspaceSurface v-if="(remediationPreview.records || []).length" class="border-slate-200 bg-white p-4">
+            <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ t('workspace.validation.remediationRecordDetails') }}</div>
+            <div class="mt-4 grid gap-3">
+              <div
+                v-for="record in remediationPreview.records || []"
+                :key="record.recordId"
+                class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4"
+              >
+                <div class="text-sm font-semibold text-slate-900">{{ record.title }}</div>
+                <div v-if="record.subtitle" class="mt-1 text-xs text-slate-500">{{ record.subtitle }}</div>
+                <div v-if="record.description" class="mt-3 text-sm leading-6 text-slate-600">{{ record.description }}</div>
+                <div class="mt-3 text-xs font-medium text-slate-500">{{ t('workspace.validation.recordId', { id: record.recordId }) }}</div>
+              </div>
             </div>
           </WorkspaceSurface>
         </template>

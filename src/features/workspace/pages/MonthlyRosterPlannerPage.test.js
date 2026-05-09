@@ -41,3 +41,29 @@ test('monthly roster clears stale selection state when the active cell disappear
     /watch\(visibleStaffIds, \(staffIds\) => \{[\s\S]*if \(!staffIds\.has\(selectedCell\.value\.staffId\)\) \{[\s\S]*clearSelection\(\)/,
   )
 })
+
+test('monthly roster focuses routed staff/day targets and keeps the grid scrollable to that record', () => {
+  assert.match(source, /import \{ computed, nextTick, onBeforeUnmount, onMounted, ref, watch \} from 'vue'/)
+  assert.match(source, /import \{ onBeforeRouteLeave, RouterLink, useRoute \} from 'vue-router'/)
+  assert.match(
+    source,
+    /function focusRosterCellFromRoute\(\) \{[\s\S]*route\.query\.focusStaffId[\s\S]*route\.query\.focusDay[\s\S]*selectCell\(String\(focusStaffId\), Number\(focusDay\)\)/,
+  )
+  assert.match(
+    source,
+    /watch\(\[filteredGroups, \(\) => route\.query\.focusStaffId, \(\) => route\.query\.focusDay\],[\s\S]*focusRosterCellFromRoute/,
+  )
+})
+
+test('monthly roster focuses routed staff/day targets and keeps the grid scrollable to that record', () => {
+  assert.match(source, /import \{ computed, nextTick, onBeforeUnmount, onMounted, ref, watch \} from 'vue'/)
+  assert.match(source, /import \{ onBeforeRouteLeave, RouterLink, useRoute \} from 'vue-router'/)
+  assert.match(
+    source,
+    /function focusRosterCellFromRoute\(\) \{[\s\S]*route\.query\.focusStaffId[\s\S]*route\.query\.focusDay[\s\S]*selectCell\(String\(focusStaffId\), Number\(focusDay\)\)/,
+  )
+  assert.match(
+    source,
+    /watch\(\[filteredGroups, \(\) => route\.query\.focusStaffId, \(\) => route\.query\.focusDay\],[\s\S]*focusRosterCellFromRoute/,
+  )
+})

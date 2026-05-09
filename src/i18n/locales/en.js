@@ -784,10 +784,16 @@ export default {
       loadingRemediationPreview: 'Loading cleanup preview...',
       remediationImpact: 'Records to remove',
       remediationImpactHint: 'Validation will re-run after this cleanup completes.',
+      remediationRecordDetails: 'Record details to remove',
       recordId: 'Record ID: {id}',
       confirmRemediation: 'Delete records',
       applyingRemediation: 'Deleting...',
       remediationSuccess: 'Removed {count} invalid record(s) via validation cleanup.',
+      bulkRemediationTitle: 'Review bulk cleanup ({count})',
+      bulkRemediationSummary:
+        'This will run {count} system-cleanup actions in sequence and refresh validation again when finished.',
+      bulkRemediationWarning:
+        'Bulk cleanup permanently deletes invalid historical records one by one, so review the details below first.',
       openRelatedArea: 'Open related area',
       issueList: 'Issue list',
       openIssues: 'Open issues',

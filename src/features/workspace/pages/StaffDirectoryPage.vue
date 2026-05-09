@@ -1,7 +1,8 @@
 <script setup>
-import { computed, onMounted, reactive, shallowRef } from 'vue'
+import { computed, nextTick, onMounted, reactive, shallowRef, watch } from 'vue'
 import { CheckCircle2, Clock3, Globe, Mail, Pencil, Phone, Plus, Search, Trash2, XCircle } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import { api } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { applyApiFieldErrors, clearFieldErrors, getApiErrorMessage } from '../lib/formErrors'
@@ -45,6 +46,8 @@ const fieldErrors = reactive({})
 const formState = reactive({ ...EMPTY_FORM })
 const authStore = useAuthStore()
 const { t } = useI18n()
+const route = useRoute()
+const highlightedStaffId = shallowRef(null)
 
 const createStaffErrorRules = [
   {
@@ -376,6 +379,31 @@ function closeDrawer() {
   resetForm()
 }
 
+function scrollToFocusedStaff(staffId) {
+  nextTick(() => {
+    const targetRow = document.querySelector(`[data-workspace-staff-id="${staffId}"]`)
+    targetRow?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  })
+}
+
+function focusStaffFromRoute() {
+  const focusStaffId = String(route.query.focusStaffId || '').trim()
+  if (!focusStaffId) {
+    return
+  }
+
+  const targetStaff = staffList.value.find((staff) => String(staff.id) === focusStaffId)
+  if (!targetStaff) {
+    return
+  }
+
+  searchTerm.value = targetStaff.staffId || targetStaff.name || ''
+  selectedTeamFilter.value = targetStaff.teamId ? String(targetStaff.teamId) : ''
+  highlightedStaffId.value = targetStaff.id
+  openDetailDrawer(focusStaffId)
+  scrollToFocusedStaff(focusStaffId)
+}
+
 function inputClass(fieldName) {
   return [
     'w-full rounded-md border px-3 py-2 outline-none transition focus:ring-2 focus:ring-teal-500/20',
@@ -387,6 +415,10 @@ onMounted(() => {
   void loadTeams()
   void loadStaff()
 })
+
+watch([filteredStaff, () => route.query.focusStaffId], () => {
+  focusStaffFromRoute()
+}, { immediate: true })
 </script>
 
 <template>
@@ -458,7 +490,11 @@ onMounted(() => {
                 <tr
                   v-for="staff in filteredStaff"
                   :key="staff.id"
-                  class="cursor-pointer transition-colors hover:bg-slate-50/80"
+                  :data-workspace-staff-id="String(staff.id)"
+                  :class="[
+                    'cursor-pointer transition-colors hover:bg-slate-50/80',
+                    highlightedStaffId === staff.id ? 'bg-amber-50 ring-1 ring-inset ring-amber-300' : '',
+                  ]"
                   @click="openDetailDrawer(staff.id)"
                 >
                   <td class="px-6 py-4">
