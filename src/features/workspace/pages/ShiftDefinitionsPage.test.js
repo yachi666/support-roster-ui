@@ -21,8 +21,18 @@ test('shift definitions handle long codes gracefully and focus routed records', 
 })
 
 test('shift definitions enable drag sorting only for a single selected team', () => {
+  assert.match(source, /const selectedTeamShifts = computed\(\(\) =>/)
   assert.match(source, /const canReorderSelectedTeam = computed\(/)
+  assert.match(source, /selectedTeamShifts\.value\.length > 1 && authStore\.canEditTeam\(selectedTeamFilter\.value\)/)
+  assert.doesNotMatch(source, /visibleTeamIds\.size === 1/)
   assert.match(source, /@dragstart="handleRowDragStart\(shift\)"/)
   assert.match(source, /api\.workspace\.reorderShiftDefinitions\(/)
   assert.match(source, /selectedTeamFilter\.value/)
+})
+
+test('shift definitions persist full selected team order when dragging a filtered subset', () => {
+  assert.match(source, /function buildReorderedSelectedTeamShifts\(nextVisibleShifts\) \{[\s\S]*selectedTeamShifts\.value/)
+  assert.match(source, /const nextSelectedTeamShifts = buildReorderedSelectedTeamShifts\(nextVisibleShifts\)/)
+  assert.match(source, /nextSelectedTeamShifts\.map\(\(shift\) => shift\.id\)/)
+  assert.match(source, /shiftDefinitions\.value = applyReorderedSelectedTeamShifts\(nextSelectedTeamShifts\)/)
 })

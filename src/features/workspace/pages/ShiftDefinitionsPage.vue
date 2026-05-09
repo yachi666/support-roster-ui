@@ -130,6 +130,12 @@ const visibleShifts = computed(() => {
     return matchesSearch && matchesTeam
   })
 })
+const selectedTeamShifts = computed(() => {
+  if (!selectedTeamFilter.value) return []
+  return shiftDefinitions.value.filter((shift) =>
+    getShiftTeams(shift).some((team) => String(team.id) === selectedTeamFilter.value),
+  )
+})
 
 const selectedShift = computed(
   () => shiftDefinitions.value.find((shift) => shift.id === selectedShiftId.value) || null,
@@ -141,10 +147,7 @@ const editableTeamOptions = computed(() =>
 const canCreateShift = computed(() => authStore.canWriteWorkspace)
 const canReorderSelectedTeam = computed(() => {
   if (!selectedTeamFilter.value) return false
-  const visibleTeamIds = new Set(
-    visibleShifts.value.flatMap((shift) => getShiftTeams(shift).map((team) => String(team.id))),
-  )
-  return visibleTeamIds.size === 1 && authStore.canEditTeam(selectedTeamFilter.value)
+  return selectedTeamShifts.value.length > 1 && authStore.canEditTeam(selectedTeamFilter.value)
 })
 const selectedShiftTeamIds = computed(() =>
   getShiftTeams(selectedShift.value)
@@ -281,7 +284,22 @@ function canEditShift(shift) {
   return authStore.canEditAllTeams(getShiftTeams(shift).map((team) => team.id))
 }
 
-function applyReorderedVisibleShifts(nextOrderedShifts) {
+function buildReorderedSelectedTeamShifts(nextVisibleShifts) {
+  const nextVisibleShiftIds = new Set(nextVisibleShifts.map((shift) => shift.id))
+  let nextVisibleShiftIndex = 0
+
+  return selectedTeamShifts.value.map((shift) => {
+    if (!nextVisibleShiftIds.has(shift.id)) {
+      return shift
+    }
+
+    const nextShift = nextVisibleShifts[nextVisibleShiftIndex]
+    nextVisibleShiftIndex += 1
+    return nextShift
+  })
+}
+
+function applyReorderedSelectedTeamShifts(nextOrderedShifts) {
   const nextOrderedShiftIds = new Set(nextOrderedShifts.map((shift) => shift.id))
   let nextOrderedShiftIndex = 0
 
@@ -296,10 +314,12 @@ function applyReorderedVisibleShifts(nextOrderedShifts) {
   })
 }
 
-async function saveReorderedShifts(nextOrderedShifts) {
+async function saveReorderedShifts(nextVisibleShifts) {
   if (!selectedTeamFilter.value || reorderPending.value || !canReorderSelectedTeam.value) {
     return
   }
+
+  const nextSelectedTeamShifts = buildReorderedSelectedTeamShifts(nextVisibleShifts)
 
   reorderPending.value = true
   errorMessage.value = ''
@@ -307,9 +327,9 @@ async function saveReorderedShifts(nextOrderedShifts) {
   try {
     await api.workspace.reorderShiftDefinitions(
       Number(selectedTeamFilter.value),
-      nextOrderedShifts.map((shift) => shift.id),
+      nextSelectedTeamShifts.map((shift) => shift.id),
     )
-    shiftDefinitions.value = applyReorderedVisibleShifts(nextOrderedShifts)
+    shiftDefinitions.value = applyReorderedSelectedTeamShifts(nextSelectedTeamShifts)
   } catch (error) {
     errorMessage.value = error.message || 'Failed to reorder shift definitions.'
   } finally {
@@ -434,19 +454,19 @@ function handleRowDrop(targetShift) {
     return
   }
 
-  const currentVisibleShifts = [...visibleShifts.value]
-  const sourceIndex = currentVisibleShifts.findIndex((shift) => shift.id === draggedShiftId.value)
-  const targetIndex = currentVisibleShifts.findIndex((shift) => shift.id === targetShift.id)
+  const nextVisibleShifts = [...visibleShifts.value]
+  const sourceIndex = nextVisibleShifts.findIndex((shift) => shift.id === draggedShiftId.value)
+  const targetIndex = nextVisibleShifts.findIndex((shift) => shift.id === targetShift.id)
 
   if (sourceIndex === -1 || targetIndex === -1) {
     handleRowDragEnd()
     return
   }
 
-  const [movedShift] = currentVisibleShifts.splice(sourceIndex, 1)
-  currentVisibleShifts.splice(targetIndex, 0, movedShift)
+  const [movedShift] = nextVisibleShifts.splice(sourceIndex, 1)
+  nextVisibleShifts.splice(targetIndex, 0, movedShift)
 
-  void saveReorderedShifts(currentVisibleShifts)
+  void saveReorderedShifts(nextVisibleShifts)
   handleRowDragEnd()
 }
 
