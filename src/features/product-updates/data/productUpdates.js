@@ -23,6 +23,15 @@ export const productUpdateModules = [
 
 export const productUpdates = [
   {
+    id: '2026-05-11-shift-definition-team-reorder-fix',
+    version: '2026.05.11',
+    date: '2026-05-11',
+    type: 'fix',
+    modules: ['workspace', 'roster', 'viewer'],
+    prNumbers: [],
+    sectionTypes: ['fix', 'improvement'],
+  },
+  {
     id: '2026-05-09-viewer-shift-ordering',
     version: '2026.05.09',
     date: '2026-05-09',
@@ -151,6 +160,56 @@ export const productUpdates = [
 ]
 
 const PRODUCT_UPDATE_TRANSLATIONS = {
+  '2026-05-11-shift-definition-team-reorder-fix': {
+    'zh-CN': {
+      title: '班次定义按 TEAM 拖拽排序现在可以真正保存',
+      summary:
+        '修复了 Shift Definitions 在选中单个 TEAM 后拖拽排序报错的问题，保存后的顺序也会稳定回流到月排班和 Viewer。',
+      status: '已发布',
+      importance: '问题修复',
+      audience: ['团队编辑者', '排班管理员', '值班查看者'],
+      impact:
+        '团队编辑者现在可以直接维护单个 TEAM 的班次展示顺序，不再因为接口报错导致拖拽失败；排班和 Viewer 也会复用同一 TEAM 顺序。',
+      highlights: [
+        '修复 Shift Definitions 单个 TEAM 拖拽排序报错',
+        '保存后的 TEAM 班次顺序会同步影响月排班和 Viewer',
+      ],
+      sections: [
+        {
+          title: '问题修复',
+          items: [
+            'Shift Definitions 在筛选到单个 TEAM 后，拖拽排序现在会调用可用的后端重排接口，不再因为缺少持久化链路而报错。',
+            '共享班次的顺序会按 TEAM 维度单独保存，避免一个 TEAM 的拖拽结果覆盖其他 TEAM 的展示顺序。',
+            '月排班与相关 Viewer 展示会复用相同的 TEAM 班次顺序，减少班次列表前后不一致的问题。',
+          ],
+        },
+      ],
+    },
+    en: {
+      title: 'Shift Definitions now saves per-team drag order correctly',
+      summary:
+        'Fixed the error that occurred when dragging Shift Definitions after selecting one TEAM, and the saved order now flows through consistently to Monthly Roster and Viewer.',
+      status: 'Published',
+      importance: 'Bug fix',
+      audience: ['Team editors', 'Roster admins', 'Roster viewers'],
+      impact:
+        'Team editors can now maintain one TEAM’s shift order without drag failures, and the same TEAM-specific order is reused in roster workflows and Viewer output.',
+      highlights: [
+        'Fixed drag-sort errors in Shift Definitions for a single TEAM',
+        'Saved TEAM shift order now carries through to Monthly Roster and Viewer',
+      ],
+      sections: [
+        {
+          title: 'Fixes',
+          items: [
+            'Shift Definitions now calls a working backend reorder flow when one TEAM is selected, so drag sorting no longer fails on save.',
+            'Shared shifts keep an independent order per TEAM instead of forcing one saved order across every shared team.',
+            'Monthly Roster and related Viewer displays now reuse the same TEAM-specific shift ordering to keep lists consistent.',
+          ],
+        },
+      ],
+    },
+  },
   '2026-05-09-viewer-shift-ordering': {
     'zh-CN': {
       title: 'Viewer 明细展开更稳，班次顺序可按团队调整',

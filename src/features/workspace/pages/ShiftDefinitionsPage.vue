@@ -27,6 +27,7 @@ import {
 import {
   applyReorderedSelectedTeamShifts,
   buildReorderedSelectedTeamShifts,
+  sortShiftsForSelectedTeam,
 } from './shiftDefinitionReorder'
 
 const EMPTY_FORM = {
@@ -124,7 +125,7 @@ const visibleShifts = computed(() => {
   const query = searchTerm.value.trim().toLowerCase()
   const teamId = selectedTeamFilter.value
 
-  return shiftDefinitions.value.filter((shift) => {
+  const filteredShifts = shiftDefinitions.value.filter((shift) => {
     const shiftTeams = getShiftTeams(shift)
     const teamNames = shiftTeams.map((team) => team.name).join(' ')
     const matchesSearch =
@@ -133,11 +134,16 @@ const visibleShifts = computed(() => {
     const matchesTeam = !teamId || shiftTeams.some((team) => String(team.id) === teamId)
     return matchesSearch && matchesTeam
   })
+
+  return sortShiftsForSelectedTeam(filteredShifts, teamId)
 })
 const selectedTeamShifts = computed(() => {
   if (!selectedTeamFilter.value) return []
-  return shiftDefinitions.value.filter((shift) =>
-    getShiftTeams(shift).some((team) => String(team.id) === selectedTeamFilter.value),
+  return sortShiftsForSelectedTeam(
+    shiftDefinitions.value.filter((shift) =>
+      getShiftTeams(shift).some((team) => String(team.id) === selectedTeamFilter.value),
+    ),
+    selectedTeamFilter.value,
   )
 })
 
@@ -302,13 +308,19 @@ async function saveReorderedShifts(nextVisibleShifts) {
   errorMessage.value = ''
 
   try {
+    const selectedTeamId = String(selectedTeamFilter.value || '').trim()
+    if (!selectedTeamId) {
+      throw new Error('Failed to resolve the selected team for reordering.')
+    }
+
     await api.workspace.reorderShiftDefinitions(
-      Number(selectedTeamFilter.value),
+      selectedTeamId,
       nextSelectedTeamShifts.map((shift) => shift.id),
     )
     shiftDefinitions.value = applyReorderedSelectedTeamShifts(
       shiftDefinitions.value,
       nextSelectedTeamShifts,
+      selectedTeamFilter.value,
     )
   } catch (error) {
     errorMessage.value = error.message || 'Failed to reorder shift definitions.'
