@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import {
   applyReorderedSelectedTeamShifts,
   buildReorderedSelectedTeamShifts,
+  sortShiftsForSelectedTeam,
 } from './shiftDefinitionReorder.js'
 
 const source = readFileSync(new URL('./ShiftDefinitionsPage.vue', import.meta.url), 'utf8')
@@ -29,6 +30,7 @@ test('shift definitions enable drag sorting only for a single selected team', ()
   assert.match(source, /const canReorderSelectedTeam = computed\(/)
   assert.match(source, /selectedTeamShifts\.value\.length > 1 && authStore\.canEditTeam\(selectedTeamFilter\.value\)/)
   assert.doesNotMatch(source, /visibleTeamIds\.size === 1/)
+  assert.match(source, /return sortShiftsForSelectedTeam\(filteredShifts, teamId\)/)
   assert.match(source, /@dragstart="handleRowDragStart\(\$event, shift\)"/)
   assert.match(
     source,
@@ -85,26 +87,45 @@ test('shift definitions reorder helpers ignore incomplete reorder subsets instea
 
 test('shift definitions apply reordered team shifts back into the full list without dropping other rows', () => {
   const allShiftDefinitions = [
-    { id: 10, code: 'X' },
-    { id: 1, code: 'A' },
-    { id: 2, code: 'B' },
-    { id: 99, code: 'Y' },
-    { id: 3, code: 'C' },
-    { id: 4, code: 'D' },
+    { id: 10, code: 'X', teams: [{ id: '7', displayOrder: 9 }] },
+    { id: 1, code: 'A', teams: [{ id: '7', displayOrder: 0 }] },
+    { id: 2, code: 'B', teams: [{ id: '7', displayOrder: 1 }] },
+    { id: 99, code: 'Y', teams: [{ id: '8', displayOrder: 4 }] },
+    { id: 3, code: 'C', teams: [{ id: '7', displayOrder: 2 }] },
+    { id: 4, code: 'D', teams: [{ id: '7', displayOrder: 3 }] },
   ]
   const nextSelectedTeamShifts = [
-    { id: 3, code: 'C' },
-    { id: 2, code: 'B' },
-    { id: 1, code: 'A' },
-    { id: 4, code: 'D' },
+    { id: 3, code: 'C', teams: [{ id: '7', displayOrder: 2 }] },
+    { id: 2, code: 'B', teams: [{ id: '7', displayOrder: 1 }] },
+    { id: 1, code: 'A', teams: [{ id: '7', displayOrder: 0 }] },
+    { id: 4, code: 'D', teams: [{ id: '7', displayOrder: 3 }] },
   ]
 
   assert.deepEqual(
-    applyReorderedSelectedTeamShifts(allShiftDefinitions, nextSelectedTeamShifts).map((shift) => shift.id),
-    [10, 3, 2, 99, 1, 4],
+    applyReorderedSelectedTeamShifts(allShiftDefinitions, nextSelectedTeamShifts, '7')
+      .map((shift) => shift.teams?.find((team) => team.id === '7')?.displayOrder ?? null),
+    [9, 2, 1, null, 0, 3],
   )
   assert.match(
     source,
-    /shiftDefinitions\.value = applyReorderedSelectedTeamShifts\(\s*shiftDefinitions\.value,\s*nextSelectedTeamShifts,\s*\)/,
+    /shiftDefinitions\.value = applyReorderedSelectedTeamShifts\(\s*shiftDefinitions\.value,\s*nextSelectedTeamShifts,\s*selectedTeamFilter\.value,\s*\)/,
   )
+})
+
+test('shift definitions sort the selected team rows by per-team display order metadata', () => {
+  const sorted = sortShiftsForSelectedTeam(
+    [
+      { id: 1, code: 'A', teams: [{ id: '7', displayOrder: 2 }] },
+      { id: 2, code: 'B', teams: [{ id: '7', displayOrder: 0 }] },
+      { id: 3, code: 'C', teams: [{ id: '7', displayOrder: 1 }] },
+      { id: 4, code: 'D', teams: [{ id: '8', displayOrder: 0 }] },
+    ],
+    '7',
+  )
+
+  assert.deepEqual(
+    sorted.map((shift) => shift.id),
+    [2, 3, 1, 4],
+  )
+  assert.match(source, /const selectedTeamId = String\(selectedTeamFilter\.value \|\| ''\)\.trim\(\)/)
 })
