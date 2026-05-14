@@ -31,7 +31,7 @@ export default {
     allTeams: 'All Teams',
     selectTeam: 'Select a team',
     readonlyMode: 'Readonly mode',
-    contactInformation: 'Contact Information',
+    contactInformation: 'Contact Hub',
     productUpdates: 'Product Updates',
   },
   locale: {
@@ -98,8 +98,8 @@ export default {
     emptyDetail: 'Select a version to view details',
   },
   linuxPasswords: {
-    entryLabel: 'Linux Password Vault',
-    title: 'Linux Password Vault',
+    entryLabel: 'Host Hub',
+    title: 'Host Hub',
     subtitle: 'Browse Linux host credentials and grouped directories in one place.',
     systemDirectory: 'System Directory',
     businessModules: 'Business Modules',
@@ -127,7 +127,7 @@ export default {
     launchingWinScp: 'Prepared WinSCP action for {hostname}.',
     savedServer: '{hostname} was added to the local vault view.',
     deletedServer: '{hostname} was removed from the vault.',
-    deleteConfirm: 'Delete {hostname} from the Linux password vault?',
+    deleteConfirm: 'Delete {hostname} from Host Hub?',
     editServer: 'Edit Server',
     formTitle: 'Machine Configuration',
     formDescription:
@@ -152,7 +152,7 @@ export default {
       'If the directory does not exist yet, enter it here and save it with the form.',
     saveMachine: 'Save Machine',
     saveChanges: 'Save Changes',
-    loadFailed: 'Failed to load the Linux password vault.',
+    loadFailed: 'Failed to load Host Hub.',
     saveFailed: 'Failed to save the Linux host.',
     deleteFailed: 'Failed to delete the Linux host.',
     copyFailed: 'Failed to copy the password.',

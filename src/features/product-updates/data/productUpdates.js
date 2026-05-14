@@ -15,13 +15,22 @@ export const productUpdateModules = [
   { value: 'workspace', label: { 'zh-CN': '工作台', en: 'Workspace' } },
   { value: 'roster', label: { 'zh-CN': '排班', en: 'Roster' } },
   { value: 'validation', label: { 'zh-CN': '校验', en: 'Validation' } },
-  { value: 'contact', label: { 'zh-CN': '联系信息', en: 'Contact information' } },
-  { value: 'linux', label: { 'zh-CN': 'Linux 密码库', en: 'Linux vault' } },
+  { value: 'contact', label: { 'zh-CN': 'Contact Hub', en: 'Contact Hub' } },
+  { value: 'linux', label: { 'zh-CN': 'Host Hub', en: 'Host Hub' } },
   { value: 'permission', label: { 'zh-CN': '权限', en: 'Access' } },
   { value: 'system', label: { 'zh-CN': '系统', en: 'System' } },
 ]
 
 export const productUpdates = [
+  {
+    id: '2026-05-14-viewer-hub-labels',
+    version: '2026.05.14',
+    date: '2026-05-14',
+    type: 'improvement',
+    modules: ['viewer', 'contact', 'linux'],
+    prNumbers: [43],
+    sectionTypes: ['fix', 'improvement'],
+  },
   {
     id: '2026-05-11-shift-definition-team-reorder-fix',
     version: '2026.05.11',
@@ -160,6 +169,58 @@ export const productUpdates = [
 ]
 
 const PRODUCT_UPDATE_TRANSLATIONS = {
+  '2026-05-14-viewer-hub-labels': {
+    'zh-CN': {
+      title: 'Viewer 团队名称不再溢出，Hub 命名也已统一',
+      summary:
+        'Viewer 左侧超长团队名称现在会在列内换行，同时跨页面入口和相关页面标题统一改为 Host Hub 与 Contact Hub。',
+      status: '已发布',
+      importance: '体验优化',
+      audience: ['值班查看者', '工作台用户', '支持团队用户'],
+      impact:
+        '查看长团队名称时不再需要横向拖动或忍受文字溢出；在 Viewer、Workspace、Host Hub 和 Contact Hub 之间切换时，入口名称也更统一。',
+      highlights: [
+        'Viewer 左侧团队名称过长时会自动换行',
+        '跨页面入口统一为 Host Hub 与 Contact Hub',
+        '相关页面标题与顶部入口名称保持一致',
+      ],
+      sections: [
+        {
+          title: '体验优化',
+          items: [
+            'Viewer 左侧团队列现在会在固定宽度内自动换行，不再因为长团队名称溢出边框。',
+            '团队名称换行后会同步撑开对应团队行高，右侧时间轴高度与左侧 sticky 列保持对齐。',
+            '跨页面顶部入口与相关页面标题统一使用 Host Hub 与 Contact Hub，减少同一功能在不同页面出现多套名称。',
+          ],
+        },
+      ],
+    },
+    en: {
+      title: 'Viewer team names wrap cleanly and hub labels are unified',
+      summary:
+        'Long team names now wrap inside the Viewer team column, and cross-page labels plus related page titles are unified as Host Hub and Contact Hub.',
+      status: 'Published',
+      importance: 'Experience improvement',
+      audience: ['Roster viewers', 'Workspace users', 'Support team users'],
+      impact:
+        'Users can scan long team names without layout overflow, and the same Host Hub and Contact Hub naming now appears consistently across Viewer, Workspace, and the related standalone pages.',
+      highlights: [
+        'Long Viewer team names now wrap inside the left team column',
+        'Cross-page entry labels now use Host Hub and Contact Hub',
+        'Related page titles match the same hub naming',
+      ],
+      sections: [
+        {
+          title: 'Experience improvements',
+          items: [
+            'The Viewer team column now wraps long team names within the fixed left rail instead of letting the text overflow the panel edge.',
+            'When a team name wraps, the row grows with it so the sticky team column and the timeline body stay vertically aligned.',
+            'Top-level cross-page entry labels and related page titles now consistently use Host Hub and Contact Hub.',
+          ],
+        },
+      ],
+    },
+  },
   '2026-05-11-shift-definition-team-reorder-fix': {
     'zh-CN': {
       title: '班次定义按 TEAM 拖拽排序现在可以真正保存',

@@ -190,7 +190,7 @@ playwright-cli close-all
 ### 推荐验证页面
 
 - Public Viewer：`http://127.0.0.1:5173/viewer`
-- Contact Information：`http://127.0.0.1:5173/contact-information`
+- Contact Hub：`http://127.0.0.1:5173/contact-information`
 - Monthly Roster：`http://127.0.0.1:5173/workspace/roster`
 - Validation Center：`http://127.0.0.1:5173/workspace/validation`
 

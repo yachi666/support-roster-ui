@@ -50,6 +50,8 @@ const MIN_ROW_HEIGHT = 72
 - 时间轴宽度不再写死为 2880px。
 - 桌面端按容器宽度平均分配 24 个小时列。
 - 当容器过窄且每小时宽度会小于 28px 时，退回横向滚动兜底。
+- 左侧 Team sticky 列保持 208px 固定宽度；当 Team 名称过长时，名称会在列内自动换行，而不是横向溢出到列外。
+- 团队行高首先满足班次泳道最小高度；若 Team 名称换行占用更多空间，整行会随左侧 sticky 列一起增高，保证右侧时间轴与左列高度保持一致。
 
 ---
 
@@ -146,7 +148,7 @@ const currentTimeLeft = computed(() => {
 ```typescript
 interface TeamLayout {
   team: TeamDto
-  height: number          // 行高 (动态计算)
+  height: number          // 班次泳道最小行高 (动态计算)
   shifts: LayoutShift[]   // 该团队的班次布局
 }
 
@@ -225,18 +227,19 @@ const layout = computed(() => {
         <div v-if="currentTimeLeft" class="absolute bg-red-500/50" />
         
         <!-- 团队行 -->
-        <div v-for="{ team, height, shifts } in layout" class="flex border-b">
-          <!-- Team 信息 (sticky) -->
-          <div class="sticky left-0 w-60" :style="{ height }">
-            <span :class="teamColor" />
-            {{ team.name }}
-            <span>{{ shifts.length }} active shifts</span>
-          </div>
-          
-          <!-- 班次卡片区 -->
-          <div class="relative" :style="{ width: timelineWidth, height }">
-            <!-- 空状态背景 -->
-            <div v-if="shifts.length === 0" class="diagonal-pattern" />
+          <div v-for="{ team, height, shifts } in layout" class="flex border-b">
+            <!-- Team 信息 (sticky) -->
+            <div class="sticky left-0 w-60" :style="{ minHeight: height }">
+              <span :class="teamColor" />
+              <span class="break-words whitespace-normal">{{ team.name }}</span>
+              <span>{{ shifts.length }} active shifts</span>
+            </div>
+
+            <!-- 班次卡片区 -->
+            <div class="relative" :style="{ width: timelineWidth, minHeight: height }">
+              <div aria-hidden="true" :style="{ height }" />
+              <!-- 空状态背景 -->
+              <div v-if="shifts.length === 0" class="diagonal-pattern" />
             
             <!-- 班次卡片 -->
             <TooltipRoot v-for="layoutShift in shifts">

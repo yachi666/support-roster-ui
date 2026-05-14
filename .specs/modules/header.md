@@ -206,9 +206,9 @@ div.flex.h-10.items-center.gap-2.rounded-md.border.border-slate-200.bg-white.px-
 
 ### 工具入口
 
-- Header 右侧工具区依次展示 Contact Information、Linux Password Vault、Workspace、External Systems 和 Product Updates。
+- Header 右侧工具区依次展示 Contact Hub、Host Hub、Workspace、External Systems 和 Product Updates。
 - Header 工具栏采用 quiet operational toolbar 风格：控件统一 `h-10`、`rounded-md`、浅 slate 边框和白底/浅灰底默认态，去掉独立卡片式阴影。
-- Contact Information、Linux Password Vault 与 Workspace 使用文字 + 图标按钮，保持普通工具入口层级。
+- Contact Hub、Host Hub 与 Workspace 使用文字 + 图标按钮，保持普通工具入口层级。
 - Workspace 不使用大面积 teal 底色，仅保留 teal 图标和 hover/focus 强调，避免抢占主视觉。
 - Product Updates 使用最右侧仅图标按钮，`to="/product-updates"`，图标采用 `Newspaper`，用于快速打开产品更新日志中心。
 - Product Updates 图标按钮必须提供 `aria-label` 与 `title`，显示文本来自 `common.productUpdates`，避免纯图标入口对辅助技术不可见。

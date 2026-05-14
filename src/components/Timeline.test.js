@@ -33,3 +33,11 @@ test('timeline details popover can grow wider for long email and shift code cont
   // Verify email row uses break-all for wrapping
   assert.match(source, /<span class="[^"]*break-all[^"]*select-all">{{ getShiftContactValue\(layoutShift\.shift, 'email'\) }}<\/span>/)
 })
+
+test('timeline team labels wrap inside the sticky team column without clipping the row', () => {
+  assert.ok(source.includes(':style="{ width: `${TEAM_COLUMN_WIDTH}px`, minHeight: `${height}px` }"'))
+  assert.ok(source.includes('<div class="flex min-w-0 items-start text-sm font-semibold text-gray-800">'))
+  assert.ok(source.includes('<span class="min-w-0 break-words whitespace-normal leading-5">{{ team.name }}</span>'))
+  assert.ok(source.includes(':style="{ width: `${timelineWidth}px`, minHeight: `${height}px` }"'))
+  assert.ok(source.includes('<div aria-hidden="true" :style="{ height: `${height}px` }"></div>'))
+})

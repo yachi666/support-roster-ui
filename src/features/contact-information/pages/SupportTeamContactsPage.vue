@@ -2,12 +2,14 @@
 import { computed, inject, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ArrowRight, CheckCircle2, CircleAlert } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import ContactInformationTable from '../components/ContactInformationTable.vue'
 import { CONTACT_INFORMATION_LAYOUT_KEY } from '../lib/layoutContext'
 import { listContactInformation } from '@/api/contactInformation'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 const layoutState = inject(CONTACT_INFORMATION_LAYOUT_KEY, { searchTerm: ref('') })
 const notice = ref({ tone: '', message: '' })
 const contactsResponse = ref({
@@ -129,7 +131,7 @@ onUnmounted(() => {
   <section class="flex flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
     <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
       <div>
-        <h1 class="text-xl font-semibold text-slate-900">System Teams</h1>
+        <h1 class="text-xl font-semibold text-slate-900">{{ t('common.contactInformation') }}</h1>
         <p class="mt-1 text-sm text-slate-500">
           Manage upstream and downstream support-team contact directories.
         </p>

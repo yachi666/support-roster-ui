@@ -49,8 +49,8 @@ This repository is designed to work as a **Git submodule** within [`support-plat
 | **Public Viewer** | `/viewer` | Public | Read-only on-call timeline with date picker, timezone selector, and responsive layout |
 | **Login** | `/login` | Public | Staff ID authentication and account activation flow |
 | **Admin Workspace** | `/workspace/*` | Authenticated + Policy | Complete roster management: overview, monthly planning, staff, shifts, teams, validation, import/export, accounts |
-| **Contact Information** | `/contact-information` | Public + Protected | Public viewing and admin management of contact details |
-| **Linux Passwords** | `/linux-passwords` | Protected | Operational password vault gated by workspace access policy |
+| **Contact Hub** | `/contact-information` | Public + Protected | Public viewing and admin management of contact details |
+| **Host Hub** | `/linux-passwords` | Protected | Operational password vault gated by workspace access policy |
 | **Product Updates** | `/product-updates` | Public | User-facing release notes tracking visible product changes |
 
 > **Note:** Navigating to `/workspace` redirects users to the appropriate workspace entry page based on their authenticated permissions and workspace policy.

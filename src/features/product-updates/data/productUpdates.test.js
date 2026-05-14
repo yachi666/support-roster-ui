@@ -16,6 +16,8 @@ test('groups product updates by release month', () => {
   assert.deepEqual(
     groups[0].items.map((item) => item.id),
     [
+      '2026-05-14-viewer-hub-labels',
+      '2026-05-11-shift-definition-team-reorder-fix',
       '2026-05-09-viewer-shift-ordering',
       '2026-05-09-workspace-validation-navigation',
       '2026-05-01-roster-save-actions',
@@ -42,18 +44,18 @@ test('groups product updates by release month', () => {
 test('localizes product updates and labels for English', () => {
   const updates = localizeProductUpdates(productUpdates, 'en')
   const groups = groupProductUpdatesByMonth(updates, 'en')
-  const newestUpdate = updates.find((item) => item.id === '2026-05-09-viewer-shift-ordering')
+  const newestUpdate = updates.find((item) => item.id === '2026-05-14-viewer-hub-labels')
   const validationUpdate = updates.find((item) => item.id === '2026-05-09-workspace-validation-navigation')
 
   assert.ok(newestUpdate)
-  assert.equal(newestUpdate.title, 'Viewer details expand better and shift order is team-aware')
+  assert.equal(newestUpdate.title, 'Viewer team names wrap cleanly and hub labels are unified')
   assert.equal(newestUpdate.sections[0].title, 'Experience improvements')
   assert.ok(validationUpdate)
   assert.equal(validationUpdate.title, 'Workspace validation fixes are more direct')
   assert.equal(getProductUpdateTypeLabel('feature', 'en'), 'New')
   assert.equal(
     formatProductUpdateModuleList(['contact', 'viewer'], 'en'),
-    'Contact information, Viewer',
+    'Contact Hub, Viewer',
   )
   assert.equal(groups[0].month, 'May 2026')
 })

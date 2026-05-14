@@ -8,6 +8,8 @@ test('contact information layout exposes navigation to related app areas', () =>
   assert.match(source, /to="\/linux-passwords"/)
   assert.match(source, /to="\/viewer"/)
   assert.match(source, /to="\/workspace"/)
+  assert.match(source, /{{ t\('linuxPasswords\.entryLabel'\) }}/)
+  assert.match(source, /{{ t\('common\.contactInformation'\) }}/)
 })
 
 test('contact information layout mirrors the shared top action hierarchy', () => {
