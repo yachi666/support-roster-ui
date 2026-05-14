@@ -28,7 +28,7 @@ export const productUpdates = [
     date: '2026-05-14',
     type: 'improvement',
     modules: ['viewer', 'contact', 'linux'],
-    prNumbers: [],
+    prNumbers: [43],
     sectionTypes: ['fix', 'improvement'],
   },
   {
