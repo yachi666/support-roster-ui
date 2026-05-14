@@ -302,29 +302,30 @@ const hasShiftContactInfo = (shift) => {
           >
             <div
               class="sticky left-0 z-20 flex flex-col justify-center border-r border-gray-200 bg-white px-4 shadow-[1px_0_0_0_rgba(229,231,235,1)] transition-colors group-hover:bg-gray-50/50"
-              :style="{ width: `${TEAM_COLUMN_WIDTH}px`, height: `${height}px` }"
+              :style="{ width: `${TEAM_COLUMN_WIDTH}px`, minHeight: `${height}px` }"
             >
-              <div class="flex items-center text-sm font-semibold text-gray-800">
+              <div class="flex min-w-0 items-start text-sm font-semibold text-gray-800">
                 <span
                   :class="
                     cn(
-                      'mr-2 h-2 w-2 rounded-full',
+                      'mt-1 mr-2 h-2 w-2 shrink-0 rounded-full',
                       !team.color?.startsWith('#') && getTeamColorClass(team.color),
                     )
                   "
                   :style="getTeamColorStyle(team.color)"
                 ></span>
-                {{ team.name }}
+                <span class="min-w-0 break-words whitespace-normal leading-5">{{ team.name }}</span>
               </div>
-              <div class="mt-1 pl-4 text-xs text-gray-400">
+              <div class="mt-1 pl-4 text-xs leading-5 text-gray-400">
                 {{ t('viewer.timeline.activeShifts', { count: getTeamShiftCount(team.id) }) }}
               </div>
             </div>
 
             <div
               class="relative flex-1 bg-white"
-              :style="{ width: `${timelineWidth}px`, height: `${height}px` }"
+              :style="{ width: `${timelineWidth}px`, minHeight: `${height}px` }"
             >
+              <div aria-hidden="true" :style="{ height: `${height}px` }"></div>
               <div v-if="shifts.length === 0" class="absolute inset-0 bg-white"></div>
 
               <TooltipRoot v-for="layoutShift in shifts" :key="layoutShift.shift.id">

@@ -1,6 +1,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ArrowLeft, Building2 } from 'lucide-vue-next'
 import SupportTeamContactForm from '../components/SupportTeamContactForm.vue'
 import { createContactInformation } from '@/api/contactInformation'
@@ -9,6 +10,7 @@ import { contactInformationPresetRoles } from '../data/contactInformationOptions
 
 const router = useRouter()
 const submitError = ref('')
+const { t } = useI18n()
 
 function handleCancel() {
   router.push('/contact-information')
@@ -31,7 +33,7 @@ async function handleSubmit(payload) {
     <div class="mb-4 flex w-full max-w-6xl items-center gap-2">
       <button
         type="button"
-        aria-label="Back to contact information list"
+        :aria-label="`Back to ${t('common.contactInformation')}`"
         class="-ml-2 inline-flex rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-900"
         @click="handleCancel"
       >
@@ -39,7 +41,7 @@ async function handleSubmit(payload) {
       </button>
       <h1 class="flex items-center gap-2.5 text-xl font-semibold tracking-tight text-slate-900">
         <Building2 class="h-5 w-5 text-teal-600" />
-        Add Team Contact Information
+        {{ `Add Team to ${t('common.contactInformation')}` }}
       </h1>
     </div>
 

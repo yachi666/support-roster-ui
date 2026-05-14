@@ -31,7 +31,7 @@ export default {
     allTeams: '全部团队',
     selectTeam: '请选择团队',
     readonlyMode: '只读模式',
-    contactInformation: '联系信息',
+    contactInformation: 'Contact Hub',
     productUpdates: '产品更新',
   },
   locale: {
@@ -96,8 +96,8 @@ export default {
     emptyDetail: '请选择一个版本查看详情',
   },
   linuxPasswords: {
-    entryLabel: 'Linux 密码库',
-    title: 'Linux 密码库',
+    entryLabel: 'Host Hub',
+    title: 'Host Hub',
     subtitle: '集中查看 Linux 主机凭据与目录分组。',
     systemDirectory: '系统目录',
     businessModules: '业务模块',

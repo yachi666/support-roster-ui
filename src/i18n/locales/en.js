@@ -31,7 +31,7 @@ export default {
     allTeams: 'All Teams',
     selectTeam: 'Select a team',
     readonlyMode: 'Readonly mode',
-    contactInformation: 'Contact Information',
+    contactInformation: 'Contact Hub',
     productUpdates: 'Product Updates',
   },
   locale: {
@@ -98,8 +98,8 @@ export default {
     emptyDetail: 'Select a version to view details',
   },
   linuxPasswords: {
-    entryLabel: 'Linux Password Vault',
-    title: 'Linux Password Vault',
+    entryLabel: 'Host Hub',
+    title: 'Host Hub',
     subtitle: 'Browse Linux host credentials and grouped directories in one place.',
     systemDirectory: 'System Directory',
     businessModules: 'Business Modules',
