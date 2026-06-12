@@ -11,10 +11,17 @@ import {
 test('groups product updates by release month', () => {
   const groups = groupProductUpdatesByMonth(productUpdates, 'zh-CN')
 
-  assert.equal(groups.length, 3)
-  assert.equal(groups[0].month, '2026年5月')
+  assert.equal(groups.length, 4)
+  assert.equal(groups[0].month, '2026年6月')
   assert.deepEqual(
     groups[0].items.map((item) => item.id),
+    [
+      '2026-06-12-workspace-overview-activity-home',
+    ],
+  )
+  assert.equal(groups[1].month, '2026年5月')
+  assert.deepEqual(
+    groups[1].items.map((item) => item.id),
     [
       '2026-05-14-viewer-hub-labels',
       '2026-05-11-shift-definition-team-reorder-fix',
@@ -24,9 +31,9 @@ test('groups product updates by release month', () => {
       '2026-05-01-workspace-motion-feedback',
     ],
   )
-  assert.equal(groups[1].month, '2026年4月')
+  assert.equal(groups[2].month, '2026年4月')
   assert.deepEqual(
-    groups[1].items.map((item) => item.id),
+    groups[2].items.map((item) => item.id),
     [
       '2026-04-28-viewer-external-systems-drawer',
       '2026-04-27-linux-password-audit',
@@ -38,17 +45,17 @@ test('groups product updates by release month', () => {
       '2026-04-03-search-validation',
     ],
   )
-  assert.equal(groups[2].month, '2026年3月')
+  assert.equal(groups[3].month, '2026年3月')
 })
 
 test('localizes product updates and labels for English', () => {
   const updates = localizeProductUpdates(productUpdates, 'en')
   const groups = groupProductUpdatesByMonth(updates, 'en')
-  const newestUpdate = updates.find((item) => item.id === '2026-05-14-viewer-hub-labels')
+  const newestUpdate = updates.find((item) => item.id === '2026-06-12-workspace-overview-activity-home')
   const validationUpdate = updates.find((item) => item.id === '2026-05-09-workspace-validation-navigation')
 
   assert.ok(newestUpdate)
-  assert.equal(newestUpdate.title, 'Viewer team names wrap cleanly and hub labels are unified')
+  assert.equal(newestUpdate.title, 'Workspace Overview now focuses on recent operations')
   assert.equal(newestUpdate.sections[0].title, 'Experience improvements')
   assert.ok(validationUpdate)
   assert.equal(validationUpdate.title, 'Workspace validation fixes are more direct')
@@ -57,7 +64,7 @@ test('localizes product updates and labels for English', () => {
     formatProductUpdateModuleList(['contact', 'viewer'], 'en'),
     'Contact Hub, Viewer',
   )
-  assert.equal(groups[0].month, 'May 2026')
+  assert.equal(groups[0].month, 'June 2026')
 })
 
 test('includes the roster editing and workspace motion feedback release notes in both locales', () => {
