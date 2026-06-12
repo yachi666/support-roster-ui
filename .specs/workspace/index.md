@@ -21,7 +21,7 @@
 | 路由 | `./routing.md` | `/workspace` 路由树、页面入口与导航约束 |
 | 壳层 | `./layout.md` | Sidebar、Topbar、主内容区与共享年月状态 |
 | 共享组件 | `./components/shared.md` | Header、Surface、Drawer、Stat Card 等复用件 |
-| 页面：总览 | `./pages/overview.md` | 首页聚合看板与快捷入口 |
+| 页面：总览 | `./pages/overview.md` | 活动记录型首页、当前上下文与常用入口 |
 | 页面：月度排班 | `./pages/monthly-roster.md` | 排班矩阵、抽屉编辑、保存与回滚 |
 | 页面：月度排班极简改版 | `./pages/monthly-roster-minimal-editing.md` | 去抽屉、去厚状态条、顶部极简班次动作条 |
 | 页面：人员目录 | `./pages/staff-directory.md` | 列表、详情抽屉、增删改流程 |

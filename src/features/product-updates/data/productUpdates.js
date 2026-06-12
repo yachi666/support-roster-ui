@@ -23,6 +23,15 @@ export const productUpdateModules = [
 
 export const productUpdates = [
   {
+    id: '2026-06-12-workspace-overview-activity-home',
+    version: '2026.06.12',
+    date: '2026-06-12',
+    type: 'improvement',
+    modules: ['workspace'],
+    prNumbers: [],
+    sectionTypes: ['improvement'],
+  },
+  {
     id: '2026-05-14-viewer-hub-labels',
     version: '2026.05.14',
     date: '2026-05-14',
@@ -169,6 +178,58 @@ export const productUpdates = [
 ]
 
 const PRODUCT_UPDATE_TRANSLATIONS = {
+  '2026-06-12-workspace-overview-activity-home': {
+    'zh-CN': {
+      title: '工作台总览现在聚焦最近操作记录',
+      summary:
+        'Workspace 总览页去掉了不常用的 KPI 仪表盘信息，改为突出最近操作记录、当前上下文和常用工作入口。',
+      status: '已发布',
+      importance: '体验优化',
+      audience: ['工作台用户', '排班管理员', '团队编辑者'],
+      impact:
+        '进入工作台后可以更快确认最近谁改了什么，并直接回到月度排班、导入导出、校验或员工目录继续处理。',
+      highlights: [
+        '总览页主内容改为最近操作记录',
+        '保留当前月份、时区和登录身份上下文',
+        '提供月度排班、导入导出、校验和员工目录的常用入口',
+      ],
+      sections: [
+        {
+          title: '体验优化',
+          items: [
+            'Workspace 总览页不再展示健康指数、完成度等低价值仪表盘卡片，首屏改为更轻量的工作入口与活动记录。',
+            '最近操作记录支持按模块筛选，并会把相关操作导向对应工作台页面。',
+            '页面加载失败、空记录和无匹配结果都使用内联状态，避免干扰用户继续导航。',
+          ],
+        },
+      ],
+    },
+    en: {
+      title: 'Workspace Overview now focuses on recent operations',
+      summary:
+        'Workspace Overview removes low-value KPI dashboard content and now emphasizes recent activity, current context, and common places to continue.',
+      status: 'Published',
+      importance: 'Experience improvement',
+      audience: ['Workspace users', 'Roster admins', 'Team editors'],
+      impact:
+        'Users can quickly see who changed what recently and jump back into Monthly Roster, Import / Export, Validation, or Staff Directory.',
+      highlights: [
+        'Recent operations are now the main Overview content',
+        'Current month, timezone, and signed-in identity stay visible',
+        'Common shortcuts remain available without dashboard clutter',
+      ],
+      sections: [
+        {
+          title: 'Experience improvements',
+          items: [
+            'Workspace Overview no longer leads with health scores, completion metrics, or other low-value dashboard cards.',
+            'Recent operations can be filtered by module and route users to the related workspace area.',
+            'Loading failures, empty activity, and no-match results now appear as lightweight inline states.',
+          ],
+        },
+      ],
+    },
+  },
   '2026-05-14-viewer-hub-labels': {
     'zh-CN': {
       title: 'Viewer 团队名称不再溢出，Hub 命名也已统一',
