@@ -52,8 +52,6 @@ export default {
       title: '为工作台操作提供安全访问。',
       description:
         '`viewer` 保持公开访问。工作台现在使用员工 ID 登录、基于角色的导航，以及按团队范围控制编辑权限。',
-      noteTitle: '当前上线说明',
-      noteBody: '首次激活目前仅适用于内网/测试环境。正式环境仍需更强的激活校验。',
     },
     card: {
       eyebrow: '工作台认证',
@@ -246,8 +244,7 @@ export default {
     },
     overview: {
       title: '总览',
-      description:
-        '最近工作台操作记录，以及继续工作的常用入口。',
+      description: '最近工作台操作记录，以及继续工作的常用入口。',
       refresh: '刷新',
       loadFailed: '加载工作台活动失败。',
       summary: '{count} 条操作 · {refreshed} 刷新',
@@ -787,7 +784,8 @@ export default {
       applyingRemediation: '删除中...',
       remediationSuccess: '已通过校验清理删除 {count} 条无效记录。',
       bulkRemediationTitle: '确认批量清理（{count} 条）',
-      bulkRemediationSummary: '本次会顺序执行 {count} 个系统清理动作，并在完成后重新拉取最新校验结果。',
+      bulkRemediationSummary:
+        '本次会顺序执行 {count} 个系统清理动作，并在完成后重新拉取最新校验结果。',
       bulkRemediationWarning: '批量清理会逐条永久删除无效历史记录，请先核对下方详情。',
       openRelatedArea: '打开相关区域',
       issueList: '问题列表',

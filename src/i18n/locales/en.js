@@ -52,9 +52,6 @@ export default {
       title: 'Secure access for workspace operations.',
       description:
         '`viewer` remains public. Workspace access now uses staff ID based sign-in, role-aware navigation, and team-scoped editor permissions.',
-      noteTitle: 'Current rollout note',
-      noteBody:
-        'First-time activation currently works inside the intranet/test scope only. Production rollout still needs stronger activation verification.',
     },
     card: {
       eyebrow: 'Workspace authentication',
@@ -162,7 +159,8 @@ export default {
       sidebarHint: 'Review password access logs',
       badge: 'Admin audit',
       title: 'Linux Password Access Audit',
-      subtitle: 'Trace password view and copy activity by staff, machine, login account, action, result, and time range.',
+      subtitle:
+        'Trace password view and copy activity by staff, machine, login account, action, result, and time range.',
       backToVault: 'Back to Vault',
       loadFailed: 'Failed to load audit records.',
       loading: 'Loading audit records...',
@@ -251,15 +249,15 @@ export default {
     },
     overview: {
       title: 'Overview',
-      description:
-        'Recent workspace activity and common places to continue.',
+      description: 'Recent workspace activity and common places to continue.',
       refresh: 'Refresh',
       loadFailed: 'Failed to load workspace activity.',
       summary: '{count} operations · refreshed {refreshed}',
       notLoaded: 'not loaded',
       continueTitle: 'Continue where work happens',
       contextTitle: 'Current context',
-      activityDescription: 'Recent changes across roster, import, validation, staff, and workspace setup.',
+      activityDescription:
+        'Recent changes across roster, import, validation, staff, and workspace setup.',
       noMatchingActivity: 'No matching activity. Try adjusting the module filter or page search.',
       unknownUser: 'Unknown user',
       openActivity: 'Open related {module} page for {action}',

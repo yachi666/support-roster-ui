@@ -1,5 +1,48 @@
 # Spec Change Log
 
+## 2026-06-15
+
+### Workspace Login Lightweight Refresh
+
+#### Summary
+
+Workspace 登录页改为更轻量的管理端入口，去掉深色宣传侧栏、大面积渐变和厚重投影，保留登录、首登设密、语言切换、错误提示和 redirect 行为。
+
+后续补充：移除登录页左侧“当前上线说明”提示块，左侧区域仅保留 Workspace 访问说明；首次激活的内网/测试提示保留在激活表单内联说明中。
+
+#### Files Changed
+
+- `.specs/workspace/auth/login-and-session.md`
+- `.specs/workspace/ui-design.md`
+- `.specs/CHANGELOG.md`
+
+#### Detailed Changes
+
+| File | Section | Change Type | Before | After | Why |
+|---|---|---|---|---|---|
+| `.specs/workspace/auth/login-and-session.md` | 登录页视觉与交互 | Add | 登录流程只描述认证行为，未记录页面视觉和交互层级 | 新增 `/login` 的轻量布局、语言切换、登录/激活切换与错误提示规则 | 保持 Workspace 登录页实现与认证专题一致 |
+| `.specs/workspace/ui-design.md` | Workspace Login | Add | Workspace 视觉规范没有单独描述登录入口 | 新增轻量登录页的表面、色彩、圆角、密度和响应式约束 | 避免后续登录页回退到厚重展示型 hero |
+| `.specs/workspace/auth/login-and-session.md` / `.specs/workspace/ui-design.md` | 登录页左侧说明 | Update | 左侧说明区包含独立内网/测试上线提示 | 左侧仅保留 Workspace 访问说明，激活风险提示留在激活表单内 | 降低登录页首屏文案负担 |
+
+### Summary
+
+Public Viewer 细化顶部工具区和 Timeline tooltip 的间距节奏，统一按钮间隙、详情行高、联系方式列表分割线和 Teams 图标按钮尺寸；同时让 Timeline 有数据的团队行按班次泳道组垂直居中，避免上下留白不一致。
+
+### Files Changed
+
+- `.specs/ui-design.md`
+- `.specs/modules/header.md`
+- `.specs/modules/timeline.md`
+- `.specs/CHANGELOG.md`
+
+### Detailed Changes
+
+| File | Section | Change Type | Before | After | Why |
+|---|---|---|---|---|---|
+| `.specs/ui-design.md` | 间距系统 / Shift Card / Tooltip | Update | Header 仍描述 `space-x-4`，班次卡片高度与行间距常量沿用旧值，Tooltip 缺少详情行节奏约束，团队行班次卡片固定从顶部 padding 开始 | 明确 Header 使用 `gap-2`、Tooltip 使用 `gap-2.5` / `min-h-6` / `my-2.5`，校准 Shift Card 32px 高度，并规定班次泳道组按 `laneStackHeight` 垂直居中 | 保持视觉规范与当前 Viewer 实现一致 |
+| `.specs/modules/header.md` | 布局结构 / 样式规范 / 工具入口 | Update | 右侧工具区没有明确禁止混用额外外边距与不同 gap | 明确 Header 右侧筛选、文字入口和图标按钮统一 `gap-2`，日期组内部使用 `gap-1` | 防止按钮间隙再次出现不统一 |
+| `.specs/modules/timeline.md` | Tooltip 内容 / 团队行布局 | Update | Teams 联系动作仍按文字行描述，未规定详情行最小高度与分割线间距；团队行高度公式会把最后一个泳道 gap 计入尾部留白 | 改为 Teams 图标按钮，记录 tooltip 详情行统一 `min-h-6`、`leading-5` 与 `gap-2.5`；团队行使用实际泳道组高度计算行高和 `top` 偏移 | 让员工详情浮层和有数据团队行的上下间距都保持稳定 |
+
 ## 2026-04-28
 
 ### Summary

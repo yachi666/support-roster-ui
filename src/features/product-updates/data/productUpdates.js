@@ -23,6 +23,15 @@ export const productUpdateModules = [
 
 export const productUpdates = [
   {
+    id: '2026-06-15-workspace-login-lightweight-refresh',
+    version: '2026.06.15',
+    date: '2026-06-15',
+    type: 'improvement',
+    modules: ['workspace', 'permission'],
+    prNumbers: [],
+    sectionTypes: ['improvement'],
+  },
+  {
     id: '2026-06-12-workspace-overview-activity-home',
     version: '2026.06.12',
     date: '2026-06-12',
@@ -178,6 +187,58 @@ export const productUpdates = [
 ]
 
 const PRODUCT_UPDATE_TRANSLATIONS = {
+  '2026-06-15-workspace-login-lightweight-refresh': {
+    'zh-CN': {
+      title: 'Workspace 登录页更轻量',
+      summary:
+        'Workspace 登录入口改为更清爽的管理端布局，弱化装饰和厚重视觉，同时保留登录、首登设密和语言切换。',
+      status: '已发布',
+      importance: '体验优化',
+      audience: ['工作台用户', '排班管理员', '团队编辑者'],
+      impact:
+        '进入 Workspace 前的登录流程更聚焦，用户可以更快识别登录方式、切换首登设密，并在同一表单内处理错误提示。',
+      highlights: [
+        '登录页去掉深色宣传侧栏和大面积渐变',
+        '保留登录、首登设密、语言切换和 redirect 行为',
+        '表单控件改为更紧凑的 Workspace 管理端风格',
+      ],
+      sections: [
+        {
+          title: '体验优化',
+          items: [
+            'Workspace 登录页改为顶部品牌栏、左侧简短说明和右侧表单的轻量结构。',
+            '表单卡片使用更克制的边框、圆角和阴影，减少登录前的视觉负担。',
+            '登录与首登设密仍通过同一页面切换，错误提示继续以内联状态呈现。',
+          ],
+        },
+      ],
+    },
+    en: {
+      title: 'Workspace sign-in is lighter',
+      summary:
+        'The Workspace sign-in entry now uses a cleaner admin layout with less visual weight while preserving sign-in, activation, and language switching.',
+      status: 'Published',
+      importance: 'Experience improvement',
+      audience: ['Workspace users', 'Roster admins', 'Team editors'],
+      impact:
+        'Users get a more focused path into Workspace, can switch between sign-in and first-time activation quickly, and still handle errors inside the same form.',
+      highlights: [
+        'Removed the dark promotional side panel and heavy gradient treatment',
+        'Kept sign-in, activation, language switching, and redirect behavior',
+        'Tightened the form controls to match the Workspace admin feel',
+      ],
+      sections: [
+        {
+          title: 'Experience improvements',
+          items: [
+            'The Workspace sign-in page now uses a lightweight structure with a top brand bar, short context copy, and a focused form panel.',
+            'The form card uses calmer borders, smaller radii, and restrained shadowing to reduce pre-login visual weight.',
+            'Sign-in and first-time activation still switch in place, with errors shown inline inside the form.',
+          ],
+        },
+      ],
+    },
+  },
   '2026-06-12-workspace-overview-activity-home': {
     'zh-CN': {
       title: '工作台总览现在聚焦最近操作记录',
@@ -385,7 +446,8 @@ const PRODUCT_UPDATE_TRANSLATIONS = {
   '2026-05-09-workspace-validation-navigation': {
     'zh-CN': {
       title: '工作台校验修复链路更直接',
-      summary: '导出增加姓名列，校验中心支持更完整的批量清理和精准跳转，班次定义与 Viewer 的可见性行为也已修正。',
+      summary:
+        '导出增加姓名列，校验中心支持更完整的批量清理和精准跳转，班次定义与 Viewer 的可见性行为也已修正。',
       status: '已发布',
       importance: '问题修复',
       audience: ['排班管理员', '团队编辑者', '值班查看者'],
@@ -444,7 +506,8 @@ const PRODUCT_UPDATE_TRANSLATIONS = {
   '2026-05-01-roster-save-actions': {
     'zh-CN': {
       title: '月度排班直接编辑更轻量',
-      summary: '月度排班页继续采用轻量的直接编辑流程，点击班次按钮会先写入本地工作副本，用户再从页面头部保存，同时补充与网格一致的颜色和 tooltip 提示。',
+      summary:
+        '月度排班页继续采用轻量的直接编辑流程，点击班次按钮会先写入本地工作副本，用户再从页面头部保存，同时补充与网格一致的颜色和 tooltip 提示。',
       status: '已发布',
       importance: '体验优化',
       audience: ['排班管理员', '团队编辑者'],
@@ -472,7 +535,7 @@ const PRODUCT_UPDATE_TRANSLATIONS = {
     en: {
       title: 'Monthly roster editing feels lighter',
       summary:
-        "Monthly roster keeps its lighter direct-editing flow: shift buttons stage changes into the local working copy first, users save from the header, and the grid now adds matching color and tooltip cues.",
+        'Monthly roster keeps its lighter direct-editing flow: shift buttons stage changes into the local working copy first, users save from the header, and the grid now adds matching color and tooltip cues.',
       status: 'Published',
       importance: 'Experience improvement',
       audience: ['Roster admins', 'Team editors'],
@@ -489,7 +552,7 @@ const PRODUCT_UPDATE_TRANSLATIONS = {
         {
           title: 'Experience improvements',
           items: [
-            "Monthly roster now uses a lighter direct-editing flow, so selecting a cell no longer opens the right drawer and shift buttons stage changes into the local working copy before the header Save Changes action commits them.",
+            'Monthly roster now uses a lighter direct-editing flow, so selecting a cell no longer opens the right drawer and shift buttons stage changes into the local working copy before the header Save Changes action commits them.',
             "The shift buttons above the grid reuse the roster grid's team-aware color presentation.",
             'Hovering or focusing a shift button reuses the roster grid tooltip information and visual treatment.',
             'Clear stays neutral and does not show shift metadata.',

@@ -34,6 +34,14 @@ Workspace 有意与 Public Viewer 区分开，避免同一套视觉语气覆盖�
 - 卡片表面：白色或 muted surface，边界清晰，阴影克制
 - 辅助文本：以灰阶建立信息优先级，不依赖高饱和颜色堆砌层级
 
+### Workspace Login
+
+- 登录页应延续 Workspace 的轻量管理端气质，避免深色大面积 hero、强装饰渐变、厚重玻璃拟态和大投影。
+- 首屏结构为顶部品牌栏 + 内容区两列：左侧承载 Workspace 说明，右侧承载登录表单。
+- 表单卡片使用白色表面、`border-slate-200`、`shadow-sm` 和小圆角；控件高度保持紧凑，输入、切换和提交按钮的圆角应统一在 `rounded-md` / `rounded-lg` 范围内。
+- 颜色以 `slate` 灰阶建立层级，`teal` 只用于安全身份、focus ring 和辅助强调，主提交按钮保持深 `slate` 以稳定可识别。
+- 移动端允许单列堆叠，但语言切换仍保留在页头，登录/激活切换和错误提示仍在表单内联呈现。
+
 ## Density Rules
 
 - 控件密度应高于 Public Viewer，优先服务录入、筛选、校验和批量编辑

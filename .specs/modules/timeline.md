@@ -52,6 +52,7 @@ const MIN_ROW_HEIGHT = 72
 - 当容器过窄且每小时宽度会小于 28px 时，退回横向滚动兜底。
 - 左侧 Team sticky 列保持 208px 固定宽度；当 Team 名称过长时，名称会在列内自动换行，而不是横向溢出到列外。
 - 团队行高首先满足班次泳道最小高度；若 Team 名称换行占用更多空间，整行会随左侧 sticky 列一起增高，保证右侧时间轴与左列高度保持一致。
+- 有班次数据时，泳道卡片组按实际 `laneStackHeight` 在团队行内垂直居中；`BLOCK_GAP` 只存在于相邻泳道之间，不能把最后一个 gap 计入尾部留白。
 
 ---
 
@@ -157,6 +158,7 @@ interface LayoutShift {
   laneIndex: number       // 泳道索引
   left: number            // 左偏移 (px)
   width: number           // 宽度 (px)
+  top: number             // 垂直偏移 (px)
 }
 ```
 
@@ -179,12 +181,23 @@ const layout = computed(() => {
       // ... 布局算法 (见上文)
     })
 
-    const height = Math.max(
-      MIN_ROW_HEIGHT,
-      lanes.length * (BLOCK_HEIGHT + BLOCK_GAP) + ROW_PADDING * 2
-    )
+    const laneStackHeight =
+      lanes.length > 0
+        ? lanes.length * BLOCK_HEIGHT + (lanes.length - 1) * BLOCK_GAP
+        : 0
+    const height = Math.max(MIN_ROW_HEIGHT, laneStackHeight + ROW_PADDING * 2)
+    const laneTopOffset = lanes.length > 0
+      ? (height - laneStackHeight) / 2
+      : ROW_PADDING
 
-    teamLayouts.push({ team, height, shifts: layoutShifts })
+    teamLayouts.push({
+      team,
+      height,
+      shifts: layoutShifts.map((layoutShift) => ({
+        ...layoutShift,
+        top: laneTopOffset + layoutShift.laneIndex * (BLOCK_HEIGHT + BLOCK_GAP),
+      })),
+    })
   })
 
   return teamLayouts
@@ -305,7 +318,7 @@ const getShiftBgClass = (teamColor) => {
 const getShiftStyle = (layoutShift) => ({
   left: `${layoutShift.left}px`,
   width: `${Math.max(layoutShift.width, 4)}px`,  // 最小宽度 4px
-  top: `${ROW_PADDING + layoutShift.laneIndex * (BLOCK_HEIGHT + BLOCK_GAP)}px`,
+  top: `${layoutShift.top}px`,
   height: `${BLOCK_HEIGHT}px`,
 })
 ```
@@ -353,13 +366,21 @@ const formatShiftTime = (iso) => {
 │ 🕐 08:00 - 17:00                                 │
 │ ──────────────────────────────────────────────── │
 │ 💬 @username                                     │
-│ Teams → 打开与该邮箱对应用户的 Microsoft Teams 对话 │
+│ [Teams icon]                                     │
 │ ✉️ username@company.com                          │
 │ 📞 +1-555-0101                                   │
 │ ──────────────────────────────────────────────── │
 │ Backup: Alex Chen (@achen)                       │
 └────────────────────────────────────────────────────┘
 ```
+
+### 视觉节奏
+
+- Tooltip 详情区使用 `space-y-2`，每一行使用 `min-h-6` 与 `leading-5`，保证上下行间距稳定。
+- 图标与文本之间统一使用 `gap-2.5`；图标尺寸为 `h-3.5 w-3.5 shrink-0`，长文本行不挤压图标列。
+- Shift Code 标签固定 `w-16`，值使用 `break-all` 与 `font-mono`，避免长编码撑宽浮层。
+- 联系方式分割线使用 `my-2.5 h-px`，分隔但不过度拉开列表。
+- Teams 联系动作使用图标按钮，尺寸为 `h-8 w-8`，内部 PNG 图标为 `h-5 w-5`，与联系方式列表密度保持一致。
 
 ### 条件渲染
 
@@ -376,8 +397,8 @@ const formatShiftTime = (iso) => {
 </div>
 ```
 
-- 若 `shift.contact.email` 存在，tooltip 内应提供 `Microsoft Teams` 行，并通过 `https://teams.microsoft.com/l/chat/0/0?users=<email>` 在新标签页打开对应会话。
-- `Microsoft Teams` 行属于可点击动作,应与纯文本联系方式区分视觉层级。
+- 若 `shift.contact.email` 存在，tooltip 内应提供 Microsoft Teams 图标按钮，并通过 `https://teams.microsoft.com/l/chat/0/0?users=<email>` 在新标签页打开对应会话。
+- Teams 图标按钮属于可点击动作，应与纯文本联系方式区分视觉层级，但不能使用更大的外边距破坏详情列表节奏。
 - `slack / email / phone` 任一字段缺失时，对应行直接隐藏，不展示空占位。
 - 员工详情浮层不再固定窄宽度；遇到长邮箱或长班次编码时可在桌面端自适应放宽，最大不超过约 640px 与视口安全边距。
 - 浮层达到宽度上限后，邮箱和班次编码改为换行展示，避免内容溢出或遮挡。

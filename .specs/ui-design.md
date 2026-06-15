@@ -108,8 +108,9 @@ font-mono: ui-monospace, SFMono-Regular, monospace
 |------|-----|------|
 | 组件内边距 | `px-3 py-1.5` | 按钮、输入框 |
 | 卡片内边距 | `px-3` | 班次卡片 |
-| 区块间距 | `space-x-4` | Header 元素 |
-| 行间距 | `space-y-2` | 列表项 |
+| Header 控件间距 | `gap-2` | Viewer 顶部筛选、工具入口与图标按钮统一使用 8px 间距 |
+| 详情行间距 | `gap-2.5` | Tooltip 图标、标签与内容统一使用 10px 横向间距 |
+| 行间距 | `space-y-2` | Tooltip 列表项保持 8px 纵向节奏，分割线上下使用 `my-2.5` |
 
 ---
 
@@ -134,7 +135,7 @@ font-mono: ui-monospace, SFMono-Regular, monospace
 | `left` | number | 左偏移量 (px) |
 | `width` | number | 卡片宽度 (px) |
 | `top` | number | 顶部偏移量 (px) |
-| `height` | number | 卡片高度 (固定 36px) |
+| `height` | number | 卡片高度 (固定 32px) |
 | `color` | string | 团队颜色 |
 
 #### 样式类
@@ -143,7 +144,7 @@ font-mono: ui-monospace, SFMono-Regular, monospace
 .absolute
 .rounded-lg
 .border
-.px-3
+.px-2
 .flex.items-center.justify-between
 .overflow-hidden
 .cursor-pointer
@@ -241,14 +242,32 @@ const currentTimeLeft = computed(() => {
 #### 高度计算
 
 ```javascript
+const laneStackHeight =
+  lanes.length > 0
+    ? lanes.length * BLOCK_HEIGHT + (lanes.length - 1) * BLOCK_GAP
+    : 0
 const height = Math.max(
-  MIN_ROW_HEIGHT,  // 80px
-  lanes.length * (BLOCK_HEIGHT + BLOCK_GAP) + ROW_PADDING * 2
+  MIN_ROW_HEIGHT,  // 72px
+  laneStackHeight + ROW_PADDING * 2
 )
-// BLOCK_HEIGHT = 36, BLOCK_GAP = 8, ROW_PADDING = 16
+const laneTopOffset = lanes.length > 0
+  ? (height - laneStackHeight) / 2
+  : ROW_PADDING
+// BLOCK_HEIGHT = 32, BLOCK_GAP = 6, ROW_PADDING = 12
 ```
 
+班次卡片组必须按 `laneStackHeight` 在团队行内垂直居中，避免有数据时卡片上方与下方留白不一致；多泳道只在相邻卡片之间保留 `BLOCK_GAP`，最后一条泳道后不额外计算尾部间隔。
+
 ### 5. Tooltip (详情浮层)
+
+Tooltip 属于高信息密度详情面板，必须使用一致的行高、横向间距和图标列节奏，避免联系信息、Teams 动作和长文本换行时出现上下间距跳变。
+
+- 内容容器使用 `p-4`、`rounded-lg`、`border-gray-200` 和 `shadow-xl`。
+- 详情列表保持 `space-y-2`，每行使用 `min-h-6`、`gap-2.5` 与 `leading-5`。
+- 图标统一使用 `h-3.5 w-3.5 shrink-0`，文本可复制字段使用 `select-all`。
+- Shift Code 标签固定 `w-16`，长 code 和 email 使用 `break-all`。
+- 联系方式分割线使用 `my-2.5`，避免贴近上下行。
+- Teams 联系入口保持图标按钮形态，尺寸收敛为 `h-8 w-8`，图标为 `h-5 w-5`，与列表节奏一致。
 
 #### 内容结构
 

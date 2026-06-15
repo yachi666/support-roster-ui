@@ -160,12 +160,12 @@ Viewer 请求后端 `/api/shifts` 时，应把当前选项转换为 IANA 时区�
 │  Messaging Support Rota & Escalation Matrix                            │
 │  🕐 14:30:45 Shanghai | Mon, Jan 1, 2025                                │
 ├─────────────────────────────────────────────────────────────────────────┤
-│                                                    ┌─────────┬─────────┐│
-│                                                    │ Today ▼ │ 📅 Date ││
-│                                                    └─────────┴─────────┘│
-│                                                    ┌───────────────────┐│
-│                                                    │ 🌐 Timezone    ▼  ││
-│                                                    └───────────────────┘│
+│                                                    ┌─────────┬─────────┐ │
+│                                                    │ Today   │ 📅 Date │ │
+│                                                    └─────────┴─────────┘ │
+│                                                    ┌───────────────────┐ │
+│                                                    │ 🌐 Timezone    ▼  │ │
+│                                                    └───────────────────┘ │
 │                                                    [Contact][Vault][Workspace][↗][📰]
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -177,25 +177,25 @@ Viewer 请求后端 `/api/shifts` 时，应把当前选项转换为 IANA 时区�
 ### 容器
 
 ```css
-header.flex.items-center.justify-between.px-6.py-4.bg-white.border-b.border-gray-200.shadow-sm.z-20.sticky.top-0
+header.sticky.top-0.z-20.flex.items-center.justify-between.gap-6.border-b.border-gray-200.bg-white.px-6.py-3.5.shadow-sm
 ```
 
 ### 标题区
 
 ```css
-h1.text-lg.font-semibold.text-gray-900.tracking-tight
+h1.truncate.text-lg.font-semibold.leading-6.tracking-tight.text-gray-900
 ```
 
 ### 时钟区
 
 ```css
-div.flex.items-center.text-sm.text-gray-500.mt-1.font-mono
+div.flex.flex-wrap.items-center.gap-x-2.gap-y-1.font-mono.text-sm.leading-5.text-gray-500
 ```
 
 ### 日期选择器容器
 
 ```css
-div.flex.h-10.items-center.rounded-md.border.border-slate-200.bg-slate-50/70.p-0.5
+div.flex.h-10.items-center.gap-1.rounded-md.border.border-slate-200.bg-slate-50/70.p-0.5
 ```
 
 ### 时区选择器容器
@@ -208,6 +208,8 @@ div.flex.h-10.items-center.gap-2.rounded-md.border.border-slate-200.bg-white.px-
 
 - Header 右侧工具区依次展示 Contact Hub、Host Hub、Workspace、External Systems 和 Product Updates。
 - Header 工具栏采用 quiet operational toolbar 风格：控件统一 `h-10`、`rounded-md`、浅 slate 边框和白底/浅灰底默认态，去掉独立卡片式阴影。
+- Header 右侧所有筛选控件、文字工具入口与纯图标按钮统一放在 `gap-2` 节奏里，不额外使用 `ml-*` 或混合 `gap-3`，避免按钮间距跳变。
+- 日期快捷组内部使用 `gap-1` 与无外边距分割线，Today、日期输入、时区选择器和工具按钮外侧间隔保持一致。
 - Contact Hub、Host Hub 与 Workspace 使用文字 + 图标按钮，保持普通工具入口层级。
 - Workspace 不使用大面积 teal 底色，仅保留 teal 图标和 hover/focus 强调，避免抢占主视觉。
 - Product Updates 使用最右侧仅图标按钮，`to="/product-updates"`，图标采用 `Newspaper`，用于快速打开产品更新日志中心。
