@@ -29,5 +29,7 @@ test('viewer header exposes contact information, linux password vault, and produ
     source,
     /class="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3\.5 text-sm font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950/,
   )
+  assert.match(source, /class="flex flex-wrap items-center justify-end gap-2"/)
+  assert.doesNotMatch(source, /class="ml-1 flex items-center gap-2"/)
   assert.doesNotMatch(source, /shadow-sm transition-colors/)
 })

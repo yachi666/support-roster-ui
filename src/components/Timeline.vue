@@ -131,12 +131,19 @@ const layout = computed(() => {
       layoutShifts.push({ shift, laneIndex, left, width })
     })
 
-    const height = Math.max(
-      MIN_ROW_HEIGHT,
-      lanes.length * (BLOCK_HEIGHT + BLOCK_GAP) + ROW_PADDING * 2,
-    )
+    const laneStackHeight =
+      lanes.length > 0 ? lanes.length * BLOCK_HEIGHT + (lanes.length - 1) * BLOCK_GAP : 0
+    const height = Math.max(MIN_ROW_HEIGHT, laneStackHeight + ROW_PADDING * 2)
+    const laneTopOffset = lanes.length > 0 ? (height - laneStackHeight) / 2 : ROW_PADDING
 
-    teamLayouts.push({ team, height, shifts: layoutShifts })
+    teamLayouts.push({
+      team,
+      height,
+      shifts: layoutShifts.map((layoutShift) => ({
+        ...layoutShift,
+        top: laneTopOffset + layoutShift.laneIndex * (BLOCK_HEIGHT + BLOCK_GAP),
+      })),
+    })
   })
 
   return teamLayouts
@@ -219,7 +226,7 @@ const formatShiftTimeInZone = (iso) => {
 const getShiftStyle = (layoutShift) => ({
   left: `${layoutShift.left}px`,
   width: `${Math.max(layoutShift.width, 4)}px`,
-  top: `${ROW_PADDING + layoutShift.laneIndex * (BLOCK_HEIGHT + BLOCK_GAP)}px`,
+  top: `${layoutShift.top}px`,
   height: `${BLOCK_HEIGHT}px`,
 })
 
@@ -232,12 +239,13 @@ const getShiftContactValue = (shift, field) => {
   return typeof value === 'string' ? value.trim() : ''
 }
 
-const getMicrosoftTeamsUrl = (shift) => buildMicrosoftTeamsChatUrl(getShiftContactValue(shift, 'email'))
+const getMicrosoftTeamsUrl = (shift) =>
+  buildMicrosoftTeamsChatUrl(getShiftContactValue(shift, 'email'))
 const hasShiftContactInfo = (shift) => {
   return Boolean(
-    getShiftContactValue(shift, 'slack')
-    || getShiftContactValue(shift, 'email')
-    || getShiftContactValue(shift, 'phone'),
+    getShiftContactValue(shift, 'slack') ||
+    getShiftContactValue(shift, 'email') ||
+    getShiftContactValue(shift, 'phone'),
   )
 }
 </script>
@@ -379,17 +387,17 @@ const hasShiftContactInfo = (shift) => {
                     class="z-50 min-w-[min(20rem,calc(100vw-2rem))] max-w-[min(40rem,calc(100vw-2rem))] rounded-lg border border-gray-200 bg-white p-4 shadow-xl"
                     :side-offset="5"
                   >
-                    <div class="mb-3 flex items-start justify-between">
-                      <div class="flex items-center space-x-3">
+                    <div class="mb-3 flex items-start justify-between gap-3">
+                      <div class="flex min-w-0 items-center gap-3">
                         <img
                           :src="layoutShift.shift.userAvatar"
-                          class="h-10 w-10 rounded-full border border-gray-100 object-cover"
+                          class="h-10 w-10 shrink-0 rounded-full border border-gray-100 object-cover"
                         />
-                        <div>
-                          <div class="font-bold text-gray-900">
+                        <div class="min-w-0">
+                          <div class="truncate font-bold leading-5 text-gray-900">
                             {{ layoutShift.shift.userName }}
                           </div>
-                          <div class="mt-0.5 flex items-center text-xs text-gray-500">
+                          <div class="mt-0.5 flex items-center text-xs leading-4 text-gray-500">
                             {{
                               layoutShift.shift.isPrimary
                                 ? t('viewer.timeline.primaryOnCall')
@@ -420,25 +428,31 @@ const hasShiftContactInfo = (shift) => {
                     </div>
 
                     <div class="space-y-2 text-sm text-gray-600">
-                      <div class="flex items-start gap-2">
-                        <span class="shrink-0 text-xs font-medium text-gray-500">{{ t('viewer.timeline.shiftCode') }}</span>
-                        <span class="min-w-0 break-all font-mono text-xs text-gray-700">{{ layoutShift.shift.code }}</span>
+                      <div class="flex min-h-6 items-start gap-2.5">
+                        <span class="w-16 shrink-0 text-xs font-medium leading-5 text-gray-500">{{
+                          t('viewer.timeline.shiftCode')
+                        }}</span>
+                        <span class="min-w-0 break-all font-mono text-xs leading-5 text-gray-700">{{
+                          layoutShift.shift.code
+                        }}</span>
                       </div>
-                      <div class="flex items-center">
-                        <Clock class="mr-2 h-3.5 w-3.5 text-gray-400" />
-                        <span class="font-mono text-xs">
+                      <div class="flex min-h-6 items-center gap-2.5">
+                        <Clock class="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                        <span class="font-mono text-xs leading-5">
                           {{ formatShiftTimeInZone(layoutShift.shift.start) }} -
                           {{ formatShiftTimeInZone(layoutShift.shift.end) }}
                         </span>
                       </div>
                       <div v-if="hasShiftContactInfo(layoutShift.shift)" class="space-y-2">
-                        <div class="my-2 h-px bg-gray-100"></div>
+                        <div class="my-2.5 h-px bg-gray-100"></div>
                         <div
                           v-if="getShiftContactValue(layoutShift.shift, 'slack')"
-                          class="flex cursor-pointer items-center transition-colors hover:text-gray-900"
+                          class="flex min-h-6 cursor-pointer items-center gap-2.5 transition-colors hover:text-gray-900"
                         >
-                          <MessageSquare class="mr-2 h-3.5 w-3.5 text-gray-400" />
-                          <span class="select-all">{{ getShiftContactValue(layoutShift.shift, 'slack') }}</span>
+                          <MessageSquare class="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                          <span class="min-w-0 select-all leading-5">{{
+                            getShiftContactValue(layoutShift.shift, 'slack')
+                          }}</span>
                         </div>
                         <a
                           v-if="getMicrosoftTeamsUrl(layoutShift.shift)"
@@ -447,28 +461,32 @@ const hasShiftContactInfo = (shift) => {
                           rel="noreferrer"
                           :aria-label="`Contact ${layoutShift.shift.userName} in Teams`"
                           :title="`Contact ${layoutShift.shift.userName} in Teams`"
-                          class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#7b83eb]/25 bg-[#eef0ff] transition-transform transition-colors hover:scale-[1.02] hover:border-[#6264a7]/40 hover:bg-[#e3e6ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6264a7]/50 focus-visible:ring-offset-1"
+                          class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#7b83eb]/25 bg-[#eef0ff] transition-transform transition-colors hover:scale-[1.02] hover:border-[#6264a7]/40 hover:bg-[#e3e6ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6264a7]/50 focus-visible:ring-offset-1"
                         >
                           <img
                             :src="teamsContactIcon"
                             alt=""
                             aria-hidden="true"
-                            class="h-7 w-7 rounded-full object-cover"
+                            class="h-5 w-5 rounded-full object-cover"
                           />
                         </a>
                         <div
                           v-if="getShiftContactValue(layoutShift.shift, 'email')"
-                          class="flex items-start transition-colors hover:text-gray-900"
+                          class="flex min-h-6 items-start gap-2.5 transition-colors hover:text-gray-900"
                         >
-                          <Mail class="mr-2 mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400" />
-                          <span class="min-w-0 break-all select-all">{{ getShiftContactValue(layoutShift.shift, 'email') }}</span>
+                          <Mail class="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400" />
+                          <span class="min-w-0 break-all select-all leading-5">{{
+                            getShiftContactValue(layoutShift.shift, 'email')
+                          }}</span>
                         </div>
                         <div
                           v-if="getShiftContactValue(layoutShift.shift, 'phone')"
-                          class="flex cursor-pointer items-center transition-colors hover:text-gray-900"
+                          class="flex min-h-6 cursor-pointer items-center gap-2.5 transition-colors hover:text-gray-900"
                         >
-                          <Phone class="mr-2 h-3.5 w-3.5 text-gray-400" />
-                          <span class="select-all">{{ getShiftContactValue(layoutShift.shift, 'phone') }}</span>
+                          <Phone class="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                          <span class="min-w-0 select-all leading-5">{{
+                            getShiftContactValue(layoutShift.shift, 'phone')
+                          }}</span>
                         </div>
                       </div>
                     </div>
@@ -477,8 +495,8 @@ const hasShiftContactInfo = (shift) => {
                       <div class="mb-1 text-xs font-semibold text-gray-500">
                         {{ t('viewer.timeline.backup') }}
                       </div>
-                      <div class="flex items-center text-sm">
-                        <User class="mr-2 h-3.5 w-3.5 text-gray-400" />
+                      <div class="flex min-h-6 items-center gap-2.5 text-sm">
+                        <User class="h-3.5 w-3.5 shrink-0 text-gray-400" />
                         {{ layoutShift.shift.backup.name }}
                         <span class="ml-1 text-gray-400"
                           >({{ layoutShift.shift.backup.contact }})</span
