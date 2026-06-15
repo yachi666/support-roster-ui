@@ -194,11 +194,13 @@ function handleLocaleChange(event) {
 
           <form class="mt-5 space-y-4" @submit.prevent="submit">
             <div>
-              <label class="mb-2 block text-sm font-semibold text-slate-700">{{
+              <label for="login-staff-id" class="mb-2 block text-sm font-semibold text-slate-700">{{
                 t('auth.card.staffId')
               }}</label>
               <input
+                id="login-staff-id"
                 v-model="formState.staffId"
+                name="staffId"
                 type="text"
                 autocomplete="username"
                 class="h-11 w-full rounded-md border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
@@ -207,11 +209,13 @@ function handleLocaleChange(event) {
             </div>
 
             <div v-if="mode === 'login'">
-              <label class="mb-2 block text-sm font-semibold text-slate-700">{{
+              <label for="login-password" class="mb-2 block text-sm font-semibold text-slate-700">{{
                 t('auth.card.password')
               }}</label>
               <input
+                id="login-password"
                 v-model="formState.password"
+                name="password"
                 type="password"
                 autocomplete="current-password"
                 class="h-11 w-full rounded-md border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
@@ -220,11 +224,16 @@ function handleLocaleChange(event) {
             </div>
 
             <div v-else>
-              <label class="mb-2 block text-sm font-semibold text-slate-700">{{
-                t('auth.card.newPassword')
-              }}</label>
+              <label
+                for="login-new-password"
+                class="mb-2 block text-sm font-semibold text-slate-700"
+              >
+                {{ t('auth.card.newPassword') }}
+              </label>
               <input
+                id="login-new-password"
                 v-model="formState.newPassword"
+                name="newPassword"
                 type="password"
                 autocomplete="new-password"
                 class="h-11 w-full rounded-md border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
