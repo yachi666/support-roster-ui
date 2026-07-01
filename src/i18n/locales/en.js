@@ -57,7 +57,7 @@ export default {
       eyebrow: 'Workspace authentication',
       title: 'Sign in with your staff ID',
       signInTab: 'Sign in',
-      activateTab: 'First-time activation',
+      activateTab: 'First-time sign in',
       staffId: 'Staff ID',
       staffIdPlaceholder: 'Enter your staff ID',
       password: 'Password',
@@ -65,7 +65,7 @@ export default {
       newPassword: 'New password',
       newPasswordPlaceholder: 'Set a password with at least 4 characters',
       intranetHint:
-        'This first-time activation flow is temporarily accepted for intranet/testing only.',
+        'New employees can set up their account here using their Staff ID. An account will be created automatically with editor access to your own team.',
     },
   },
   viewer: {
